@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <title>Mi tablero de sonidos</title>
+        <link rel="stylesheet" href="estilo.css">
+        <link rel="manifest" href="manifest.json" />
+        <script type="text/javascript" src="js.js"></script>
+    </head>
+    <body>
+        <main>
+            <div id="tablero">
+                <div class="boton" id="a" onclick="playa()">
+                    <audio id="aa" src="audio/aa.mp3"></audio>
+                </div>
+                <div class="boton" id="b" onclick="playb()">
+                    <audio id="bb" src="audio/bb.mp3"></audio>
+                </div>
+                <div class="boton" id="c" onclick="playc()">
+                    <audio id="cc" src="audio/cc.mp3"></audio>
+                </div>
+                <div class="boton" id="d" onclick="playd()">
+                    <audio id="dd" src="audio/dd.mp3"></audio>
+                </div>
+                <div class="boton" id="e" onclick="playe()">
+                    <audio id="ee" src="audio/ee.mp3"></audio>
+                </div>
+                <div class="boton" id="f" onclick="playf()">
+                    <audio id="ff" src="audio/ff.mp3"></audio>
+                </div>
+            </div>
+            <div id="controles">
+                <img id="ctrlStop" src="img/ctrlStop.png" onclick="stop()">
+            </div>
+        </main>
+    </body>
+</html>
