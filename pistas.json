@@ -1,0 +1,112 @@
+{
+    "pistas":[
+        {
+            "archivo":"a",
+            "titulo":"Un pequeño dedo",
+            "interprete":"Super Simple",
+            "orden":"1"
+        },
+        {
+            "archivo":"b",
+            "titulo":"¿Por qué lloras?",
+            "interprete":"Nene León",
+            "orden":"2"
+        },
+        {
+            "archivo":"c",
+            "titulo":"Los medios de transporte",
+            "interprete":"Nene León",
+            "orden":"3"
+        },
+        {
+            "archivo":"d",
+            "titulo":"Como los animalitos",
+            "interprete":"Plim Plim",
+            "orden":"4"
+        },
+        {
+            "archivo":"e",
+            "titulo":"Soy una taza",
+            "interprete":"Plim Plim",
+            "orden":"5"
+        },
+        {
+            "archivo":"f",
+            "titulo":"Abejita chiquitita",
+            "interprete":"Plim Plim",
+            "orden":"6"
+        },
+        {
+            "archivo":"g",
+            "titulo":"Peekaboo",
+            "interprete":"Super Simple",
+            "orden":"7"
+        },
+        {
+            "archivo":"h",
+            "titulo":"Los animales en la granja",
+            "interprete":"Super Simple",
+            "orden":"8"
+        },
+        {
+            "archivo":"i",
+            "titulo":"Canción del ombligo",
+            "interprete":"CoComelon",
+            "orden":"9"
+        },
+        {
+            "archivo":"j",
+            "titulo":"¿Cómo hace el caballito? - fragmento de Como los animalitos",
+            "interprete":"Plim Plim",
+            "orden":"10"
+        },
+        {
+            "archivo":"k",
+            "titulo":"¿Cómo hace el perrito? - fragmento de Como los animalitos",
+            "interprete":"Plim Plim",
+            "orden":"11"
+        },
+        {
+            "archivo":"l",
+            "titulo":"¿Cómo hace la tortuga? - fragmento de Como los animalitos",
+            "interprete":"Plim Plim",
+            "orden":"12"
+        },
+        {
+            "archivo":"m",
+            "titulo":"¿Cómo hace el gatito? - fragmento de Como los animalitos",
+            "interprete":"Plim Plim",
+            "orden":"13"
+        },
+        {
+            "archivo":"n",
+            "titulo":"Canción de la hora del baño",
+            "interprete":"Nene León",
+            "orden":"14"
+        },
+        {
+            "archivo":"o",
+            "titulo":"Cabeza, hombros, rodillas y pies",
+            "interprete":"Nene León",
+            "orden":"15"
+        },
+        {
+            "archivo":"p",
+            "titulo":"Toodly Doodly Doo",
+            "interprete":"Super Simple",
+            "orden":"16"
+        },
+        {
+            "archivo":"q",
+            "titulo":"¿Estrellita dónde estás",
+            "interprete":"Super Simple",
+            "orden":"17"
+        },
+        {
+            "archivo":"r",
+            "titulo":"El baile de la ensalada",
+            "interprete":"Plim Plim",
+            "orden":"18"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
-    "name": "EmmaSounds",
-    "short_name": "EmmaSounds",
+    "name": "DJ Emmy",
+    "short_name": "DJ Emmy",
     "description": "Tablero de sonidos personalizado para Emma Natalia",
     "icons": [
         {
@@ -29,8 +29,9 @@
             "type": "image/png"
         }
     ],
-    "start_url": "/index.html",
-    "display": "standalone",
+    "start_url": "/",
+    "display": "fullscreen",
     "theme_color": "#111111",
-    "background_color": "#444444"
+    "background_color": "#444444",
+    "scope": "/"
 }

@@ -1,35 +1,43 @@
-<html>
+<!DOCTYPE html>
+<html manifest="manifest.appcache">
     <head>
-        <title>Mi tablero de sonidos</title>
         <link rel="stylesheet" href="estilo.css">
         <link rel="manifest" href="manifest.json" />
-        <script type="text/javascript" src="js.js"></script>
+        <!--<html manifest="manifest.appcache"></html>-->
+        <title>DJ Emmy</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     </head>
     <body>
-        <main>
-            <div id="tablero">
-                <div class="boton" id="a" onclick="playa()">
-                    <audio id="aa" src="audio/aa.mp3"></audio>
-                </div>
-                <div class="boton" id="b" onclick="playb()">
-                    <audio id="bb" src="audio/bb.mp3"></audio>
-                </div>
-                <div class="boton" id="c" onclick="playc()">
-                    <audio id="cc" src="audio/cc.mp3"></audio>
-                </div>
-                <div class="boton" id="d" onclick="playd()">
-                    <audio id="dd" src="audio/dd.mp3"></audio>
-                </div>
-                <div class="boton" id="e" onclick="playe()">
-                    <audio id="ee" src="audio/ee.mp3"></audio>
-                </div>
-                <div class="boton" id="f" onclick="playf()">
-                    <audio id="ff" src="audio/ff.mp3"></audio>
-                </div>
-            </div>
-            <div id="controles">
-                <img id="ctrlStop" src="img/ctrlStop.png" onclick="stop()">
-            </div>
+        <header>
+            <ul>
+                <li id="musica"></li>
+                <!--<li id="cafe"></li>
+                <li id="videos"></li>
+                <li id="vocabulario"></li>
+                <li id="colores"></li>
+                <li id="figuras"></li>
+                <li id="letras"></li>
+                <li id="números"></li>-->
+            </ul>
+        </header>
+        <main id="tablero">
+            <!-- LOS ELEMENTOS article PARA CADA BOTÓN SE CREAN AQUÍ EN procesos.js -->
         </main>
+        <footer>
+            <div id="ctrlStop" onclick="stop()"></div>
+            <p><span id="titulo"></span> <span id="interprete"></span></p>
+        </footer>
+        <script type="text/javascript" src="js/procesos.js"></script>
+        <script type="text/javascript">
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registrado:', registration);
+                })
+                .catch(error => {
+                    console.error('Error al registrar el Service Worker:', error);
+                });
+            }
+        </script>
     </body>
 </html>
