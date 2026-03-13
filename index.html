@@ -17,8 +17,42 @@
     <!-- Link al manifest dinámico (se llenará con JS) -->
     <link id="manifest-link" rel="manifest" href="">
     
-    <!-- Icono de la app (Data URI para no requerir archivo externo) -->
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%238b5cf6%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22>🎧</text></svg>">
+    <!-- Iconos de la app (Se generarán dinámicamente con JS para máxima compatibilidad iOS) -->
+    <link id="apple-icon" rel="apple-touch-icon" href="">
+    <link id="favicon" rel="icon" type="image/png" href="">
+    
+    <script>
+        // Generador dinámico de Ícono en alta calidad (Soluciona problemas de SVG en iPad)
+        (function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Fondo Degradado (Estilo App Premium)
+            const grad = ctx.createLinearGradient(0, 0, 512, 512);
+            grad.addColorStop(0, '#ec4899'); // Rosa
+            grad.addColorStop(0.5, '#8b5cf6'); // Morado
+            grad.addColorStop(1, '#6366f1'); // Índigo
+            ctx.fillStyle = grad; 
+            // iOS requiere un cuadrado sólido, él recorta las esquinas automáticamente
+            ctx.fillRect(0, 0, 512, 512); 
+            
+            // Círculos internos de cristal
+            ctx.beginPath(); ctx.arc(256, 256, 180, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fill();
+            ctx.beginPath(); ctx.arc(256, 256, 210, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 8; ctx.stroke();
+            
+            // Emoji 🎧 con sombra paralela
+            ctx.font = '240px "Apple Color Emoji", "Segoe UI Emoji", sans-serif'; 
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10;
+            ctx.fillText('🎧', 256, 276); // Se desplaza ligeramente en Y por el diseño base
+            
+            // Convertir pintura a PNG y asignar globalmente
+            window.appIconPNG = canvas.toDataURL('image/png');
+            document.getElementById('apple-icon').href = window.appIconPNG;
+            document.getElementById('favicon').href = window.appIconPNG;
+        })();
+    </script>
 
     <style>
         /* Deshabilitar selección de texto y zoom táctil para que se sienta como App nativa */
@@ -330,7 +364,7 @@
                 // Prefijo según carpeta (ajusta según tu servidor)
                 const rutaCarpeta = tipo === 'musica' ? 'audio/' : 'sonidos/';
                 audioEl.src = `${rutaCarpeta}${track.archivo}.mp3`;
-                audioEl.preload = 'none'; // Ahorra datos iniciales, el SW los cacheará
+                audioEl.preload = 'auto'; // Forzamos al navegador a pre-cargar el archivo en memoria
                 
                 // Eventos
                 articulo.addEventListener('click', () => reproducir(track, tipo));
@@ -406,29 +440,60 @@
             "theme_color": "#8b5cf6",
             "description": "Botonera musical infantil",
             "icons": [{
-                "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%238b5cf6%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22>🎧</text></svg>",
-                "sizes": "192x192",
-                "type": "image/svg+xml"
+                "src": window.appIconPNG, // Usa la imagen PNG Premium generada arriba
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
             }]
         };
         const blobManifest = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
         document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
 
-        // 2. Inyectar Service Worker para uso Fuera de Línea
+        // 2. Preparar lista de todos los archivos para forzar descarga (Pre-caché)
+        const urlsParaCachear = [
+            './',
+            'index.html'
+        ];
+        
+        // Agregar dinámicamente todos los MP3 y MP4/WEBP a la lista de descarga
+        musica.forEach(t => urlsParaCachear.push(`audio/${t.archivo}.mp3`));
+        sonidos.forEach(t => urlsParaCachear.push(`sonidos/${t.archivo}.mp3`));
+        videosDatos.forEach(t => {
+            urlsParaCachear.push(`vid/${t.archivo}.mp4`);
+            urlsParaCachear.push(`img/cover-vid-${t.archivo}.webp`);
+        });
+
+        // 3. Inyectar Service Worker para uso Fuera de Línea
         const swCodigo = `
-            const CACHE_NAME = 'djemmy-cache-v1';
+            const CACHE_NAME = 'djemmy-cache-v2';
+            const urlsToCache = ${JSON.stringify(urlsParaCachear)};
+
             self.addEventListener('install', (event) => {
                 self.skipWaiting();
+                // Al instalarse la PWA, fuerza la descarga de toda la lista
+                event.waitUntil(
+                    caches.open(CACHE_NAME).then((cache) => {
+                        console.log('Descargando todos los recursos para uso offline...');
+                        // Usamos map y catch para que si un archivo falta, no se detenga la descarga de los demás
+                        return Promise.all(
+                            urlsToCache.map(url => {
+                                return cache.add(url).catch(err => console.warn('Archivo no encontrado, omitiendo:', url));
+                            })
+                        );
+                    })
+                );
             });
+
             self.addEventListener('fetch', (event) => {
-                // Solo cachear peticiones GET de la misma web (Audios, HTML)
+                // Solo cachear peticiones GET de la misma web
                 if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
                 
                 event.respondWith(
                     caches.match(event.request).then((cachedResponse) => {
                         if (cachedResponse) {
-                            return cachedResponse; // Devolver de caché si existe
+                            return cachedResponse; // Devolver el archivo ya descargado instantáneamente
                         }
+                        // Si por algo no estaba, intentar descargarlo en el momento
                         return fetch(event.request).then((networkResponse) => {
                             return caches.open(CACHE_NAME).then((cache) => {
                                 cache.put(event.request, networkResponse.clone());
@@ -445,12 +510,12 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register(urlSW).then(reg => {
-                    console.log('App lista para uso fuera de línea.');
+                    console.log('App lista para uso fuera de línea. Descarga en segundo plano iniciada.');
                 }).catch(err => console.log('Error en Service Worker', err));
             });
         }
 
-        // 3. Detectar iPadOS/iOS para mostrar prompt de instalación
+        // 4. Detectar iPadOS/iOS para mostrar prompt de instalación
         const esIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const enModoStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
         
