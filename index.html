@@ -1,43 +1,329 @@
 <!DOCTYPE html>
-<html manifest="manifest.appcache">
-    <head>
-        <link rel="stylesheet" href="estilo.css">
-        <link rel="manifest" href="manifest.json" />
-        <!--<html manifest="manifest.appcache"></html>-->
-        <title>DJ Emmy</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    </head>
-    <body>
-        <header>
-            <ul>
-                <li id="musica"></li>
-                <!--<li id="cafe"></li>
-                <li id="videos"></li>
-                <li id="vocabulario"></li>
-                <li id="colores"></li>
-                <li id="figuras"></li>
-                <li id="letras"></li>
-                <li id="números"></li>-->
-            </ul>
-        </header>
-        <main id="tablero">
-            <!-- LOS ELEMENTOS article PARA CADA BOTÓN SE CREAN AQUÍ EN procesos.js -->
-        </main>
-        <footer>
-            <div id="ctrlStop" onclick="stop()"></div>
-            <p><span id="titulo"></span> <span id="interprete"></span></p>
-        </footer>
-        <script type="text/javascript" src="js/procesos.js"></script>
-        <script type="text/javascript">
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registrado:', registration);
-                })
-                .catch(error => {
-                    console.error('Error al registrar el Service Worker:', error);
-                });
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Meta tags específicos para iPadOS y PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DJ Emmy">
+    <meta name="theme-color" content="#8b5cf6">
+    
+    <title>DJ Emmy - Reproductor Infantil</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Link al manifest dinámico (se llenará con JS) -->
+    <link id="manifest-link" rel="manifest" href="">
+    
+    <!-- Icono de la app (Data URI para no requerir archivo externo) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%238b5cf6%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22>🎧</text></svg>">
+
+    <style>
+        /* Deshabilitar selección de texto y zoom táctil para que se sienta como App nativa */
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            overscroll-behavior-y: none;
+            /* Soporte para el "notch" o bordes curvos del iPad */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        /* Ocultar scrollbars pero mantener funcionalidad */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        /* Animación de reproducción */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.97); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+            100% { transform: scale(0.97); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        
+        .reproduciendo {
+            animation: pulse-ring 2s infinite;
+            border: 4px solid white !important;
+            filter: brightness(1.1);
+            z-index: 10;
+        }
+
+        .tab-activa {
+            background-color: white;
+            color: #8b5cf6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-inactiva {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Efecto al tocar botones en iPad */
+        article:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 h-screen w-screen overflow-hidden text-white font-sans flex flex-col">
+
+    <!-- Encabezado Fijo (Optimizado para iPad Landscape) -->
+    <header class="flex-none p-4 md:p-6 lg:px-10 flex items-center justify-between gap-6">
+        <!-- Logo -->
+        <div class="flex items-center gap-4 bg-white/20 backdrop-blur-md rounded-2xl p-4 border border-white/30 shadow-lg">
+            <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-inner">🎧</div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wider leading-none">DJ Emmy</h1>
+                <p class="text-purple-100 text-sm font-medium">Modo iPad</p>
+            </div>
+        </div>
+
+        <!-- Controles de Navegación (Pestañas) en el Centro -->
+        <div class="flex-1 max-w-2xl mx-4 flex bg-black/20 p-2 rounded-2xl gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
+            <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
+                🎵 Música
+            </button>
+            <button id="btn-sonidos" onclick="cambiarSeccion('sonidos')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+                💥 Efectos
+            </button>
+        </div>
+
+        <!-- Botón Parar Todo -->
+        <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-5 md:px-8 rounded-2xl shadow-lg flex items-center gap-3 font-bold text-xl md:text-2xl transition-colors border-2 border-red-400/50">
+            <span>⏹️</span> Parar
+        </button>
+    </header>
+
+    <!-- Área de Botones (Scrollable si es necesario) -->
+    <main class="flex-1 overflow-y-auto px-6 pt-2 md:pt-4 pb-8 lg:px-10">
+        <!-- Contenedor Música -->
+        <div id="seccion-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
+            <!-- Botones inyectados vía JS -->
+        </div>
+
+        <!-- Contenedor Sonidos (Oculto por defecto) -->
+        <div id="seccion-sonidos" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10 hidden">
+            <!-- Botones inyectados vía JS -->
+        </div>
+    </main>
+
+    <!-- Modal de Instalación PWA (Solo se muestra en Safari iOS/iPadOS) -->
+    <div id="pwa-prompt" class="hidden absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white text-purple-800 p-4 rounded-2xl shadow-2xl items-center gap-4 z-50 border-2 border-purple-300 animate-bounce">
+        <span class="text-3xl">📱</span>
+        <div>
+            <p class="font-bold">Instala DJ Emmy en tu iPad</p>
+            <p class="text-sm">Toca el botón <strong>Compartir</strong> y luego <strong>"Agregar a Inicio"</strong>.</p>
+        </div>
+        <button onclick="document.getElementById('pwa-prompt').style.display='none'" class="bg-gray-200 p-2 rounded-full px-4 font-bold ml-2">Cerrar</button>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS DE PISTAS ---
+        const musica = [
+            { archivo: "a", titulo: "Un pequeño dedo", interprete: "Super Simple", emoji: "☝️", color: "bg-red-400" },
+            { archivo: "b", titulo: "¿Por qué lloras?", interprete: "Nene León", emoji: "😢", color: "bg-blue-400" },
+            { archivo: "c", titulo: "Los medios de transporte", interprete: "Nene León", emoji: "🚗", color: "bg-green-400" },
+            { archivo: "d", titulo: "Como los animalitos", interprete: "Plim Plim", emoji: "🐾", color: "bg-yellow-400" },
+            { archivo: "e", titulo: "Soy una taza", interprete: "Plim Plim", emoji: "☕", color: "bg-orange-400" },
+            { archivo: "f", titulo: "Abejita chiquitita", interprete: "Plim Plim", emoji: "🐝", color: "bg-amber-500" },
+            { archivo: "g", titulo: "Peekaboo", interprete: "Super Simple", emoji: "🙈", color: "bg-pink-400" },
+            { archivo: "h", titulo: "Los animales en la granja", interprete: "Super Simple", emoji: "🐄", color: "bg-emerald-500" },
+            { archivo: "i", titulo: "Canción del ombligo", interprete: "CoComelon", emoji: "👶", color: "bg-cyan-400" },
+            { archivo: "j", titulo: "¿Cómo hace el caballito?", interprete: "Plim Plim", emoji: "🐴", color: "bg-orange-500" },
+            { archivo: "k", titulo: "¿Cómo hace el perrito?", interprete: "Plim Plim", emoji: "🐶", color: "bg-yellow-500" },
+            { archivo: "l", titulo: "¿Cómo hace la tortuga?", interprete: "Plim Plim", emoji: "🐢", color: "bg-green-500" },
+            { archivo: "m", titulo: "¿Cómo hace el gatito?", interprete: "Plim Plim", emoji: "🐱", color: "bg-orange-300" },
+            { archivo: "n", titulo: "Hora del baño", interprete: "Nene León", emoji: "🛁", color: "bg-blue-300" },
+            { archivo: "o", titulo: "Cabeza, hombros...", interprete: "Super Simple", emoji: "👤", color: "bg-indigo-400" },
+            { archivo: "p", titulo: "Toodly Doodly Doo", interprete: "Super Simple", emoji: "🎶", color: "bg-purple-400" },
+            { archivo: "q", titulo: "¿Estrellita dónde estás?", interprete: "Super Simple", emoji: "⭐", color: "bg-yellow-300" },
+            { archivo: "r", titulo: "El baile de la ensalada", interprete: "Plim Plim", emoji: "🥗", color: "bg-lime-500" }
+        ];
+
+        const sonidos = [
+            { archivo: "s1", titulo: "Aplausos", interprete: "Efecto", emoji: "👏", color: "bg-emerald-400" },
+            { archivo: "s2", titulo: "Risas", interprete: "Efecto", emoji: "😂", color: "bg-sky-400" },
+            { archivo: "s3", titulo: "Redoble", interprete: "Tambor", emoji: "🥁", color: "bg-red-500" },
+            { archivo: "s4", titulo: "Boing", interprete: "Efecto", emoji: "🪀", color: "bg-purple-500" },
+            { archivo: "s5", titulo: "Magia", interprete: "Efecto", emoji: "✨", color: "bg-yellow-400" },
+            { archivo: "s6", titulo: "Error", interprete: "Trombón", emoji: "🎺", color: "bg-orange-400" },
+            { archivo: "s7", titulo: "Ta-da!", interprete: "Celebración", emoji: "🎉", color: "bg-pink-500" },
+            { archivo: "s8", titulo: "Silbato", interprete: "Efecto", emoji: "😗", color: "bg-teal-400" }
+        ];
+
+        // --- CACHÉ DE ELEMENTOS DEL DOM ---
+        const contenedorMusica = document.getElementById('seccion-musica');
+        const contenedorSonidos = document.getElementById('seccion-sonidos');
+        const btnMusica = document.getElementById('btn-musica');
+        const btnSonidos = document.getElementById('btn-sonidos');
+        
+        let temporizadorSimulador; // Para entorno de prueba
+        let cancionActual = null; // Para detener la canción anterior
+
+        // --- LÓGICA DE REPRODUCCIÓN ---
+        const pararTodo = () => {
+            document.querySelectorAll('audio').forEach(el => {
+                el.pause();
+                el.currentTime = 0;
+            });
+            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
+            cancionActual = null;
+            clearTimeout(temporizadorSimulador);
+        };
+
+        const reproducir = (track, tipo) => {
+            const audio = document.getElementById(`audio-${track.archivo}`);
+            const articulo = document.getElementById(`btn-${track.archivo}`);
+            if (!audio || !articulo) return;
+
+            // Si es música, paramos otras músicas. (Los sonidos pueden sonar sobre la música)
+            if (tipo === 'musica') {
+                if (cancionActual && cancionActual !== audio) {
+                    cancionActual.pause();
+                    cancionActual.currentTime = 0;
+                }
+                document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
+                cancionActual = audio;
+            } else {
+                // Si es un sonido, solo reseteamos su propia animación
+                articulo.classList.remove('reproduciendo');
             }
-        </script>
-    </body>
+
+            // Iniciar animación y audio
+            articulo.classList.add('reproduciendo');
+            audio.currentTime = 0;
+            
+            audio.play().catch(e => {
+                console.warn("Sin audio real. Simulando...", e);
+                // Simulación para el Preview de IA
+                clearTimeout(temporizadorSimulador);
+                temporizadorSimulador = setTimeout(() => {
+                    articulo.classList.remove('reproduciendo');
+                }, tipo === 'musica' ? 4000 : 1500); // 4s para música, 1.5s para SFX
+            });
+        };
+
+        // --- GENERACIÓN DE LA INTERFAZ ---
+        const crearBotones = (arreglo, contenedor, tipo) => {
+            arreglo.forEach((track) => {
+                // Tarjeta
+                const articulo = document.createElement('article');
+                articulo.id = `btn-${track.archivo}`;
+                // Estilo especial para iPad: cuadrados perfectos (aspect-square) y bordes gruesos
+                articulo.className = `${track.color} rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center aspect-square border-4 border-white/20 relative overflow-hidden transition-all`;
+                articulo.innerHTML = `
+                    <span class="text-6xl md:text-7xl mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
+                    <span class="text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-1 pointer-events-none">${track.titulo}</span>
+                `;
+                
+                // Audio tag
+                const audioEl = document.createElement('audio');
+                audioEl.id = `audio-${track.archivo}`;
+                // Prefijo según carpeta (ajusta según tu servidor)
+                const rutaCarpeta = tipo === 'musica' ? 'audio/' : 'sonidos/';
+                audioEl.src = `${rutaCarpeta}${track.archivo}.mp3`;
+                audioEl.preload = 'none'; // Ahorra datos iniciales, el SW los cacheará
+                
+                // Eventos
+                articulo.addEventListener('click', () => reproducir(track, tipo));
+                audioEl.addEventListener('ended', () => {
+                    articulo.classList.remove('reproduciendo');
+                });
+
+                articulo.appendChild(audioEl);
+                contenedor.appendChild(articulo);
+            });
+        };
+
+        const cambiarSeccion = (seccion) => {
+            if (seccion === 'musica') {
+                contenedorMusica.classList.remove('hidden');
+                contenedorSonidos.classList.add('hidden');
+                btnMusica.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                btnSonidos.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+            } else {
+                contenedorMusica.classList.add('hidden');
+                contenedorSonidos.classList.remove('hidden');
+                btnSonidos.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                btnMusica.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+            }
+        };
+
+        // Inicializar UI
+        crearBotones(musica, contenedorMusica, 'musica');
+        crearBotones(sonidos, contenedorSonidos, 'sonidos');
+
+        // --- SISTEMA PWA EN UN SOLO ARCHIVO (MAGIA) ---
+        // 1. Inyectar Manifest.json
+        const pwaManifest = {
+            "name": "DJ Emmy Reproductor",
+            "short_name": "DJ Emmy",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#8b5cf6",
+            "theme_color": "#8b5cf6",
+            "description": "Botonera musical infantil",
+            "icons": [{
+                "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%238b5cf6%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22>🎧</text></svg>",
+                "sizes": "192x192",
+                "type": "image/svg+xml"
+            }]
+        };
+        const blobManifest = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
+        document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
+
+        // 2. Inyectar Service Worker para uso Fuera de Línea
+        const swCodigo = `
+            const CACHE_NAME = 'djemmy-cache-v1';
+            self.addEventListener('install', (event) => {
+                self.skipWaiting();
+            });
+            self.addEventListener('fetch', (event) => {
+                // Solo cachear peticiones GET de la misma web (Audios, HTML)
+                if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
+                
+                event.respondWith(
+                    caches.match(event.request).then((cachedResponse) => {
+                        if (cachedResponse) {
+                            return cachedResponse; // Devolver de caché si existe
+                        }
+                        return fetch(event.request).then((networkResponse) => {
+                            return caches.open(CACHE_NAME).then((cache) => {
+                                cache.put(event.request, networkResponse.clone());
+                                return networkResponse;
+                            });
+                        });
+                    }).catch(() => new Response('Contenido no disponible offline'))
+                );
+            });
+        `;
+        const blobSW = new Blob([swCodigo], {type: 'application/javascript'});
+        const urlSW = URL.createObjectURL(blobSW);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(urlSW).then(reg => {
+                    console.log('App lista para uso fuera de línea.');
+                }).catch(err => console.log('Error en Service Worker', err));
+            });
+        }
+
+        // 3. Detectar iPadOS/iOS para mostrar prompt de instalación
+        const esIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const enModoStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        
+        if (esIos && !enModoStandalone) {
+            // Mostrar mensajito de cómo instalar en el iPad después de 2 segundos
+            setTimeout(() => {
+                const prompt = document.getElementById('pwa-prompt');
+                prompt.classList.remove('hidden');
+                prompt.classList.add('flex');
+            }, 2000);
+        }
+    </script>
+</body>
 </html>
