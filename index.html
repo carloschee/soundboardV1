@@ -127,20 +127,20 @@
         </div>
 
         <!-- Grupo de Botones de Acción -->
-        <div class="flex items-center gap-2">
-            <!-- NUEVO: Botón Recargar / Borrar Caché -->
-            <button onclick="borrarCacheYRecargar()" class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white p-3 md:px-5 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-all border-2 border-orange-400/50">
-                <span>🔄</span> <span class="hidden md:inline" id="btn-actualizar-texto">Actualizar</span>
+        <div class="flex items-center gap-2 md:gap-3">
+            <!-- NUEVO: Botón Recargar / Borrar Caché (Solo Ícono) -->
+            <button onclick="borrarCacheYRecargar()" title="Actualizar" class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-lg flex items-center justify-center text-2xl md:text-3xl transition-all border-2 border-orange-400/50 shrink-0">
+                <span id="icono-actualizar">🔄</span>
             </button>
 
-            <!-- Botón Forzar Descarga Offline -->
-            <button onclick="iniciarDescargaOffline()" class="bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white p-3 md:px-5 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-all border-2 border-blue-400/50">
-                <span>☁️</span> <span class="hidden md:inline">Descargar</span>
+            <!-- Botón Forzar Descarga Offline (Solo Ícono) -->
+            <button onclick="iniciarDescargaOffline()" title="Descargar" class="bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-lg flex items-center justify-center text-2xl md:text-3xl transition-all border-2 border-blue-400/50 shrink-0">
+                <span>☁️</span>
             </button>
             
             <!-- Botón Parar Todo -->
-            <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-3 md:px-6 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-colors border-2 border-red-400/50">
-                <span>⏹️</span> Parar
+            <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-3 md:px-6 h-12 md:h-14 rounded-2xl shadow-lg flex items-center justify-center gap-2 font-bold text-lg md:text-xl transition-colors border-2 border-red-400/50 shrink-0">
+                <span>⏹️</span> <span class="hidden md:inline">Parar</span>
             </button>
         </div>
     </header>
@@ -490,8 +490,8 @@
 
         // NUEVO: Función para limpiar caché completamente y recargar
         const borrarCacheYRecargar = async () => {
-            const textoBtn = document.getElementById('btn-actualizar-texto');
-            if(textoBtn) textoBtn.innerText = "Borrando...";
+            const iconoBtn = document.getElementById('icono-actualizar');
+            if(iconoBtn) iconoBtn.innerText = "⏳";
             
             try {
                 // 1. Borrar todas las cachés guardadas
