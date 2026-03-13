@@ -112,7 +112,11 @@
             <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-inner">🎧</div>
             <div>
                 <h1 class="text-2xl font-bold tracking-wider leading-none">DJ Emmy</h1>
-                <p class="text-purple-100 text-sm font-medium">Modo iPad</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <p class="text-purple-100 text-sm font-medium">Modo iPad</p>
+                    <!-- NUEVO: Indicador discreto de descarga PWA -->
+                    <span id="offline-status" class="hidden text-[10px] px-2 py-0.5 rounded-full items-center gap-1 transition-all"></span>
+                </div>
             </div>
         </div>
 
@@ -509,9 +513,45 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
+                const statusEl = document.getElementById('offline-status');
+                statusEl.classList.remove('hidden');
+                statusEl.classList.add('flex'); // Mostrar el elemento
+
+                const updateStatus = (state) => {
+                    if (state === 'installing') {
+                        statusEl.innerHTML = '<span class="animate-spin inline-block">🔄</span> <span>Descargando...</span>';
+                        statusEl.className = 'text-[10px] bg-blue-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-blue-100 border border-blue-400/30';
+                    } else if (state === 'installed' || state === 'activated') {
+                        statusEl.innerHTML = '<span>✅</span> <span>100% Offline</span>';
+                        statusEl.className = 'text-[10px] bg-green-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-green-100 border border-green-400/30';
+                        setTimeout(() => { statusEl.style.opacity = '0.6'; }, 3000); // Hacerlo más sutil tras 3s
+                    } else if (state === 'redundant') {
+                        statusEl.innerHTML = '<span>⚠️</span> <span>Fallo</span>';
+                        statusEl.className = 'text-[10px] bg-red-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-red-100 border border-red-400/30';
+                    }
+                };
+
                 navigator.serviceWorker.register(urlSW).then(reg => {
-                    console.log('App lista para uso fuera de línea. Descarga en segundo plano iniciada.');
-                }).catch(err => console.log('Error en Service Worker', err));
+                    // Estado inicial al cargar la página
+                    if (reg.installing) {
+                        updateStatus(reg.installing.state);
+                        reg.installing.addEventListener('statechange', (e) => updateStatus(e.target.state));
+                    } else if (reg.waiting) {
+                        updateStatus(reg.waiting.state);
+                    } else if (reg.active) {
+                        updateStatus(reg.active.state); // Si ya había visitado la app antes, marca 100% rápido
+                    }
+
+                    // Detectar cuando se está descargando una actualización en el futuro
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        updateStatus(newWorker.state);
+                        newWorker.addEventListener('statechange', (e) => updateStatus(e.target.state));
+                    });
+                }).catch(err => {
+                    console.log('Error en Service Worker', err);
+                    statusEl.innerHTML = '<span>❌</span> <span>Sin conexión</span>';
+                });
             });
         }
 
