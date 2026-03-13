@@ -105,15 +105,15 @@
 </head>
 <body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 h-screen w-screen overflow-hidden text-white font-sans flex flex-col">
 
-    <!-- Encabezado Fijo (Optimizado para iPad Landscape) -->
-    <header class="flex-none p-4 md:p-6 lg:px-10 flex items-center justify-between gap-6">
+    <!-- Encabezado Fijo (Optimizado para iPad Landscape - Altura reducida) -->
+    <header class="flex-none p-2 md:p-4 lg:px-8 flex items-center justify-between gap-4">
         <!-- Logo -->
-        <div class="flex items-center gap-4 bg-white/20 backdrop-blur-md rounded-2xl p-4 border border-white/30 shadow-lg">
-            <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-inner">🎧</div>
+        <div class="flex items-center gap-3 bg-white/20 backdrop-blur-md rounded-2xl p-2 md:p-3 border border-white/30 shadow-lg">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div>
-                <h1 class="text-2xl font-bold tracking-wider leading-none">DJ Emmy</h1>
+                <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none">DJ Emmy</h1>
                 <div class="flex items-center gap-2 mt-1">
-                    <p class="text-purple-100 text-sm font-medium">Modo iPad</p>
+                    <p class="text-purple-100 text-[10px] md:text-xs font-medium">Modo iPad</p>
                     <!-- NUEVO: Indicador discreto de descarga PWA -->
                     <span id="offline-status" class="hidden text-[10px] px-2 py-0.5 rounded-full items-center gap-1 transition-all"></span>
                 </div>
@@ -121,26 +121,26 @@
         </div>
 
         <!-- Controles de Navegación (Pestañas) en el Centro -->
-        <div class="flex-1 max-w-3xl mx-4 flex bg-black/20 p-2 rounded-2xl gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
-            <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
+        <div class="flex-1 max-w-3xl mx-2 flex bg-black/20 p-1 md:p-2 rounded-2xl gap-1 md:gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
+            <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
                 🎵 Música
             </button>
-            <button id="btn-sonidos" onclick="cambiarSeccion('sonidos')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+            <button id="btn-sonidos" onclick="cambiarSeccion('sonidos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
                 💥 Efectos
             </button>
-            <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+            <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
                 🎬 Videos
             </button>
         </div>
 
         <!-- Botón Parar Todo -->
-        <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-5 md:px-8 rounded-2xl shadow-lg flex items-center gap-3 font-bold text-xl md:text-2xl transition-colors border-2 border-red-400/50">
+        <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-3 md:px-6 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-colors border-2 border-red-400/50">
             <span>⏹️</span> Parar
         </button>
     </header>
 
     <!-- Área de Botones (Modificado para scroll individual por pestaña) -->
-    <main class="flex-1 flex flex-col min-h-0 px-6 pt-2 md:pt-4 pb-6 lg:px-10">
+    <main class="flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-2 pb-2 lg:px-8">
         <!-- Contenedor Música (Envoltura para Scroll seguro en Safari/iPad) -->
         <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block">
             <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
@@ -156,7 +156,7 @@
         </div>
 
         <!-- Contenedor Videos (Reproductor Central y Cinto Inferior) -->
-        <div id="seccion-videos" class="flex-1 min-h-0 flex-col gap-4 hidden pb-2">
+        <div id="seccion-videos" class="flex-1 min-h-0 flex-col gap-2 hidden pb-1">
             <!-- Reproductor de Video Central -->
             <div class="flex-1 min-h-0 relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-black">
                 <video id="reproductor-video" class="w-full h-full object-contain" playsinline
@@ -174,9 +174,9 @@
                 </div>
             </div>
             
-            <!-- Cinto de botones de video (Horizontal) -->
-            <div class="flex-none h-28 md:h-36 lg:h-44 w-full bg-black/20 backdrop-blur-md border-2 border-white/10 rounded-3xl shadow-inner p-3 md:p-4">
-                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-4 items-center snap-x snap-mandatory scroll-smooth h-full w-full">
+            <!-- Cinto de botones de video (Horizontal - Altura Reducida) -->
+            <div class="flex-none h-20 md:h-28 lg:h-32 w-full bg-black/20 backdrop-blur-md border-2 border-white/10 rounded-2xl shadow-inner p-2 md:p-3">
+                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-3 items-center snap-x snap-mandatory scroll-smooth h-full w-full">
                     <!-- Botones inyectados vía JS -->
                 </div>
             </div>
@@ -378,7 +378,7 @@
                 const articulo = document.createElement('article');
                 articulo.id = `btn-vid-${track.archivo}`;
                 // Formato Cinto: Elementos que no se encojen (flex-none), toman el alto total (h-full), y mantienen aspecto de video.
-                articulo.className = `flex-none h-full aspect-video rounded-2xl shadow-xl border-4 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
+                articulo.className = `flex-none h-full aspect-video rounded-xl shadow-xl border-2 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
                 
                 // Asignamos la imagen de fondo apuntando a la carpeta img
                 articulo.style.backgroundImage = `url('img/cover-vid-${track.archivo}.webp')`;
@@ -410,12 +410,12 @@
                     cont.classList.remove('hidden');
                     if (sec.display === 'flex') cont.classList.add('flex');
                     else cont.classList.add('block');
-                    btn.className = "flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
                 } else {
                     cont.classList.add('hidden');
                     if (sec.display === 'flex') cont.classList.remove('flex');
                     else cont.classList.remove('block');
-                    btn.className = "flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
                 }
             });
         };
@@ -461,7 +461,7 @@
 
         // 3. Inyectar Service Worker para uso Fuera de Línea
         const swCodigo = `
-            const CACHE_NAME = 'djemmy-cache-v2';
+            const CACHE_NAME = 'djemmy-cache-v4'; // ¡VERSIÓN V4 PARA APLICAR CAMBIOS DE DISEÑO!
             const urlsToCache = ${JSON.stringify(urlsParaCachear)};
 
             self.addEventListener('install', (event) => {
@@ -469,7 +469,7 @@
                 // Al instalarse la PWA, fuerza la descarga de toda la lista
                 event.waitUntil(
                     caches.open(CACHE_NAME).then((cache) => {
-                        console.log('Descargando todos los recursos para uso offline...');
+                        console.log('Descargando todos los recursos para uso offline (v4)...');
                         // Usamos map y catch para que si un archivo falta, no se detenga la descarga de los demás
                         return Promise.all(
                             urlsToCache.map(url => {
@@ -477,6 +477,23 @@
                             })
                         );
                     })
+                );
+            });
+
+            // NUEVO: Evento Activate para limpiar cachés antiguas
+            self.addEventListener('activate', (event) => {
+                event.waitUntil(
+                    caches.keys().then((cacheNames) => {
+                        return Promise.all(
+                            cacheNames.map((cacheName) => {
+                                // Si el nombre de la caché no es el actual (v4), bórrala
+                                if (cacheName !== CACHE_NAME) {
+                                    console.log('Borrando caché antigua:', cacheName);
+                                    return caches.delete(cacheName);
+                                }
+                            })
+                        );
+                    }).then(() => self.clients.claim()) // Tomar control inmediato de la página
                 );
             });
 
