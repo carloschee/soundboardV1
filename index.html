@@ -110,14 +110,7 @@
         <!-- Logo -->
         <div class="flex items-center gap-3 bg-white/20 backdrop-blur-md rounded-2xl p-2 md:p-3 border border-white/30 shadow-lg">
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none">DJ Emmy</h1>
-                <div class="flex items-center gap-2 mt-1">
-                    <p class="text-purple-100 text-[10px] md:text-xs font-medium">Modo iPad</p>
-                    <!-- NUEVO: Indicador discreto de descarga PWA -->
-                    <span id="offline-status" class="hidden text-[10px] px-2 py-0.5 rounded-full items-center gap-1 transition-all"></span>
-                </div>
-            </div>
+            <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
         </div>
 
         <!-- Controles de Navegación (Pestañas) en el Centro -->
@@ -135,6 +128,11 @@
 
         <!-- Grupo de Botones de Acción -->
         <div class="flex items-center gap-2">
+            <!-- NUEVO: Botón Recargar / Borrar Caché -->
+            <button onclick="borrarCacheYRecargar()" class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white p-3 md:px-5 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-all border-2 border-orange-400/50">
+                <span>🔄</span> <span class="hidden md:inline" id="btn-actualizar-texto">Actualizar</span>
+            </button>
+
             <!-- Botón Forzar Descarga Offline -->
             <button onclick="iniciarDescargaOffline()" class="bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white p-3 md:px-5 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-all border-2 border-blue-400/50">
                 <span>☁️</span> <span class="hidden md:inline">Descargar</span>
@@ -490,8 +488,36 @@
             urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
         });
 
-        // 2.5 NUEVO: Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v8'; // VERSIÓN 8
+        // NUEVO: Función para limpiar caché completamente y recargar
+        const borrarCacheYRecargar = async () => {
+            const textoBtn = document.getElementById('btn-actualizar-texto');
+            if(textoBtn) textoBtn.innerText = "Borrando...";
+            
+            try {
+                // 1. Borrar todas las cachés guardadas
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+                
+                // 2. Desregistrar el Service Worker para forzar la actualización
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                
+                // 3. Recargar la página desde cero
+                window.location.reload();
+            } catch (error) {
+                console.error("Error al limpiar caché:", error);
+                window.location.reload(); // Recargar de todos modos si falla
+            }
+        };
+
+        // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
+        const CACHE_NAME = 'djemmy-cache-v9'; // VERSIÓN 9
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
@@ -540,13 +566,6 @@
                 barra.classList.add('bg-green-500');
                 texto.innerText = "¡Todo descargado con éxito! ✅";
                 btnCerrar.classList.remove('hidden');
-                
-                // Actualizar indicador pequeño
-                const statusEl = document.getElementById('offline-status');
-                if(statusEl) {
-                    statusEl.innerHTML = '<span>✅</span> <span>100% Offline</span>';
-                    statusEl.className = 'text-[10px] bg-green-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-green-100 border border-green-400/30';
-                }
                 
             } catch(error) {
                 console.error("Error crítico en descarga manual:", error);
@@ -617,45 +636,11 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const statusEl = document.getElementById('offline-status');
-                statusEl.classList.remove('hidden');
-                statusEl.classList.add('flex'); // Mostrar el elemento
-
-                const updateStatus = (state) => {
-                    if (state === 'installing') {
-                        statusEl.innerHTML = '<span class="animate-spin inline-block">🔄</span> <span>Descargando...</span>';
-                        statusEl.className = 'text-[10px] bg-blue-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-blue-100 border border-blue-400/30';
-                    } else if (state === 'installed' || state === 'activated') {
-                        statusEl.innerHTML = '<span>✅</span> <span>100% Offline</span>';
-                        statusEl.className = 'text-[10px] bg-green-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-green-100 border border-green-400/30';
-                        setTimeout(() => { statusEl.style.opacity = '0.6'; }, 3000); // Hacerlo más sutil tras 3s
-                    } else if (state === 'redundant') {
-                        statusEl.innerHTML = '<span>⚠️</span> <span>Fallo</span>';
-                        statusEl.className = 'text-[10px] bg-red-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-red-100 border border-red-400/30';
-                    }
-                };
-
-                // NUEVO: Agregamos { scope: './' } explícito para forzar al iPad a aceptar el alcance del Blob
+                // Registramos el Service Worker simplificado sin los indicadores visuales
                 navigator.serviceWorker.register(urlSW, { scope: './' }).then(reg => {
-                    // Estado inicial al cargar la página
-                    if (reg.installing) {
-                        updateStatus(reg.installing.state);
-                        reg.installing.addEventListener('statechange', (e) => updateStatus(e.target.state));
-                    } else if (reg.waiting) {
-                        updateStatus(reg.waiting.state);
-                    } else if (reg.active) {
-                        updateStatus(reg.active.state); // Si ya había visitado la app antes, marca 100% rápido
-                    }
-
-                    // Detectar cuando se está descargando una actualización en el futuro
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        updateStatus(newWorker.state);
-                        newWorker.addEventListener('statechange', (e) => updateStatus(e.target.state));
-                    });
+                    console.log('Service Worker registrado correctamente.', reg.scope);
                 }).catch(err => {
                     console.log('Error en Service Worker', err);
-                    statusEl.innerHTML = '<span>❌</span> <span>Sin conexión</span>';
                 });
             });
         }
