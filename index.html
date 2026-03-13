@@ -157,11 +157,18 @@
 
         <!-- Contenedor Videos (Reproductor Central y Cinto Inferior) -->
         <div id="seccion-videos" class="flex-1 min-h-0 flex-col gap-2 hidden pb-1">
-            <!-- Reproductor de Video Central -->
-            <div class="flex-1 min-h-0 relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-black">
-                <video id="reproductor-video" class="w-full h-full object-contain" playsinline
+            <!-- Reproductor de Video Central (Añadido ID para Fullscreen) -->
+            <div id="contenedor-reproductor" class="flex-1 min-h-0 relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-black">
+                <!-- Añadido atributo "loop" -->
+                <video id="reproductor-video" class="w-full h-full object-contain" playsinline loop
                     poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23000000'/%3E%3Ctext x='50%25' y='50%25' font-size='48' text-anchor='middle' fill='%239ca3af' font-family='sans-serif' dy='.3em'%3E🎬 Selecciona un Video%3C/text%3E%3C/svg%3E">
                 </video>
+                
+                <!-- Botón Pantalla Completa (Infantil) -->
+                <button id="btn-fullscreen" onclick="toggleFullScreen()" class="hidden absolute top-4 right-4 bg-green-500 text-white p-3 md:p-4 rounded-3xl border-4 border-white shadow-[0_6px_0_rgb(21,128,61)] active:shadow-[0_0px_0_rgb(21,128,61)] active:translate-y-1.5 flex items-center justify-center transition-all z-20 hover:scale-105">
+                    <span id="icono-fullscreen" class="text-4xl md:text-5xl drop-shadow-md pointer-events-none">📺</span>
+                </button>
+
                 <!-- Indicador de Carga (Oculto por defecto) -->
                 <div id="indicador-carga-video" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden bg-black/40">
                     <div class="bg-black/80 text-white px-6 py-4 rounded-2xl backdrop-blur-md border border-white/20 flex items-center gap-3">
@@ -239,9 +246,12 @@
         const contenedorMusica = document.getElementById('grid-musica');
         const contenedorSonidos = document.getElementById('grid-sonidos');
         const contenedorVideos = document.getElementById('seccion-videos');
+        const contenedorReproductor = document.getElementById('contenedor-reproductor');
         const listaVideosUI = document.getElementById('lista-videos');
         const reproductorVideo = document.getElementById('reproductor-video');
         const indicadorCargaVideo = document.getElementById('indicador-carga-video');
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const iconoFullscreen = document.getElementById('icono-fullscreen');
         const btnMusica = document.getElementById('btn-musica');
         const btnSonidos = document.getElementById('btn-sonidos');
         const btnVideos = document.getElementById('btn-videos');
@@ -261,6 +271,7 @@
             reproductorVideo.removeAttribute('src'); // Quitar fuente para forzar el póster
             reproductorVideo.load();
             indicadorCargaVideo.classList.add('hidden'); // Ocultar carga si se presionó parar
+            btnFullscreen.classList.add('hidden'); // Ocultar botón fullscreen
 
             document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
             cancionActual = null;
@@ -313,6 +324,7 @@
             
             articulo.classList.add('reproduciendo');
             indicadorCargaVideo.classList.remove('hidden'); // Mostrar "Cargando..."
+            btnFullscreen.classList.remove('hidden'); // Mostrar botón fullscreen
 
             // Configurar y reproducir video leyendo la carpeta "vid"
             reproductorVideo.src = `vid/${track.archivo}.mp4`;
@@ -330,16 +342,53 @@
                     reproductorVideo.removeAttribute('src');
                     reproductorVideo.load();
                     indicadorCargaVideo.classList.add('hidden');
+                    btnFullscreen.classList.add('hidden');
                 }, 5000);
             });
             
-            // Volver a la imagen inicial al terminar
+            // Volver a la imagen inicial al terminar (Aun con loop, lo mantenemos por si acaso)
             reproductorVideo.onended = () => {
                 articulo.classList.remove('reproduciendo');
                 reproductorVideo.removeAttribute('src');
                 reproductorVideo.load(); 
+                btnFullscreen.classList.add('hidden');
             };
         };
+
+        // --- LÓGICA DE PANTALLA COMPLETA ---
+        const toggleFullScreen = () => {
+            const estaEnFullScreen = document.fullscreenElement || document.webkitFullscreenElement;
+            
+            if (!estaEnFullScreen) {
+                if (contenedorReproductor.requestFullscreen) {
+                    contenedorReproductor.requestFullscreen();
+                } else if (contenedorReproductor.webkitRequestFullscreen) {
+                    contenedorReproductor.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        };
+
+        const actualizarBotonFullscreen = () => {
+            const estaEnFullScreen = document.fullscreenElement || document.webkitFullscreenElement;
+            if (estaEnFullScreen) {
+                iconoFullscreen.innerText = '❌';
+                btnFullscreen.classList.remove('bg-green-500', 'shadow-[0_6px_0_rgb(21,128,61)]');
+                btnFullscreen.classList.add('bg-red-500', 'shadow-[0_6px_0_rgb(185,28,28)]');
+            } else {
+                iconoFullscreen.innerText = '📺';
+                btnFullscreen.classList.remove('bg-red-500', 'shadow-[0_6px_0_rgb(185,28,28)]');
+                btnFullscreen.classList.add('bg-green-500', 'shadow-[0_6px_0_rgb(21,128,61)]');
+            }
+        };
+
+        document.addEventListener('fullscreenchange', actualizarBotonFullscreen);
+        document.addEventListener('webkitfullscreenchange', actualizarBotonFullscreen);
 
         // --- GENERACIÓN DE LA INTERFAZ ---
         const crearBotones = (arreglo, contenedor, tipo) => {
@@ -461,7 +510,7 @@
 
         // 3. Inyectar Service Worker para uso Fuera de Línea
         const swCodigo = `
-            const CACHE_NAME = 'djemmy-cache-v4'; // ¡VERSIÓN V4 PARA APLICAR CAMBIOS DE DISEÑO!
+            const CACHE_NAME = 'djemmy-cache-v5'; // ¡VERSIÓN V5: BUCLE Y PANTALLA COMPLETA!
             const urlsToCache = ${JSON.stringify(urlsParaCachear)};
 
             self.addEventListener('install', (event) => {
