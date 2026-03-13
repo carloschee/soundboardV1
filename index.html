@@ -83,12 +83,15 @@
         </div>
 
         <!-- Controles de Navegación (Pestañas) en el Centro -->
-        <div class="flex-1 max-w-2xl mx-4 flex bg-black/20 p-2 rounded-2xl gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
+        <div class="flex-1 max-w-3xl mx-4 flex bg-black/20 p-2 rounded-2xl gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
             <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
                 🎵 Música
             </button>
             <button id="btn-sonidos" onclick="cambiarSeccion('sonidos')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
                 💥 Efectos
+            </button>
+            <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+                🎬 Videos
             </button>
         </div>
 
@@ -108,6 +111,21 @@
         <!-- Contenedor Sonidos (Oculto por defecto) -->
         <div id="seccion-sonidos" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10 hidden">
             <!-- Botones inyectados vía JS -->
+        </div>
+
+        <!-- Contenedor Videos (Oculto por defecto) -->
+        <div id="seccion-videos" class="flex-col gap-6 pb-10 hidden">
+            <!-- Reproductor de Video Central (Sin controles, con póster) -->
+            <div class="w-full max-w-4xl mx-auto aspect-video bg-black/60 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 relative flex-shrink-0">
+                <video id="reproductor-video" class="w-full h-full object-cover" playsinline
+                    poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' font-size='48' text-anchor='middle' fill='%239ca3af' font-family='sans-serif' dy='.3em'%3E🎬 Selecciona un Video%3C/text%3E%3C/svg%3E">
+                </video>
+            </div>
+            
+            <!-- Panel de botones de video -->
+            <div id="lista-videos" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-4">
+                <!-- Botones inyectados vía JS -->
+            </div>
         </div>
     </main>
 
@@ -155,11 +173,22 @@
             { archivo: "s8", titulo: "Silbato", interprete: "Efecto", emoji: "😗", color: "bg-teal-400" }
         ];
 
+        const videosDatos = [
+            { archivo: "v1", titulo: "Aventura en el Parque", emoji: "🌳", color: "bg-green-500" },
+            { archivo: "v2", titulo: "Aprende los Colores", emoji: "🎨", color: "bg-blue-500" },
+            { archivo: "v3", titulo: "Baile de los Animales", emoji: "🦁", color: "bg-yellow-500" },
+            { archivo: "v4", titulo: "Números del 1 al 10", emoji: "🔢", color: "bg-purple-500" }
+        ];
+
         // --- CACHÉ DE ELEMENTOS DEL DOM ---
         const contenedorMusica = document.getElementById('seccion-musica');
         const contenedorSonidos = document.getElementById('seccion-sonidos');
+        const contenedorVideos = document.getElementById('seccion-videos');
+        const listaVideosUI = document.getElementById('lista-videos');
+        const reproductorVideo = document.getElementById('reproductor-video');
         const btnMusica = document.getElementById('btn-musica');
         const btnSonidos = document.getElementById('btn-sonidos');
+        const btnVideos = document.getElementById('btn-videos');
         
         let temporizadorSimulador; // Para entorno de prueba
         let cancionActual = null; // Para detener la canción anterior
@@ -170,6 +199,12 @@
                 el.pause();
                 el.currentTime = 0;
             });
+
+            // Detener y resetear video para que muestre la imagen poster
+            reproductorVideo.pause();
+            reproductorVideo.removeAttribute('src');
+            reproductorVideo.load();
+
             document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
             cancionActual = null;
             clearTimeout(temporizadorSimulador);
@@ -180,12 +215,13 @@
             const articulo = document.getElementById(`btn-${track.archivo}`);
             if (!audio || !articulo) return;
 
-            // Si es música, paramos otras músicas. (Los sonidos pueden sonar sobre la música)
+            // Si es música, paramos otras músicas y el video actual
             if (tipo === 'musica') {
                 if (cancionActual && cancionActual !== audio) {
                     cancionActual.pause();
                     cancionActual.currentTime = 0;
                 }
+                reproductorVideo.pause(); // Silenciar video si se toca música
                 document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
                 cancionActual = audio;
             } else {
@@ -205,6 +241,39 @@
                     articulo.classList.remove('reproduciendo');
                 }, tipo === 'musica' ? 4000 : 1500); // 4s para música, 1.5s para SFX
             });
+        };
+
+        const reproducirVideo = (track) => {
+            const articulo = document.getElementById(`btn-vid-${track.archivo}`);
+            if (!articulo) return;
+
+            // Detener música si está sonando
+            if (cancionActual) {
+                cancionActual.pause();
+                cancionActual.currentTime = 0;
+            }
+            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
+            
+            articulo.classList.add('reproduciendo');
+
+            // Configurar y reproducir video leyendo la carpeta "vids"
+            reproductorVideo.src = `vids/${track.archivo}.mp4`;
+            reproductorVideo.play().catch(e => {
+                console.warn("Sin video real en la carpeta local. Simulando...", e);
+                clearTimeout(temporizadorSimulador);
+                temporizadorSimulador = setTimeout(() => {
+                    articulo.classList.remove('reproduciendo');
+                    reproductorVideo.removeAttribute('src');
+                    reproductorVideo.load();
+                }, 5000);
+            });
+            
+            // Volver a la imagen inicial al terminar
+            reproductorVideo.onended = () => {
+                articulo.classList.remove('reproduciendo');
+                reproductorVideo.removeAttribute('src');
+                reproductorVideo.load(); 
+            };
         };
 
         // --- GENERACIÓN DE LA INTERFAZ ---
@@ -239,23 +308,52 @@
             });
         };
 
+        const crearBotonesVideos = () => {
+            videosDatos.forEach((track) => {
+                const articulo = document.createElement('article');
+                articulo.id = `btn-vid-${track.archivo}`;
+                // Aspecto apaisado para los botones de video (aspect-video)
+                articulo.className = `${track.color} rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center aspect-video border-4 border-white/20 relative overflow-hidden transition-all cursor-pointer`;
+                articulo.innerHTML = `
+                    <span class="text-5xl md:text-6xl mb-2 drop-shadow-md pointer-events-none">${track.emoji}</span>
+                    <span class="text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-1 pointer-events-none">${track.titulo}</span>
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/20 transition-opacity pointer-events-none">
+                        <span class="text-4xl">▶️</span>
+                    </div>
+                `;
+                
+                articulo.addEventListener('click', () => reproducirVideo(track));
+                listaVideosUI.appendChild(articulo);
+            });
+        };
+
         const cambiarSeccion = (seccion) => {
-            if (seccion === 'musica') {
-                contenedorMusica.classList.remove('hidden');
-                contenedorSonidos.classList.add('hidden');
-                btnMusica.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
-                btnSonidos.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
-            } else {
-                contenedorMusica.classList.add('hidden');
-                contenedorSonidos.classList.remove('hidden');
-                btnSonidos.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
-                btnMusica.className = "flex-1 py-3 text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
-            }
+            const seccionesConfig = [
+                { id: 'musica', flexGrid: 'grid' },
+                { id: 'sonidos', flexGrid: 'grid' },
+                { id: 'videos', flexGrid: 'flex' }
+            ];
+            
+            seccionesConfig.forEach(sec => {
+                const cont = document.getElementById(`seccion-${sec.id}`);
+                const btn = document.getElementById(`btn-${sec.id}`);
+                
+                if (sec.id === seccion) {
+                    cont.classList.remove('hidden');
+                    cont.classList.add(sec.flexGrid);
+                    btn.className = "flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                } else {
+                    cont.classList.add('hidden');
+                    cont.classList.remove(sec.flexGrid);
+                    btn.className = "flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+                }
+            });
         };
 
         // Inicializar UI
         crearBotones(musica, contenedorMusica, 'musica');
         crearBotones(sonidos, contenedorSonidos, 'sonidos');
+        crearBotonesVideos();
 
         // --- SISTEMA PWA EN UN SOLO ARCHIVO (MAGIA) ---
         // 1. Inyectar Manifest.json
