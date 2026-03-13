@@ -101,30 +101,41 @@
         </button>
     </header>
 
-    <!-- Área de Botones (Scrollable si es necesario) -->
-    <main class="flex-1 overflow-y-auto px-6 pt-2 md:pt-4 pb-8 lg:px-10">
-        <!-- Contenedor Música -->
-        <div id="seccion-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
-            <!-- Botones inyectados vía JS -->
+    <!-- Área de Botones (Modificado para scroll individual por pestaña) -->
+    <main class="flex-1 flex flex-col min-h-0 px-6 pt-2 md:pt-4 pb-6 lg:px-10">
+        <!-- Contenedor Música (Envoltura para Scroll seguro en Safari/iPad) -->
+        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block">
+            <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
+                <!-- Botones inyectados vía JS -->
+            </div>
         </div>
 
         <!-- Contenedor Sonidos (Oculto por defecto) -->
-        <div id="seccion-sonidos" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10 hidden">
-            <!-- Botones inyectados vía JS -->
+        <div id="seccion-sonidos" class="flex-1 overflow-y-auto min-h-0 pr-2 hidden">
+            <div id="grid-sonidos" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
+                <!-- Botones inyectados vía JS -->
+            </div>
         </div>
 
-        <!-- Contenedor Videos (Oculto por defecto) -->
-        <div id="seccion-videos" class="flex-col gap-6 pb-10 hidden">
-            <!-- Reproductor de Video Central (Sin controles, con póster) -->
-            <div class="w-full max-w-4xl mx-auto aspect-video bg-black/60 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 relative flex-shrink-0">
-                <video id="reproductor-video" class="w-full h-full object-cover" playsinline
-                    poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' font-size='48' text-anchor='middle' fill='%239ca3af' font-family='sans-serif' dy='.3em'%3E🎬 Selecciona un Video%3C/text%3E%3C/svg%3E">
-                </video>
+        <!-- Contenedor Videos (Panel dual) -->
+        <div id="seccion-videos" class="flex-1 min-h-0 flex-col lg:flex-row gap-6 hidden pb-2">
+            <!-- Reproductor de Video Central (Orientado a la izquierda) -->
+            <div class="w-full lg:w-3/5 xl:w-2/3 flex-shrink-0 flex flex-col justify-start">
+                <div class="w-full aspect-video bg-black/60 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 relative">
+                    <video id="reproductor-video" class="w-full h-full object-cover" playsinline
+                        poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' font-size='48' text-anchor='middle' fill='%239ca3af' font-family='sans-serif' dy='.3em'%3E🎬 Selecciona un Video%3C/text%3E%3C/svg%3E">
+                    </video>
+                </div>
             </div>
             
-            <!-- Panel de botones de video -->
-            <div id="lista-videos" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-4">
-                <!-- Botones inyectados vía JS -->
+            <!-- Panel de botones de video con desplazamiento propio -->
+            <div class="flex-1 flex flex-col bg-black/20 backdrop-blur-md border-2 border-white/10 rounded-3xl overflow-hidden min-h-0 shadow-inner">
+                <div class="p-3 md:p-4 bg-white/10 text-center font-bold text-pink-200 border-b border-white/10 flex-none uppercase tracking-widest text-sm md:text-base">
+                    🎞️ Lista de Videos
+                </div>
+                <div id="lista-videos" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 content-start scroll-smooth">
+                    <!-- Botones inyectados vía JS -->
+                </div>
             </div>
         </div>
     </main>
@@ -181,8 +192,8 @@
         ];
 
         // --- CACHÉ DE ELEMENTOS DEL DOM ---
-        const contenedorMusica = document.getElementById('seccion-musica');
-        const contenedorSonidos = document.getElementById('seccion-sonidos');
+        const contenedorMusica = document.getElementById('grid-musica');
+        const contenedorSonidos = document.getElementById('grid-sonidos');
         const contenedorVideos = document.getElementById('seccion-videos');
         const listaVideosUI = document.getElementById('lista-videos');
         const reproductorVideo = document.getElementById('reproductor-video');
@@ -329,9 +340,9 @@
 
         const cambiarSeccion = (seccion) => {
             const seccionesConfig = [
-                { id: 'musica', flexGrid: 'grid' },
-                { id: 'sonidos', flexGrid: 'grid' },
-                { id: 'videos', flexGrid: 'flex' }
+                { id: 'musica', display: 'block' },
+                { id: 'sonidos', display: 'block' },
+                { id: 'videos', display: 'flex' }
             ];
             
             seccionesConfig.forEach(sec => {
@@ -340,11 +351,13 @@
                 
                 if (sec.id === seccion) {
                     cont.classList.remove('hidden');
-                    cont.classList.add(sec.flexGrid);
+                    if (sec.display === 'flex') cont.classList.add('flex');
+                    else cont.classList.add('block');
                     btn.className = "flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
                 } else {
                     cont.classList.add('hidden');
-                    cont.classList.remove(sec.flexGrid);
+                    if (sec.display === 'flex') cont.classList.remove('flex');
+                    else cont.classList.remove('block');
                     btn.className = "flex-1 py-3 md:py-4 text-xl md:text-2xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
                 }
             });
