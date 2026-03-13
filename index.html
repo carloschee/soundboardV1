@@ -198,11 +198,11 @@
         ];
 
         const videosDatos = [
-            { archivo: "a", titulo: "Golden Live The Tonight Show", emoji: "🌙", color: "bg-blue-600" },
-            { archivo: "b", titulo: "Golden Live A Year in TIME", emoji: "🕰️", color: "bg-red-600" },
-            { archivo: "c", titulo: "Golden Live Jimmy Kimmel", emoji: "🎙️", color: "bg-indigo-600" },
-            { archivo: "d", titulo: "Golden Live 2026 BAFTA Film Awards", emoji: "🏆", color: "bg-amber-600" },
-            { archivo: "e", titulo: "Golden Live Dick Clark NYE 2026", emoji: "🎉", color: "bg-orange-600" }
+            { archivo: "a", titulo: "Golden Live The Tonight Show" },
+            { archivo: "b", titulo: "Golden Live A Year in TIME" },
+            { archivo: "c", titulo: "Golden Live Jimmy Kimmel" },
+            { archivo: "d", titulo: "Golden Live 2026 BAFTA Film Awards" },
+            { archivo: "e", titulo: "Golden Live Dick Clark NYE 2026" }
         ];
 
         // --- CACHÉ DE ELEMENTOS DEL DOM ---
@@ -347,13 +347,16 @@
             videosDatos.forEach((track) => {
                 const articulo = document.createElement('article');
                 articulo.id = `btn-vid-${track.archivo}`;
-                // Aspecto apaisado para los botones de video (aspect-video)
-                articulo.className = `${track.color} rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center aspect-video border-4 border-white/20 relative overflow-hidden transition-all cursor-pointer`;
+                // Aspecto apaisado para los botones de video, agregamos clases para la imagen de fondo (bg-cover, bg-center)
+                articulo.className = `rounded-3xl shadow-xl flex flex-col items-center justify-center aspect-video border-4 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800`;
+                
+                // Asignamos la imagen de fondo apuntando a la carpeta img
+                articulo.style.backgroundImage = `url('img/cover-vid-${track.archivo}.webp')`;
+                
+                // Limpiamos el texto y emoji, dejamos solo un overlay oscuro con un botón de play al pasar el dedo/mouse
                 articulo.innerHTML = `
-                    <span class="text-5xl md:text-6xl mb-2 drop-shadow-md pointer-events-none">${track.emoji}</span>
-                    <span class="text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-1 pointer-events-none">${track.titulo}</span>
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/20 transition-opacity pointer-events-none">
-                        <span class="text-4xl">▶️</span>
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity pointer-events-none">
+                        <span class="text-5xl md:text-6xl drop-shadow-lg">▶️</span>
                     </div>
                 `;
                 
