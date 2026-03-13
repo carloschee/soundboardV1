@@ -135,6 +135,11 @@
 
         <!-- Grupo de Botones de Acción -->
         <div class="flex items-center gap-2">
+            <!-- Botón Forzar Descarga Offline -->
+            <button onclick="iniciarDescargaOffline()" class="bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white p-3 md:px-5 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-all border-2 border-blue-400/50">
+                <span>☁️</span> <span class="hidden md:inline">Descargar</span>
+            </button>
+            
             <!-- Botón Parar Todo -->
             <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-3 md:px-6 rounded-2xl shadow-lg flex items-center gap-2 font-bold text-lg md:text-xl transition-colors border-2 border-red-400/50">
                 <span>⏹️</span> Parar
@@ -196,6 +201,24 @@
             <p class="text-sm">Toca el botón <strong>Compartir</strong> y luego <strong>"Agregar a Inicio"</strong>.</p>
         </div>
         <button onclick="document.getElementById('pwa-prompt').style.display='none'" class="bg-gray-200 p-2 rounded-full px-4 font-bold ml-2">Cerrar</button>
+    </div>
+
+    <!-- NUEVO: Modal de Progreso de Descarga Offline -->
+    <div id="modal-descarga" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
+        <div class="bg-white text-black p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl flex flex-col items-center text-center">
+            <span class="text-6xl mb-4">✈️</span>
+            <h2 class="text-2xl font-bold mb-2 text-purple-600">Preparando Modo Avión</h2>
+            <p class="text-gray-600 mb-6 font-medium leading-tight">Guardando canciones y videos en el iPad. Por favor, no cierres esta pantalla.</p>
+            
+            <div class="w-full bg-gray-200 rounded-full h-6 mb-2 overflow-hidden border-2 border-gray-300 shadow-inner">
+                <div id="barra-progreso" class="bg-gradient-to-r from-blue-400 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p id="texto-progreso" class="font-bold text-lg mb-6 text-gray-800">0 / 0 archivos</p>
+            
+            <button id="btn-cerrar-descarga" onclick="document.getElementById('modal-descarga').classList.replace('flex', 'hidden')" class="hidden bg-purple-500 hover:bg-purple-400 text-white font-bold py-3 px-8 rounded-2xl shadow-lg border-2 border-purple-400 active:scale-95 transition-all text-xl">
+                ¡Listo para jugar!
+            </button>
+        </div>
     </div>
 
     <script>
@@ -451,70 +474,136 @@
         const blobManifest = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
         document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
 
-        // 2. Preparar lista de todos los archivos para forzar descarga (Pre-caché)
+        // 2. Preparar lista de todos los archivos CON URLS ABSOLUTAS (Soluciona bug de iOS Blob)
+        const baseHref = window.location.href.split('?')[0].replace(/index\.html$/, '');
+        const makeAbsolute = (path) => new URL(path, baseHref).href;
+
         const urlsParaCachear = [
-            './',
-            'index.html'
+            makeAbsolute('./'),
+            makeAbsolute('index.html')
         ];
         
-        // Agregar dinámicamente todos los MP3 y MP4/WEBP a la lista de descarga
-        musica.forEach(t => urlsParaCachear.push(`audio/${t.archivo}.mp3`));
-        sonidos.forEach(t => urlsParaCachear.push(`sonidos/${t.archivo}.mp3`));
+        musica.forEach(t => urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`)));
+        sonidos.forEach(t => urlsParaCachear.push(makeAbsolute(`sonidos/${t.archivo}.mp3`)));
         videosDatos.forEach(t => {
-            urlsParaCachear.push(`vid/${t.archivo}.mp4`);
-            urlsParaCachear.push(`img/cover-vid-${t.archivo}.webp`);
+            urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
+            urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
         });
+
+        // 2.5 NUEVO: Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
+        const CACHE_NAME = 'djemmy-cache-v8'; // VERSIÓN 8
+        
+        const iniciarDescargaOffline = async () => {
+            const modal = document.getElementById('modal-descarga');
+            const barra = document.getElementById('barra-progreso');
+            const texto = document.getElementById('texto-progreso');
+            const btnCerrar = document.getElementById('btn-cerrar-descarga');
+            
+            modal.classList.replace('hidden', 'flex');
+            btnCerrar.classList.add('hidden');
+            barra.style.width = '0%';
+            barra.classList.remove('bg-red-500');
+            barra.classList.add('from-blue-400', 'to-indigo-500');
+            
+            try {
+                const cache = await caches.open(CACHE_NAME);
+                let completados = 0;
+                const total = urlsParaCachear.length;
+                
+                texto.innerText = `Calculando...`;
+                
+                // Descargar uno por uno para poder animar la barra de progreso
+                for(let i = 0; i < total; i++) {
+                    const url = urlsParaCachear[i];
+                    try {
+                        // Verificamos si ya está guardado para no descargar doble
+                        const respuestaCache = await cache.match(url);
+                        if(!respuestaCache) {
+                            const respuestaRed = await fetch(url, { cache: 'no-store' });
+                            if(respuestaRed.ok) {
+                                await cache.put(url, respuestaRed);
+                            } else {
+                                console.warn('Archivo omitido (404):', url);
+                            }
+                        }
+                    } catch(e) {
+                        console.warn('Fallo de red al descargar:', url, e);
+                    }
+                    completados++;
+                    const porcentaje = Math.round((completados / total) * 100);
+                    barra.style.width = `${porcentaje}%`;
+                    texto.innerText = `${completados} de ${total} guardados`;
+                }
+                
+                // Cambiar estilo a éxito
+                barra.classList.remove('from-blue-400', 'to-indigo-500');
+                barra.classList.add('bg-green-500');
+                texto.innerText = "¡Todo descargado con éxito! ✅";
+                btnCerrar.classList.remove('hidden');
+                
+                // Actualizar indicador pequeño
+                const statusEl = document.getElementById('offline-status');
+                if(statusEl) {
+                    statusEl.innerHTML = '<span>✅</span> <span>100% Offline</span>';
+                    statusEl.className = 'text-[10px] bg-green-500/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all text-green-100 border border-green-400/30';
+                }
+                
+            } catch(error) {
+                console.error("Error crítico en descarga manual:", error);
+                barra.classList.remove('from-blue-400', 'to-indigo-500');
+                barra.classList.add('bg-red-500');
+                texto.innerText = "Error de conexión. Intenta de nuevo. ❌";
+                btnCerrar.classList.remove('hidden');
+            }
+        };
 
         // 3. Inyectar Service Worker para uso Fuera de Línea
         const swCodigo = `
-            const CACHE_NAME = 'djemmy-cache-v7'; // ¡VERSIÓN V7: SIN MAGIA AI!
+            const CACHE_NAME_SW = '${CACHE_NAME}'; 
             const urlsToCache = ${JSON.stringify(urlsParaCachear)};
 
             self.addEventListener('install', (event) => {
                 self.skipWaiting();
-                // Al instalarse la PWA, fuerza la descarga de toda la lista
+                // Sigue instalando en segundo plano, pero con URLs absolutas arregladas
                 event.waitUntil(
-                    caches.open(CACHE_NAME).then((cache) => {
-                        console.log('Descargando todos los recursos para uso offline (v4)...');
-                        // Usamos map y catch para que si un archivo falta, no se detenga la descarga de los demás
+                    caches.open(CACHE_NAME_SW).then((cache) => {
                         return Promise.all(
                             urlsToCache.map(url => {
-                                return cache.add(url).catch(err => console.warn('Archivo no encontrado, omitiendo:', url));
+                                return cache.add(url).catch(err => console.warn('Ignorado en background:', url));
                             })
                         );
                     })
                 );
             });
 
-            // NUEVO: Evento Activate para limpiar cachés antiguas
+            // Evento Activate para limpiar cachés antiguas
             self.addEventListener('activate', (event) => {
                 event.waitUntil(
                     caches.keys().then((cacheNames) => {
                         return Promise.all(
                             cacheNames.map((cacheName) => {
-                                // Si el nombre de la caché no es el actual (v4), bórrala
-                                if (cacheName !== CACHE_NAME) {
+                                if (cacheName !== CACHE_NAME_SW) {
                                     console.log('Borrando caché antigua:', cacheName);
                                     return caches.delete(cacheName);
                                 }
                             })
                         );
-                    }).then(() => self.clients.claim()) // Tomar control inmediato de la página
+                    }).then(() => self.clients.claim()) 
                 );
             });
 
             self.addEventListener('fetch', (event) => {
-                // Solo cachear peticiones GET de la misma web
-                if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
+                // Solo interceptar peticiones GET
+                if (event.request.method !== 'GET') return;
                 
                 event.respondWith(
                     caches.match(event.request).then((cachedResponse) => {
                         if (cachedResponse) {
-                            return cachedResponse; // Devolver el archivo ya descargado instantáneamente
+                            return cachedResponse; // Devolver desde caché instantáneamente
                         }
-                        // Si por algo no estaba, intentar descargarlo en el momento
+                        // Intento de red
                         return fetch(event.request).then((networkResponse) => {
-                            return caches.open(CACHE_NAME).then((cache) => {
+                            return caches.open(CACHE_NAME_SW).then((cache) => {
                                 cache.put(event.request, networkResponse.clone());
                                 return networkResponse;
                             });
@@ -546,7 +635,8 @@
                     }
                 };
 
-                navigator.serviceWorker.register(urlSW).then(reg => {
+                // NUEVO: Agregamos { scope: './' } explícito para forzar al iPad a aceptar el alcance del Blob
+                navigator.serviceWorker.register(urlSW, { scope: './' }).then(reg => {
                     // Estado inicial al cargar la página
                     if (reg.installing) {
                         updateStatus(reg.installing.state);
