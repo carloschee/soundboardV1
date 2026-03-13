@@ -188,10 +188,10 @@
         ];
 
         const videosDatos = [
-            { archivo: "v1", titulo: "Aventura en el Parque", emoji: "🌳", color: "bg-green-500" },
-            { archivo: "v2", titulo: "Aprende los Colores", emoji: "🎨", color: "bg-blue-500" },
-            { archivo: "v3", titulo: "Baile de los Animales", emoji: "🦁", color: "bg-yellow-500" },
-            { archivo: "v4", titulo: "Números del 1 al 10", emoji: "🔢", color: "bg-purple-500" }
+            { archivo: "a", titulo: "Golden Live The Tonight Show", emoji: "🌙", color: "bg-blue-600" },
+            { archivo: "b", titulo: "Golden Live A Year in TIME", emoji: "🕰️", color: "bg-red-600" },
+            { archivo: "c", titulo: "Golden Live Jimmy Kimmel", emoji: "🎙️", color: "bg-indigo-600" },
+            { archivo: "d", titulo: "Golden Live 2026 BAFTA Film Awards", emoji: "🏆", color: "bg-amber-600" }
         ];
 
         // --- CACHÉ DE ELEMENTOS DEL DOM ---
@@ -270,8 +270,8 @@
             
             articulo.classList.add('reproduciendo');
 
-            // Configurar y reproducir video leyendo la carpeta "vids"
-            reproductorVideo.src = `vids/${track.archivo}.mp4`;
+            // Configurar y reproducir video leyendo la carpeta "vid"
+            reproductorVideo.src = `vid/${track.archivo}.mp4`;
             reproductorVideo.play().catch(e => {
                 console.warn("Sin video real en la carpeta local. Simulando...", e);
                 clearTimeout(temporizadorSimulador);
