@@ -121,6 +121,11 @@
         </h1>
         
         <div class="flex gap-2 md:gap-3">
+            <!-- Botón para Parar Todo -->
+            <button onclick="pararTodo()" id="btn-parar" class="bg-red-500/80 hover:bg-red-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-full backdrop-blur-md shadow-lg flex items-center justify-center transition-all active:scale-90 border border-white/30">
+                <span class="text-lg md:text-xl" style="line-height: 1;">⏹️</span>
+            </button>
+
             <!-- Botón para Limpiar Caché y Actualizar -->
             <button onclick="borrarCacheYRecargar()" id="btn-actualizar" class="bg-white/20 hover:bg-white/30 text-white w-10 h-10 md:w-12 md:h-12 rounded-full backdrop-blur-md shadow-lg flex items-center justify-center transition-all active:scale-90 border border-white/30">
                 <span id="icono-actualizar" class="text-lg md:text-xl">🔄</span>
