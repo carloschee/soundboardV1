@@ -96,6 +96,13 @@
             color: white;
         }
 
+        /* Animaciones Memorama */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .tarjeta-memorama { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+
         /* Efecto al tocar botones en iPad */
         article:active {
             transform: scale(0.95);
@@ -118,8 +125,8 @@
             <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
                 🎵 Música
             </button>
-            <button id="btn-sonidos" onclick="cambiarSeccion('sonidos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
-                💥 Efectos
+            <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+                🍎 Memorama
             </button>
             <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
                 🎬 Videos
@@ -154,10 +161,26 @@
             </div>
         </div>
 
-        <!-- Contenedor Sonidos (Oculto por defecto) -->
-        <div id="seccion-sonidos" class="flex-1 overflow-y-auto min-h-0 pr-2 hidden">
-            <div id="grid-sonidos" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
-                <!-- Botones inyectados vía JS -->
+        <!-- Contenedor Memorama (Reemplaza a Sonidos) -->
+        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center justify-start pt-2 md:pt-4 relative">
+            <div class="w-full max-w-2xl flex justify-between items-center mb-4 px-4 shrink-0">
+                <h2 class="text-xl md:text-2xl font-bold text-white drop-shadow-md">Encuentra las parejas</h2>
+                <button onclick="iniciarMemorama()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-2">
+                    <span>🔄</span> <span class="hidden md:inline">Reiniciar</span>
+                </button>
+            </div>
+            
+            <div id="grid-memorama" class="grid grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl px-4 perspective-1000 pb-10 overflow-y-auto">
+                <!-- Tarjetas inyectadas vía JS -->
+            </div>
+
+            <!-- Overlay de Victoria -->
+            <div id="mensaje-victoria" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm flex-col items-center justify-center z-10 rounded-3xl m-2">
+                <span class="text-7xl mb-4 animate-bounce">🏆</span>
+                <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 drop-shadow-lg mb-6">¡Ganaste!</h2>
+                <button onclick="iniciarMemorama()" class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-8 py-3 rounded-2xl font-bold text-xl shadow-xl hover:scale-105 active:scale-95 transition-all border-2 border-white/50">
+                    Jugar otra vez
+                </button>
             </div>
         </div>
 
@@ -242,16 +265,12 @@
             { archivo: "r", titulo: "El baile de la ensalada", interprete: "Plim Plim", emoji: "🥗", color: "bg-lime-500" }
         ];
 
-        const sonidos = [
-            { archivo: "s1", titulo: "Aplausos", interprete: "Efecto", emoji: "👏", color: "bg-emerald-400" },
-            { archivo: "s2", titulo: "Risas", interprete: "Efecto", emoji: "😂", color: "bg-sky-400" },
-            { archivo: "s3", titulo: "Redoble", interprete: "Tambor", emoji: "🥁", color: "bg-red-500" },
-            { archivo: "s4", titulo: "Boing", interprete: "Efecto", emoji: "🪀", color: "bg-purple-500" },
-            { archivo: "s5", titulo: "Magia", interprete: "Efecto", emoji: "✨", color: "bg-yellow-400" },
-            { archivo: "s6", titulo: "Error", interprete: "Trombón", emoji: "🎺", color: "bg-orange-400" },
-            { archivo: "s7", titulo: "Ta-da!", interprete: "Celebración", emoji: "🎉", color: "bg-pink-500" },
-            { archivo: "s8", titulo: "Silbato", interprete: "Efecto", emoji: "😗", color: "bg-teal-400" }
-        ];
+        // --- DATOS DEL JUEGO MEMORAMA ---
+        const frutasMemorama = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍍', '🥝', '🍒'];
+        let cartasJuego = [];
+        let cartasVolteadas = [];
+        let parejasEncontradas = 0;
+        let memoramaBloqueado = false;
 
         const videosDatos = [
             { archivo: "a", titulo: "Golden Live The Tonight Show" },
@@ -263,15 +282,11 @@
 
         // --- CACHÉ DE ELEMENTOS DEL DOM ---
         const contenedorMusica = document.getElementById('grid-musica');
-        const contenedorSonidos = document.getElementById('grid-sonidos');
         const contenedorVideos = document.getElementById('seccion-videos');
         const contenedorReproductor = document.getElementById('contenedor-reproductor');
         const listaVideosUI = document.getElementById('lista-videos');
         const reproductorVideo = document.getElementById('reproductor-video');
         const indicadorCargaVideo = document.getElementById('indicador-carga-video');
-        const btnMusica = document.getElementById('btn-musica');
-        const btnSonidos = document.getElementById('btn-sonidos');
-        const btnVideos = document.getElementById('btn-videos');
         
         let temporizadorSimulador; // Para entorno de prueba
         let cancionActual = null; // Para detener la canción anterior
@@ -422,10 +437,91 @@
             });
         };
 
+        // --- LÓGICA DEL MEMORAMA ---
+        const iniciarMemorama = () => {
+            const grid = document.getElementById('grid-memorama');
+            const mensajeVictoria = document.getElementById('mensaje-victoria');
+            
+            grid.innerHTML = '';
+            mensajeVictoria.classList.replace('flex', 'hidden');
+            cartasVolteadas = [];
+            parejasEncontradas = 0;
+            memoramaBloqueado = false;
+            
+            // Duplicar y barajar
+            cartasJuego = [...frutasMemorama, ...frutasMemorama]
+                .sort(() => Math.random() - 0.5)
+                .map((fruta, index) => ({ id: index, fruta, volteada: false, encontrada: false }));
+
+            cartasJuego.forEach((carta, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'tarjeta-memorama relative aspect-square cursor-pointer transform-style-3d';
+                
+                // Las dos caras de la carta
+                cardEl.innerHTML = `
+                    <div class="absolute inset-0 bg-white/20 backdrop-blur-md border-2 md:border-4 border-white/30 rounded-2xl flex items-center justify-center backface-hidden shadow-lg">
+                        <span class="text-3xl md:text-5xl opacity-80">❓</span>
+                    </div>
+                    <div class="absolute inset-0 bg-white rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 shadow-lg border-2 md:border-4 border-pink-400">
+                        <span class="text-4xl md:text-6xl drop-shadow-sm pointer-events-none">${carta.fruta}</span>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', () => voltearCarta(cardEl, index));
+                grid.appendChild(cardEl);
+            });
+        };
+
+        const voltearCarta = (cardEl, index) => {
+            if (memoramaBloqueado || cartasJuego[index].volteada || cartasJuego[index].encontrada) return;
+
+            pararTodo(); // Silenciar música o videos si se empieza a jugar
+            
+            cartasJuego[index].volteada = true;
+            cardEl.classList.add('rotate-y-180');
+            cartasVolteadas.push({ cardEl, index });
+
+            if (cartasVolteadas.length === 2) {
+                verificarPareja();
+            }
+        };
+
+        const verificarPareja = () => {
+            memoramaBloqueado = true;
+            const [carta1, carta2] = cartasVolteadas;
+
+            if (cartasJuego[carta1.index].fruta === cartasJuego[carta2.index].fruta) {
+                cartasJuego[carta1.index].encontrada = true;
+                cartasJuego[carta2.index].encontrada = true;
+                parejasEncontradas++;
+                
+                setTimeout(() => {
+                    // Efecto visual cuando se hace pareja
+                    carta1.cardEl.classList.add('scale-90', 'opacity-60');
+                    carta2.cardEl.classList.add('scale-90', 'opacity-60');
+                    memoramaBloqueado = false;
+                    cartasVolteadas = [];
+                    
+                    if (parejasEncontradas === frutasMemorama.length) {
+                        document.getElementById('mensaje-victoria').classList.replace('hidden', 'flex');
+                    }
+                }, 600);
+            } else {
+                setTimeout(() => {
+                    carta1.cardEl.classList.remove('rotate-y-180');
+                    carta2.cardEl.classList.remove('rotate-y-180');
+                    cartasJuego[carta1.index].volteada = false;
+                    cartasJuego[carta2.index].volteada = false;
+                    memoramaBloqueado = false;
+                    cartasVolteadas = [];
+                }, 1000); // 1 segundo para intentar recordar las frutas antes de voltear
+            }
+        };
+
         const cambiarSeccion = (seccion) => {
             const seccionesConfig = [
                 { id: 'musica', display: 'block' },
-                { id: 'sonidos', display: 'block' },
+                { id: 'memorama', display: 'flex' },
                 { id: 'videos', display: 'flex' }
             ];
             
@@ -449,7 +545,7 @@
 
         // Inicializar UI
         crearBotones(musica, contenedorMusica, 'musica');
-        crearBotones(sonidos, contenedorSonidos, 'sonidos');
+        iniciarMemorama();
         crearBotonesVideos();
 
         // --- SISTEMA PWA EN UN SOLO ARCHIVO (MAGIA) ---
@@ -482,7 +578,6 @@
         ];
         
         musica.forEach(t => urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`)));
-        sonidos.forEach(t => urlsParaCachear.push(makeAbsolute(`sonidos/${t.archivo}.mp3`)));
         videosDatos.forEach(t => {
             urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
             urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
@@ -517,7 +612,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v9'; // VERSIÓN 9
+        const CACHE_NAME = 'djemmy-cache-v10'; // VERSIÓN 10 (Añadido Memorama)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
