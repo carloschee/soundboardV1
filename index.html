@@ -25,72 +25,59 @@
         // Generador dinámico de Ícono en alta calidad (Soluciona problemas de SVG en iPad)
         (function() {
             const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
+            canvas.width = 512;
+            canvas.height = 512;
             const ctx = canvas.getContext('2d');
             
-            // Fondo Degradado (Estilo App Premium)
-            const grad = ctx.createLinearGradient(0, 0, 512, 512);
-            grad.addColorStop(0, '#ec4899'); // Rosa
-            grad.addColorStop(0.5, '#8b5cf6'); // Morado
-            grad.addColorStop(1, '#6366f1'); // Índigo
-            ctx.fillStyle = grad; 
-            // iOS requiere un cuadrado sólido, él recorta las esquinas automáticamente
-            ctx.fillRect(0, 0, 512, 512); 
-            
-            // Círculos internos de cristal
-            ctx.beginPath(); ctx.arc(256, 256, 180, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fill();
-            ctx.beginPath(); ctx.arc(256, 256, 210, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 8; ctx.stroke();
-            
-            // Emoji 🎧 con sombra paralela
-            ctx.font = '240px "Apple Color Emoji", "Segoe UI Emoji", sans-serif'; 
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10;
-            ctx.fillText('🎧', 256, 276); // Se desplaza ligeramente en Y por el diseño base
-            
-            // Convertir pintura a PNG y asignar globalmente
-            window.appIconPNG = canvas.toDataURL('image/png');
-            document.getElementById('apple-icon').href = window.appIconPNG;
-            document.getElementById('favicon').href = window.appIconPNG;
+            // Fondo
+            const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+            gradient.addColorStop(0, '#8b5cf6'); // Violeta
+            gradient.addColorStop(1, '#ec4899'); // Rosa
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 512, 512, 100);
+            ctx.fill();
+
+            // Sombra del emoji
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(256, 380, 120, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Emoji 🎧
+            ctx.font = '240px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎧', 256, 256);
+
+            const iconUrl = canvas.toDataURL('image/png');
+            document.getElementById('apple-icon').href = iconUrl;
+            document.getElementById('favicon').href = iconUrl;
+            window.appIconPNG = iconUrl; // Guardar para el manifest
         })();
     </script>
 
     <style>
-        /* Deshabilitar selección de texto y zoom táctil para que se sienta como App nativa */
+        /* Evitar el "pull-to-refresh" y scroll elástico de iOS en toda la página */
         body {
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
             overscroll-behavior-y: none;
-            /* Soporte para el "notch" o bordes curvos del iPad */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Ocultar scrollbars pero mantener funcionalidad (añadido height 0px para scroll horizontal) */
-        ::-webkit-scrollbar { width: 0px; height: 0px; background: transparent; }
-
-        /* Animación de reproducción */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.97); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-            70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
-            100% { transform: scale(0.97); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-        }
-        
-        .reproduciendo {
-            animation: pulse-ring 2s infinite;
-            border: 4px solid white !important;
-            filter: brightness(1.1);
-            z-index: 10;
+        /* Ocultar scrollbars globalmente pero permitir scroll */
+        ::-webkit-scrollbar {
+            width: 0px;
+            height: 0px;
+            background: transparent;
         }
 
+        /* Estilos de las pestañas */
         .tab-activa {
-            background-color: white;
-            color: #8b5cf6;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #7c3aed;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: scale(1.02);
         }
-        
         .tab-inactiva {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
@@ -118,74 +105,61 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 h-screen w-screen overflow-hidden text-white font-sans flex flex-col">
+<body class="bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 min-h-screen max-h-screen flex flex-col font-sans select-none overflow-hidden">
 
-    <!-- Encabezado Fijo (Optimizado para iPad Landscape - Altura reducida) -->
-    <header class="flex-none p-2 md:p-4 lg:px-8 flex items-center justify-between gap-4">
-        <!-- Logo -->
-        <div class="flex items-center gap-3 bg-white/20 backdrop-blur-md rounded-2xl p-2 md:p-3 border border-white/30 shadow-lg">
-            <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
-            <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-        </div>
-
-        <!-- Controles de Navegación (Pestañas) en el Centro -->
-        <div class="flex-1 max-w-3xl mx-2 flex bg-black/20 p-1 md:p-2 rounded-2xl gap-1 md:gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
-            <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
-                🎵 Música
-            </button>
-            <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
-                🍎 Memorama
-            </button>
-            <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
-                🎬 Videos
-            </button>
-        </div>
-
-        <!-- Grupo de Botones de Acción -->
-        <div class="flex items-center gap-2 md:gap-3">
-            <!-- NUEVO: Botón Recargar / Borrar Caché (Solo Ícono) -->
-            <button onclick="borrarCacheYRecargar()" title="Actualizar" class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-lg flex items-center justify-center text-2xl md:text-3xl transition-all border-2 border-orange-400/50 shrink-0">
-                <span id="icono-actualizar">🔄</span>
-            </button>
-
-            <!-- Botón Forzar Descarga Offline (Solo Ícono) -->
-            <button onclick="iniciarDescargaOffline()" title="Descargar" class="bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-lg flex items-center justify-center text-2xl md:text-3xl transition-all border-2 border-blue-400/50 shrink-0">
-                <span>☁️</span>
+    <!-- Encabezado Fijo -->
+    <header class="pt-10 pb-2 px-4 md:px-6 lg:px-8 flex justify-between items-center shrink-0">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-md flex items-center gap-3">
+            <span class="text-4xl md:text-6xl">🎧</span> DJ Emmy
+        </h1>
+        
+        <div class="flex gap-2">
+            <!-- Botón para Limpiar Caché y Actualizar -->
+            <button onclick="borrarCacheYRecargar()" id="btn-actualizar" class="bg-orange-500/80 hover:bg-orange-600 text-white p-2 md:p-3 rounded-2xl md:rounded-3xl backdrop-blur-md shadow-lg flex items-center justify-center transition-all active:scale-90 border-2 border-white/20">
+                <span id="icono-actualizar" class="text-2xl md:text-3xl">🔄</span>
             </button>
             
-            <!-- Botón Parar Todo -->
-            <button onclick="pararTodo()" class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-3 md:px-6 h-12 md:h-14 rounded-2xl shadow-lg flex items-center justify-center gap-2 font-bold text-lg md:text-xl transition-colors border-2 border-red-400/50 shrink-0">
-                <span>⏹️</span> <span class="hidden md:inline">Parar</span>
+            <!-- Botón para Forzar Descarga Manual -->
+            <button onclick="iniciarDescargaOffline()" id="btn-descarga-manual" class="bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-2xl md:rounded-3xl backdrop-blur-md shadow-lg flex items-center justify-center transition-all active:scale-90 border-2 border-white/20">
+                <span class="text-2xl md:text-3xl">☁️</span>
             </button>
         </div>
     </header>
 
-    <!-- Área de Botones (Modificado para scroll individual por pestaña) -->
+    <!-- Controles de Navegación (Pestañas) en el Centro -->
+    <div class="max-w-3xl mx-4 md:mx-auto flex bg-black/20 p-1 md:p-2 rounded-2xl gap-1 md:gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner shrink-0 mb-2">
+        <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
+            🎵 Música
+        </button>
+        <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+            🍎 Memorama
+        </button>
+        <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
+            🎬 Videos
+        </button>
+    </div>
+
+    <!-- Área de Botones -->
     <main class="flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-2 pb-2 lg:px-8">
-        <!-- Contenedor Música (Envoltura para Scroll seguro en Safari/iPad) -->
+        
+        <!-- Contenedor Música -->
         <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block">
             <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
                 <!-- Botones inyectados vía JS -->
             </div>
         </div>
 
-        <!-- Contenedor Memorama (Ancho completo responsivo) -->
+        <!-- Contenedor Memorama -->
         <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center justify-center pt-2 pb-2 md:pb-4 relative w-full overflow-hidden">
             <div class="w-full flex justify-between items-center mb-2 md:mb-4 px-2 md:px-4 shrink-0 max-w-7xl">
                 <h2 class="text-xl md:text-3xl font-bold text-white drop-shadow-md">Encuentra las parejas</h2>
-                <button onclick="iniciarMemorama()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-2 text-sm md:text-lg z-20">
-                    <span>🔄</span> <span class="hidden md:inline">Reiniciar</span>
-                </button>
             </div>
             
-            <!-- Contenedor Principal del Juego y Pila -->
             <div class="flex flex-col w-full max-w-7xl justify-center items-center gap-3 md:gap-5 px-2 md:px-4 flex-1 min-h-0">
-                <!-- Tablero (4 columnas en vertical, 8 en horizontal para usar el ancho perfecto sin scroll) -->
                 <div id="grid-memorama" class="grid grid-cols-4 lg:grid-cols-8 gap-2 md:gap-4 w-full perspective-1000 shrink-0">
                     <!-- Tarjetas inyectadas vía JS -->
                 </div>
 
-                <!-- Pila de Cartas Encontradas (Barra horizontal inferior) -->
                 <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center p-2 md:p-3 gap-3 shadow-inner overflow-x-auto min-h-[4rem] md:min-h-[5.5rem] shrink-0">
                     <span class="text-white/70 font-bold text-sm md:text-base uppercase tracking-widest pl-2 pr-2">Pares</span>
                     <div id="stack-parejas" class="flex flex-row gap-2 md:gap-3 w-full justify-start items-center">
@@ -194,102 +168,77 @@
                 </div>
             </div>
 
-            <!-- Overlay de Victoria (Transparente, sin botón y con animación de desvanecimiento) -->
             <div id="mensaje-victoria" class="hidden absolute inset-0 flex-col items-center justify-center z-50 pointer-events-none transition-opacity duration-1000 opacity-0">
                 <span class="text-8xl md:text-[9rem] mb-4 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">🏆</span>
                 <h2 class="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">¡Ganaste!</h2>
             </div>
         </div>
 
-        <!-- Contenedor Videos (Reproductor Central y Cinto Inferior) -->
-        <div id="seccion-videos" class="flex-1 min-h-0 flex-col gap-2 hidden pb-1">
-            <!-- Reproductor de Video Central (Añadido ID para Fullscreen) -->
-            <div id="contenedor-reproductor" class="flex-1 min-h-0 relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-black">
-                <!-- Añadido atributo "loop" -->
-                <video id="reproductor-video" class="w-full h-full object-contain" playsinline loop
-                    poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23000000'/%3E%3Ctext x='50%25' y='50%25' font-size='48' text-anchor='middle' fill='%239ca3af' font-family='sans-serif' dy='.3em'%3E🎬 Selecciona un Video%3C/text%3E%3C/svg%3E">
-                </video>
-
-                <!-- Indicador de Carga (Oculto por defecto) -->
-                <div id="indicador-carga-video" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden bg-black/40">
-                    <div class="bg-black/80 text-white px-6 py-4 rounded-2xl backdrop-blur-md border border-white/20 flex items-center gap-3">
-                        <svg class="animate-spin h-8 w-8 text-pink-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span class="text-xl font-bold tracking-widest">Cargando...</span>
-                    </div>
+        <!-- Contenedor Videos -->
+        <div id="seccion-videos" class="flex-1 hidden flex-col h-full min-h-0 pb-6 relative">
+            <div id="contenedor-reproductor" class="flex-1 w-full bg-black rounded-3xl overflow-hidden shadow-2xl relative flex items-center justify-center min-h-[40vh]">
+                <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-white/50">
+                    <span class="text-7xl mb-4">📺</span>
+                    <p class="text-xl font-medium">Toca un video abajo para reproducir</p>
                 </div>
+
+                <div id="indicador-carga-video" class="hidden absolute inset-0 bg-black/80 flex-col items-center justify-center z-10 backdrop-blur-sm">
+                    <div class="w-16 h-16 border-8 border-pink-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-white font-bold text-xl drop-shadow-md">Cargando video...</p>
+                </div>
+
+                <video id="reproductor-video" class="w-full h-full object-contain hidden" controls playsinline preload="none">
+                    Tu navegador no soporta videos HTML5.
+                </video>
             </div>
-            
-            <!-- Cinto de botones de video (Horizontal - Altura Reducida) -->
-            <div class="flex-none h-20 md:h-28 lg:h-32 w-full bg-black/20 backdrop-blur-md border-2 border-white/10 rounded-2xl shadow-inner p-2 md:p-3">
-                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-3 items-center snap-x snap-mandatory scroll-smooth h-full w-full">
-                    <!-- Botones inyectados vía JS -->
+
+            <div class="mt-4 h-32 md:h-40 w-full shrink-0">
+                <div class="h-full w-full overflow-x-auto overflow-y-hidden pb-2 snap-x snap-mandatory">
+                    <div id="lista-videos" class="flex gap-4 px-2 h-full items-center">
+                        <!-- Tarjetas de video inyectadas vía JS -->
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal de Instalación PWA (Solo se muestra en Safari iOS/iPadOS) -->
-    <div id="pwa-prompt" class="hidden absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white text-purple-800 p-4 rounded-2xl shadow-2xl items-center gap-4 z-50 border-2 border-purple-300 animate-bounce">
-        <span class="text-3xl">📱</span>
-        <div>
-            <p class="font-bold">Instala DJ Emmy en tu iPad</p>
-            <p class="text-sm">Toca el botón <strong>Compartir</strong> y luego <strong>"Agregar a Inicio"</strong>.</p>
-        </div>
-        <button onclick="document.getElementById('pwa-prompt').style.display='none'" class="bg-gray-200 p-2 rounded-full px-4 font-bold ml-2">Cerrar</button>
-    </div>
-
-    <!-- NUEVO: Modal de Progreso de Descarga Offline -->
-    <div id="modal-descarga" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
-        <div class="bg-white text-black p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl flex flex-col items-center text-center">
-            <span class="text-6xl mb-4">✈️</span>
-            <h2 class="text-2xl font-bold mb-2 text-purple-600">Preparando Modo Avión</h2>
-            <p class="text-gray-600 mb-6 font-medium leading-tight">Guardando canciones y videos en el iPad. Por favor, no cierres esta pantalla.</p>
+    <!-- Modal PWA -->
+    <div id="modal-descarga" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex-col justify-center items-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl text-center">
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Preparando iPad 🚀</h3>
+            <p id="texto-progreso-descarga" class="text-gray-600 font-medium mb-6">Analizando archivos...</p>
             
-            <div class="w-full bg-gray-200 rounded-full h-6 mb-2 overflow-hidden border-2 border-gray-300 shadow-inner">
-                <div id="barra-progreso" class="bg-gradient-to-r from-blue-400 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            <div class="w-full bg-gray-200 rounded-full h-6 md:h-8 mb-4 overflow-hidden shadow-inner border border-gray-300">
+                <div id="barra-progreso" class="bg-gradient-to-r from-pink-500 to-violet-500 h-full rounded-full transition-all duration-300 w-0 flex items-center justify-end pr-2">
+                    <span id="porcentaje-texto" class="text-white text-xs md:text-sm font-bold shadow-sm">0%</span>
+                </div>
             </div>
-            <p id="texto-progreso" class="font-bold text-lg mb-6 text-gray-800">0 / 0 archivos</p>
             
-            <button id="btn-cerrar-descarga" onclick="document.getElementById('modal-descarga').classList.replace('flex', 'hidden')" class="hidden bg-purple-500 hover:bg-purple-400 text-white font-bold py-3 px-8 rounded-2xl shadow-lg border-2 border-purple-400 active:scale-95 transition-all text-xl">
-                ¡Listo para jugar!
+            <button id="btn-cerrar-modal" onclick="document.getElementById('modal-descarga').classList.replace('flex', 'hidden')" class="hidden mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl w-full transition-colors">
+                Cerrar
             </button>
         </div>
     </div>
 
-    <script>
-        // --- BASE DE DATOS DE PISTAS ---
-        const musica = [
-            { archivo: "a", titulo: "Un pequeño dedo", interprete: "Super Simple", emoji: "☝️", color: "bg-red-400" },
-            { archivo: "b", titulo: "¿Por qué lloras?", interprete: "Nene León", emoji: "😢", color: "bg-blue-400" },
-            { archivo: "c", titulo: "Los medios de transporte", interprete: "Nene León", emoji: "🚗", color: "bg-green-400" },
-            { archivo: "d", titulo: "Como los animalitos", interprete: "Plim Plim", emoji: "🐾", color: "bg-yellow-400" },
-            { archivo: "e", titulo: "Soy una taza", interprete: "Plim Plim", emoji: "☕", color: "bg-orange-400" },
-            { archivo: "f", titulo: "Abejita chiquitita", interprete: "Plim Plim", emoji: "🐝", color: "bg-amber-500" },
-            { archivo: "g", titulo: "Peekaboo", interprete: "Super Simple", emoji: "🙈", color: "bg-pink-400" },
-            { archivo: "h", titulo: "Los animales en la granja", interprete: "Super Simple", emoji: "🐄", color: "bg-emerald-500" },
-            { archivo: "i", titulo: "Canción del ombligo", interprete: "CoComelon", emoji: "👶", color: "bg-cyan-400" },
-            { archivo: "j", titulo: "¿Cómo hace el caballito?", interprete: "Plim Plim", emoji: "🐴", color: "bg-orange-500" },
-            { archivo: "k", titulo: "¿Cómo hace el perrito?", interprete: "Plim Plim", emoji: "🐶", color: "bg-yellow-500" },
-            { archivo: "l", titulo: "¿Cómo hace la tortuga?", interprete: "Plim Plim", emoji: "🐢", color: "bg-green-500" },
-            { archivo: "m", titulo: "¿Cómo hace el gatito?", interprete: "Plim Plim", emoji: "🐱", color: "bg-orange-300" },
-            { archivo: "n", titulo: "Hora del baño", interprete: "Nene León", emoji: "🛁", color: "bg-blue-300" },
-            { archivo: "o", titulo: "Cabeza, hombros...", interprete: "Super Simple", emoji: "👤", color: "bg-indigo-400" },
-            { archivo: "p", titulo: "Toodly Doodly Doo", interprete: "Super Simple", emoji: "🎶", color: "bg-purple-400" },
-            { archivo: "q", titulo: "¿Estrellita dónde estás?", interprete: "Super Simple", emoji: "⭐", color: "bg-yellow-300" },
-            { archivo: "r", titulo: "El baile de la ensalada", interprete: "Plim Plim", emoji: "🥗", color: "bg-lime-500" }
-        ];
+    <div id="pwa-prompt" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-4 rounded-3xl shadow-2xl flex-col items-center text-center border-2 border-violet-200 animate-bounce w-[90%] max-w-sm z-50">
+        <span class="text-3xl mb-2">📲</span>
+        <p class="text-gray-800 font-bold mb-1">¡Instala DJ Emmy!</p>
+        <p class="text-sm text-gray-600 leading-tight">Toca el botón <b>Compartir</b> <br> y luego <b>"Agregar a Inicio"</b></p>
+    </div>
 
-        // --- DATOS DEL JUEGO MEMORAMA (Ahora con 12 pares / 24 cartas) ---
+    <audio id="motor-audio" playsinline></audio>
+
+    <script>
+        let musica = []; 
+        let videosDatos = []; 
+        let urlsParaCachear = []; 
+
         const frutasMemorama = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍍', '🥝', '🍒', '🥭', '🥥', '🥑', '🍋'];
         let cartasJuego = [];
         let cartasVolteadas = [];
         let parejasEncontradas = 0;
         let memoramaBloqueado = false;
 
-        // --- SISTEMA DE SONIDOS SINTÉTICOS (Para Memorama, no requiere descargas) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
 
@@ -314,8 +263,8 @@
 
         const sonidoFlip = () => playTone(300, 'triangle', 0.05, 0.02);
         const sonidoExito = () => {
-            playTone(523.25, 'sine', 0.1, 0.1); // Do
-            setTimeout(() => playTone(659.25, 'sine', 0.2, 0.1), 100); // Mi
+            playTone(523.25, 'sine', 0.1, 0.1); 
+            setTimeout(() => playTone(659.25, 'sine', 0.2, 0.1), 100); 
         };
         const sonidoError = () => {
             playTone(200, 'sawtooth', 0.1, 0.05);
@@ -325,7 +274,6 @@
             [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.3, 0.1), i * 150));
         };
 
-        // --- EFECTO DE CONFETI ---
         const lanzarConfeti = () => {
             const colores = ['#fce18a', '#ff726d', '#b48def', '#f4306d', '#42c062', '#3b82f6', '#fbbf24'];
             for (let i = 0; i < 80; i++) {
@@ -353,172 +301,82 @@
             }
         };
 
-        const videosDatos = [
-            { archivo: "a", titulo: "Golden Live The Tonight Show" },
-            { archivo: "b", titulo: "Golden Live A Year in TIME" },
-            { archivo: "c", titulo: "Golden Live Jimmy Kimmel" },
-            { archivo: "d", titulo: "Golden Live 2026 BAFTA Film Awards" },
-            { archivo: "e", titulo: "Golden Live Dick Clark NYE 2026" }
-        ];
-
-        // --- CACHÉ DE ELEMENTOS DEL DOM ---
         const contenedorMusica = document.getElementById('grid-musica');
         const contenedorVideos = document.getElementById('seccion-videos');
         const contenedorReproductor = document.getElementById('contenedor-reproductor');
         const listaVideosUI = document.getElementById('lista-videos');
         const reproductorVideo = document.getElementById('reproductor-video');
         const indicadorCargaVideo = document.getElementById('indicador-carga-video');
+        const motorAudio = document.getElementById('motor-audio');
         
-        let temporizadorSimulador; // Para entorno de prueba
-        let cancionActual = null; // Para detener la canción anterior
-
-        // --- LÓGICA DE REPRODUCCIÓN ---
         const pararTodo = () => {
-            document.querySelectorAll('audio').forEach(el => {
-                el.pause();
-                el.currentTime = 0;
-            });
-
-            // Detener y resetear video para que muestre la imagen poster
+            motorAudio.pause();
+            motorAudio.currentTime = 0;
             reproductorVideo.pause();
-            reproductorVideo.removeAttribute('src'); // Quitar fuente para forzar el póster
-            reproductorVideo.load();
-            indicadorCargaVideo.classList.add('hidden'); // Ocultar carga si se presionó parar
-
-            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
-            cancionActual = null;
-            clearTimeout(temporizadorSimulador);
         };
 
-        const reproducir = (track, tipo) => {
-            const audio = document.getElementById(`audio-${track.archivo}`);
-            const articulo = document.getElementById(`btn-${track.archivo}`);
-            if (!audio || !articulo) return;
-
-            // Si es música, paramos otras músicas y el video actual
-            if (tipo === 'musica') {
-                if (cancionActual && cancionActual !== audio) {
-                    cancionActual.pause();
-                    cancionActual.currentTime = 0;
-                }
-                reproductorVideo.pause(); // Silenciar video si se toca música
-                document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
-                cancionActual = audio;
-            } else {
-                // Si es un sonido, solo reseteamos su propia animación
-                articulo.classList.remove('reproduciendo');
-            }
-
-            // Iniciar animación y audio
-            articulo.classList.add('reproduciendo');
-            audio.currentTime = 0;
-            
-            audio.play().catch(e => {
-                console.warn("Sin audio real. Simulando...", e);
-                // Simulación para el Preview de IA
-                clearTimeout(temporizadorSimulador);
-                temporizadorSimulador = setTimeout(() => {
-                    articulo.classList.remove('reproduciendo');
-                }, tipo === 'musica' ? 4000 : 1500); // 4s para música, 1.5s para SFX
-            });
+        const reproducirMusica = (track) => {
+            pararTodo();
+            motorAudio.src = `audio/${track.archivo}.mp3`;
+            motorAudio.play().catch(e => console.log("Espera interacción del usuario"));
         };
 
         const reproducirVideo = (track) => {
-            const articulo = document.getElementById(`btn-vid-${track.archivo}`);
-            if (!articulo) return;
+            pararTodo();
+            document.getElementById('video-placeholder').classList.add('hidden');
+            reproductorVideo.classList.add('hidden');
+            indicadorCargaVideo.classList.remove('hidden');
+            indicadorCargaVideo.classList.add('flex');
 
-            // Detener música si está sonando
-            if (cancionActual) {
-                cancionActual.pause();
-                cancionActual.currentTime = 0;
-            }
-            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
-            
-            articulo.classList.add('reproduciendo');
-            indicadorCargaVideo.classList.remove('hidden'); // Mostrar "Cargando..."
-
-            // Configurar y reproducir video leyendo la carpeta "vid"
             reproductorVideo.src = `vid/${track.archivo}.mp4`;
-            
-            // Cuando el video tenga suficientes datos, ocultar el indicador
-            reproductorVideo.oncanplay = () => {
+            reproductorVideo.load();
+            reproductorVideo.play().then(() => {
+                indicadorCargaVideo.classList.remove('flex');
                 indicadorCargaVideo.classList.add('hidden');
-            };
-
-            reproductorVideo.play().catch(e => {
-                console.warn("Sin video real en la carpeta local. Simulando...", e);
-                clearTimeout(temporizadorSimulador);
-                temporizadorSimulador = setTimeout(() => {
-                    articulo.classList.remove('reproduciendo');
-                    reproductorVideo.removeAttribute('src');
-                    reproductorVideo.load();
-                    indicadorCargaVideo.classList.add('hidden');
-                }, 5000);
+                reproductorVideo.classList.remove('hidden');
+                reproductorVideo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }).catch(e => {
+                indicadorCargaVideo.classList.remove('flex');
+                indicadorCargaVideo.classList.add('hidden');
+                reproductorVideo.classList.remove('hidden'); 
             });
-            
-            // Volver a la imagen inicial al terminar (Aun con loop, lo mantenemos por si acaso)
-            reproductorVideo.onended = () => {
-                articulo.classList.remove('reproduciendo');
-                reproductorVideo.removeAttribute('src');
-                reproductorVideo.load(); 
-            };
         };
 
-        // --- GENERACIÓN DE LA INTERFAZ ---
-        const crearBotones = (arreglo, contenedor, tipo) => {
-            arreglo.forEach((track) => {
-                // Tarjeta
+        const crearBotones = (datos, contenedor, tipo) => {
+            contenedor.innerHTML = '';
+            datos.forEach(track => {
                 const articulo = document.createElement('article');
-                articulo.id = `btn-${track.archivo}`;
-                // Estilo especial para iPad: cuadrados perfectos (aspect-square) y bordes gruesos
-                articulo.className = `${track.color} rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center aspect-square border-4 border-white/20 relative overflow-hidden transition-all`;
+                articulo.className = `${track.color} rounded-3xl p-3 md:p-4 shadow-[0_8px_0_rgba(0,0,0,0.2)] md:shadow-[0_12px_0_rgba(0,0,0,0.2)] hover:shadow-[0_4px_0_rgba(0,0,0,0.2)] hover:translate-y-1 md:hover:translate-y-2 cursor-pointer flex flex-col items-center justify-center text-center border-4 border-white/20 transition-all group`;
                 articulo.innerHTML = `
-                    <span class="text-6xl md:text-7xl mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
-                    <span class="text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-1 pointer-events-none">${track.titulo}</span>
+                    <span class="text-5xl md:text-6xl mb-2 drop-shadow-md group-hover:scale-110 transition-transform">${track.emoji}</span>
+                    <h3 class="text-white font-extrabold text-sm md:text-lg leading-tight drop-shadow-md">${track.titulo}</h3>
+                    <p class="text-white/80 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">${track.interprete}</p>
                 `;
-                
-                // Audio tag
-                const audioEl = document.createElement('audio');
-                audioEl.id = `audio-${track.archivo}`;
-                // Prefijo según carpeta (ajusta según tu servidor)
-                const rutaCarpeta = tipo === 'musica' ? 'audio/' : 'sonidos/';
-                audioEl.src = `${rutaCarpeta}${track.archivo}.mp3`;
-                audioEl.preload = 'auto'; // Forzamos al navegador a pre-cargar el archivo en memoria
-                
-                // Eventos
-                articulo.addEventListener('click', () => reproducir(track, tipo));
-                audioEl.addEventListener('ended', () => {
-                    articulo.classList.remove('reproduciendo');
-                });
-
-                articulo.appendChild(audioEl);
+                articulo.addEventListener('click', () => reproducirMusica(track));
                 contenedor.appendChild(articulo);
             });
         };
 
         const crearBotonesVideos = () => {
-            videosDatos.forEach((track) => {
+            listaVideosUI.innerHTML = '';
+            videosDatos.forEach(track => {
                 const articulo = document.createElement('article');
-                articulo.id = `btn-vid-${track.archivo}`;
-                // Formato Cinto: Elementos que no se encojen (flex-none), toman el alto total (h-full), y mantienen aspecto de video.
-                articulo.className = `flex-none h-full aspect-video rounded-xl shadow-xl border-2 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
+                articulo.className = `snap-center shrink-0 w-40 md:w-56 h-full bg-gray-800 rounded-2xl shadow-xl border-4 border-white/10 overflow-hidden cursor-pointer group relative`;
                 
-                // Asignamos la imagen de fondo apuntando a la carpeta img
-                articulo.style.backgroundImage = `url('img/cover-vid-${track.archivo}.webp')`;
-                
-                // Limpiamos el texto y emoji, dejamos solo un overlay oscuro con un botón de play al pasar el dedo/mouse
                 articulo.innerHTML = `
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity pointer-events-none">
-                        <span class="text-4xl md:text-5xl drop-shadow-lg">▶️</span>
+                    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('img/cover-vid-${track.archivo}.webp'); background-color: #4c1d95;">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                    </div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-end p-3 text-center z-10">
+                        <span class="text-3xl md:text-4xl mb-2 group-hover:scale-125 transition-transform drop-shadow-lg">▶️</span>
+                        <h3 class="text-white font-bold text-xs md:text-sm leading-tight drop-shadow-md truncate w-full">${track.titulo}</h3>
                     </div>
                 `;
-                
                 articulo.addEventListener('click', () => reproducirVideo(track));
                 listaVideosUI.appendChild(articulo);
             });
         };
 
-        // --- LÓGICA DEL MEMORAMA ---
         const iniciarMemorama = () => {
             const grid = document.getElementById('grid-memorama');
             const stack = document.getElementById('stack-parejas');
@@ -533,7 +391,6 @@
             parejasEncontradas = 0;
             memoramaBloqueado = false;
             
-            // Duplicar y barajar
             cartasJuego = [...frutasMemorama, ...frutasMemorama]
                 .sort(() => Math.random() - 0.5)
                 .map((fruta, index) => ({ id: index, fruta, volteada: false, encontrada: false }));
@@ -542,7 +399,6 @@
                 const cardEl = document.createElement('div');
                 cardEl.className = 'tarjeta-memorama relative aspect-square cursor-pointer transform-style-3d';
                 
-                // Las dos caras de la carta (Textos reajustados para el tablero de 24 cartas)
                 cardEl.innerHTML = `
                     <div class="absolute inset-0 bg-white/20 backdrop-blur-md border-2 md:border-4 border-white/30 rounded-2xl flex items-center justify-center backface-hidden shadow-lg">
                         <span class="text-3xl md:text-5xl lg:text-5xl opacity-80">❓</span>
@@ -560,8 +416,8 @@
         const voltearCarta = (cardEl, index) => {
             if (memoramaBloqueado || cartasJuego[index].volteada || cartasJuego[index].encontrada) return;
 
-            pararTodo(); // Silenciar música o videos si se empieza a jugar
-            initAudio(); // Activa el motor de audio de iOS
+            pararTodo(); 
+            initAudio(); 
             sonidoFlip();
             
             cartasJuego[index].volteada = true;
@@ -586,11 +442,9 @@
                 sonidoExito();
                 
                 setTimeout(() => {
-                    // Ocultar suavemente del tablero
                     carta1.cardEl.classList.add('scale-0', 'opacity-0');
                     carta2.cardEl.classList.add('scale-0', 'opacity-0');
                     
-                    // Añadir la fruta encontrada a la pila lateral con animación (tamaño reducido para que quepan 12)
                     const pilaEl = document.getElementById('stack-parejas');
                     const frutaStack = document.createElement('div');
                     frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-xl w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-xl md:text-3xl anim-pop shadow-md shrink-0';
@@ -605,7 +459,6 @@
                         victoriaEl.classList.remove('hidden');
                         victoriaEl.classList.add('flex');
                         
-                        // Permitir que el DOM se actualice antes de aplicar opacidad
                         setTimeout(() => {
                             victoriaEl.classList.replace('opacity-0', 'opacity-100');
                         }, 50);
@@ -613,15 +466,12 @@
                         sonidoVictoria();
                         lanzarConfeti();
 
-                        // Desvanecer el mensaje y recargar automáticamente tras pasar el confeti
                         setTimeout(() => {
                             victoriaEl.classList.replace('opacity-100', 'opacity-0');
-                            
                             setTimeout(() => {
-                                iniciarMemorama(); // Reinicia el tablero al ocultarse el trofeo
-                            }, 1000); // 1 segundo que dura la transición de opacidad
-                            
-                        }, 5500); // 5.5 segs (Tiempo suficiente para que termine la lluvia de confeti)
+                                iniciarMemorama(); 
+                            }, 1000); 
+                        }, 5500); 
                     }
                 }, 600);
             } else {
@@ -633,11 +483,12 @@
                     cartasJuego[carta2.index].volteada = false;
                     memoramaBloqueado = false;
                     cartasVolteadas = [];
-                }, 1000); // 1 segundo para intentar recordar las frutas antes de voltear
+                }, 1000);
             }
         };
 
         const cambiarSeccion = (seccion) => {
+            pararTodo();
             const seccionesConfig = [
                 { id: 'musica', display: 'block' },
                 { id: 'memorama', display: 'flex' },
@@ -662,215 +513,199 @@
             });
         };
 
-        // Inicializar UI
-        crearBotones(musica, contenedorMusica, 'musica');
-        iniciarMemorama();
-        crearBotonesVideos();
-
-        // --- SISTEMA PWA EN UN SOLO ARCHIVO (MAGIA) ---
-        // 1. Inyectar Manifest.json
-        const pwaManifest = {
-            "name": "DJ Emmy Reproductor",
-            "short_name": "DJ Emmy",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#8b5cf6",
-            "theme_color": "#8b5cf6",
-            "description": "Botonera musical infantil",
-            "icons": [{
-                "src": window.appIconPNG, // Usa la imagen PNG Premium generada arriba
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "any maskable"
-            }]
-        };
-        const blobManifest = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
-        document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
-
-        // 2. Preparar lista de todos los archivos CON URLS ABSOLUTAS (Soluciona bug de iOS Blob)
-        const baseHref = window.location.href.split('?')[0].replace(/index\.html$/, '');
-        const makeAbsolute = (path) => new URL(path, baseHref).href;
-
-        const urlsParaCachear = [
-            makeAbsolute('./'),
-            makeAbsolute('index.html')
-        ];
-        
-        musica.forEach(t => urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`)));
-        videosDatos.forEach(t => {
-            urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
-            urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
-        });
-
-        // NUEVO: Función para limpiar caché completamente y recargar
         const borrarCacheYRecargar = async () => {
             const iconoBtn = document.getElementById('icono-actualizar');
-            if(iconoBtn) iconoBtn.innerText = "⏳";
+            iconoBtn.classList.add('animate-spin');
             
             try {
-                // 1. Borrar todas las cachés guardadas
-                if ('caches' in window) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => caches.delete(key)));
-                }
-                
-                // 2. Desregistrar el Service Worker para forzar la actualización
                 if ('serviceWorker' in navigator) {
                     const registrations = await navigator.serviceWorker.getRegistrations();
                     for (let registration of registrations) {
                         await registration.unregister();
                     }
                 }
-                
-                // 3. Recargar la página desde cero
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
                 window.location.reload();
             } catch (error) {
                 console.error("Error al limpiar caché:", error);
-                window.location.reload(); // Recargar de todos modos si falla
+                window.location.reload(); 
             }
         };
 
-        // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v14'; // VERSIÓN 14 (24 Cartas y reinicio automático sin modal)
+        const CACHE_NAME = 'djemmy-cache-v16'; 
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
             const barra = document.getElementById('barra-progreso');
-            const texto = document.getElementById('texto-progreso');
-            const btnCerrar = document.getElementById('btn-cerrar-descarga');
-            
-            modal.classList.replace('hidden', 'flex');
-            btnCerrar.classList.add('hidden');
+            const textoPorcentaje = document.getElementById('porcentaje-texto');
+            const textoProgreso = document.getElementById('texto-progreso-descarga');
+            const btnCerrar = document.getElementById('btn-cerrar-modal');
+
             barra.style.width = '0%';
-            barra.classList.remove('bg-red-500');
-            barra.classList.add('from-blue-400', 'to-indigo-500');
-            
+            textoPorcentaje.innerText = '0%';
+            textoProgreso.innerText = "Calculando archivos...";
+            btnCerrar.classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
             try {
                 const cache = await caches.open(CACHE_NAME);
                 let completados = 0;
                 const total = urlsParaCachear.length;
-                
-                texto.innerText = `Calculando...`;
-                
-                // Descargar uno por uno para poder animar la barra de progreso
-                for(let i = 0; i < total; i++) {
+
+                for (let i = 0; i < total; i++) {
                     const url = urlsParaCachear[i];
+                    textoProgreso.innerText = `Guardando: ${url.split('/').pop().substring(0,20)}...`;
+                    
                     try {
-                        // Verificamos si ya está guardado para no descargar doble
-                        const respuestaCache = await cache.match(url);
-                        if(!respuestaCache) {
-                            const respuestaRed = await fetch(url, { cache: 'no-store' });
-                            if(respuestaRed.ok) {
-                                await cache.put(url, respuestaRed);
-                            } else {
-                                console.warn('Archivo omitido (404):', url);
-                            }
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            await cache.put(url, response);
                         }
-                    } catch(e) {
-                        console.warn('Fallo de red al descargar:', url, e);
+                    } catch (err) {
+                        console.warn('No se pudo cachear:', url);
                     }
+
                     completados++;
                     const porcentaje = Math.round((completados / total) * 100);
                     barra.style.width = `${porcentaje}%`;
-                    texto.innerText = `${completados} de ${total} guardados`;
+                    textoPorcentaje.innerText = `${porcentaje}%`;
                 }
-                
-                // Cambiar estilo a éxito
-                barra.classList.remove('from-blue-400', 'to-indigo-500');
-                barra.classList.add('bg-green-500');
-                texto.innerText = "¡Todo descargado con éxito! ✅";
+
+                textoProgreso.innerText = "¡Listo! iPad listo para modo avión ✈️";
                 btnCerrar.classList.remove('hidden');
-                
-            } catch(error) {
-                console.error("Error crítico en descarga manual:", error);
-                barra.classList.remove('from-blue-400', 'to-indigo-500');
-                barra.classList.add('bg-red-500');
-                texto.innerText = "Error de conexión. Intenta de nuevo. ❌";
+
+            } catch (error) {
+                console.error("Error en descarga manual", error);
+                textoProgreso.innerText = "Error de conexión. Intenta de nuevo. ❌";
                 btnCerrar.classList.remove('hidden');
             }
         };
 
-        // 3. Inyectar Service Worker para uso Fuera de Línea
-        const swCodigo = `
-            const CACHE_NAME_SW = '${CACHE_NAME}'; 
-            const urlsToCache = ${JSON.stringify(urlsParaCachear)};
-
-            self.addEventListener('install', (event) => {
-                self.skipWaiting();
-                // Sigue instalando en segundo plano, pero con URLs absolutas arregladas
-                event.waitUntil(
-                    caches.open(CACHE_NAME_SW).then((cache) => {
-                        return Promise.all(
-                            urlsToCache.map(url => {
-                                return cache.add(url).catch(err => console.warn('Ignorado en background:', url));
-                            })
-                        );
-                    })
-                );
-            });
-
-            // Evento Activate para limpiar cachés antiguas
-            self.addEventListener('activate', (event) => {
-                event.waitUntil(
-                    caches.keys().then((cacheNames) => {
-                        return Promise.all(
-                            cacheNames.map((cacheName) => {
-                                if (cacheName !== CACHE_NAME_SW) {
-                                    console.log('Borrando caché antigua:', cacheName);
-                                    return caches.delete(cacheName);
-                                }
-                            })
-                        );
-                    }).then(() => self.clients.claim()) 
-                );
-            });
-
-            self.addEventListener('fetch', (event) => {
-                // Solo interceptar peticiones GET
-                if (event.request.method !== 'GET') return;
+        const inicializarApp = async () => {
+            try {
+                const [resAudios, resVids] = await Promise.all([
+                    fetch('audios.json', { cache: 'no-cache' }),
+                    fetch('vids.json', { cache: 'no-cache' })
+                ]);
                 
-                event.respondWith(
-                    caches.match(event.request).then((cachedResponse) => {
-                        if (cachedResponse) {
-                            return cachedResponse; // Devolver desde caché instantáneamente
-                        }
-                        // Intento de red
-                        return fetch(event.request).then((networkResponse) => {
-                            return caches.open(CACHE_NAME_SW).then((cache) => {
-                                cache.put(event.request, networkResponse.clone());
-                                return networkResponse;
-                            });
-                        });
-                    }).catch(() => new Response('Contenido no disponible offline'))
-                );
-            });
-        `;
-        const blobSW = new Blob([swCodigo], {type: 'application/javascript'});
-        const urlSW = URL.createObjectURL(blobSW);
+                if (!resAudios.ok) throw new Error('No se pudo cargar audios.json');
+                if (!resVids.ok) throw new Error('No se pudo cargar vids.json');
+                
+                musica = await resAudios.json();
+                videosDatos = await resVids.json();
+            } catch (error) {
+                console.error('Error cargando JSONs:', error);
+                if(musica.length === 0) musica = [{ archivo: "error", titulo: "Audio Mockup 1", interprete: "Sistema", emoji: "🎶", color: "bg-red-500" }, { archivo: "error", titulo: "Audio Mockup 2", interprete: "Sistema", emoji: "🎸", color: "bg-blue-500" }];
+                if(videosDatos.length === 0) videosDatos = [{ archivo: "error", titulo: "Video Mockup 1" }];
+            }
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                // Registramos el Service Worker simplificado sin los indicadores visuales
-                navigator.serviceWorker.register(urlSW, { scope: './' }).then(reg => {
-                    console.log('Service Worker registrado correctamente.', reg.scope);
-                }).catch(err => {
-                    console.log('Error en Service Worker', err);
+            crearBotones(musica, contenedorMusica, 'musica');
+            iniciarMemorama();
+            crearBotonesVideos();
+
+            const baseHref = window.location.href.split('?')[0].replace(/index\.html$/, '');
+            const makeAbsolute = (path) => new URL(path, baseHref).href;
+
+            urlsParaCachear = [
+                makeAbsolute('./'),
+                makeAbsolute('index.html'),
+                makeAbsolute('audios.json'), 
+                makeAbsolute('vids.json')    
+            ];
+            
+            musica.forEach(t => urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`)));
+            videosDatos.forEach(t => {
+                urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
+                urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
+            });
+
+            const pwaManifest = {
+                "name": "DJ Emmy Reproductor",
+                "short_name": "DJ Emmy",
+                "start_url": ".",
+                "display": "standalone",
+                "background_color": "#8b5cf6",
+                "theme_color": "#8b5cf6",
+                "description": "Botonera musical infantil",
+                "icons": [{
+                    "src": window.appIconPNG,
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }]
+            };
+            const blobManifest = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
+            document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
+
+            const swCodigo = `
+                const CACHE_NAME_SW = '${CACHE_NAME}'; 
+                const urlsToCache = ${JSON.stringify(urlsParaCachear)};
+
+                self.addEventListener('install', (event) => {
+                    self.skipWaiting();
+                    event.waitUntil(
+                        caches.open(CACHE_NAME_SW).then((cache) => {
+                            return Promise.all(
+                                urlsToCache.map(url => {
+                                    return cache.add(url).catch(err => console.warn('Ignorado en background:', url));
+                                })
+                            );
+                        })
+                    );
                 });
-            });
-        }
 
-        // 4. Detectar iPadOS/iOS para mostrar prompt de instalación
-        const esIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const enModoStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-        
-        if (esIos && !enModoStandalone) {
-            // Mostrar mensajito de cómo instalar en el iPad después de 2 segundos
-            setTimeout(() => {
-                const prompt = document.getElementById('pwa-prompt');
-                prompt.classList.remove('hidden');
-                prompt.classList.add('flex');
-            }, 2000);
-        }
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(
+                        caches.keys().then((cacheNames) => {
+                            return Promise.all(
+                                cacheNames.map((cacheName) => {
+                                    if (cacheName !== CACHE_NAME_SW) {
+                                        return caches.delete(cacheName);
+                                    }
+                                })
+                            );
+                        }).then(() => self.clients.claim()) 
+                    );
+                });
+
+                self.addEventListener('fetch', (event) => {
+                    if (event.request.method !== 'GET') return;
+                    
+                    event.respondWith(
+                        caches.match(event.request).then((cachedResponse) => {
+                            if (cachedResponse) return cachedResponse; 
+                            return fetch(event.request).then((networkResponse) => {
+                                return caches.open(CACHE_NAME_SW).then((cache) => {
+                                    cache.put(event.request, networkResponse.clone());
+                                    return networkResponse;
+                                });
+                            });
+                        }).catch(() => new Response('Contenido no disponible offline'))
+                    );
+                });
+            `;
+            const blobSW = new Blob([swCodigo], {type: 'application/javascript'});
+            const urlSW = URL.createObjectURL(blobSW);
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register(urlSW, { scope: './' }).catch(err => console.log('Error SW', err));
+            }
+
+            const esIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const enModoStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+            
+            if (esIos && !enModoStandalone) {
+                setTimeout(() => {
+                    const prompt = document.getElementById('pwa-prompt');
+                    prompt.classList.remove('hidden');
+                    prompt.classList.add('flex');
+                }, 2000);
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', inicializarApp);
     </script>
 </body>
 </html>
