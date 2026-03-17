@@ -77,10 +77,12 @@
             color: #7c3aed;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transform: scale(1.02);
+            z-index: 10;
         }
         .tab-inactiva {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
+            z-index: 1;
         }
 
         /* Animaciones Memorama */
@@ -108,49 +110,51 @@
 <body class="bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 min-h-screen max-h-screen flex flex-col font-sans select-none overflow-hidden">
 
     <!-- Encabezado Fijo -->
-    <header class="pt-10 pb-2 px-4 md:px-6 lg:px-8 flex justify-between items-center shrink-0">
-        <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-md flex items-center gap-3">
+    <header class="pt-8 md:pt-10 pb-2 px-4 md:px-6 lg:px-8 flex justify-between items-center shrink-0">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-md flex items-center gap-2 md:gap-3">
             <span class="text-4xl md:text-6xl">🎧</span> DJ Emmy
         </h1>
         
         <div class="flex gap-2">
             <!-- Botón para Limpiar Caché y Actualizar -->
             <button onclick="borrarCacheYRecargar()" id="btn-actualizar" class="bg-orange-500/80 hover:bg-orange-600 text-white p-2 md:p-3 rounded-2xl md:rounded-3xl backdrop-blur-md shadow-lg flex items-center justify-center transition-all active:scale-90 border-2 border-white/20">
-                <span id="icono-actualizar" class="text-2xl md:text-3xl">🔄</span>
+                <span id="icono-actualizar" class="text-xl md:text-3xl">🔄</span>
             </button>
             
             <!-- Botón para Forzar Descarga Manual -->
             <button onclick="iniciarDescargaOffline()" id="btn-descarga-manual" class="bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-2xl md:rounded-3xl backdrop-blur-md shadow-lg flex items-center justify-center transition-all active:scale-90 border-2 border-white/20">
-                <span class="text-2xl md:text-3xl">☁️</span>
+                <span class="text-xl md:text-3xl">☁️</span>
             </button>
         </div>
     </header>
 
-    <!-- Controles de Navegación (Pestañas) en el Centro -->
-    <div class="max-w-3xl mx-4 md:mx-auto flex bg-black/20 p-1 md:p-2 rounded-2xl gap-1 md:gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner shrink-0 mb-2">
-        <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2">
-            🎵 Música
-        </button>
-        <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
-            🍎 Memorama
-        </button>
-        <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">
-            🎬 Videos
-        </button>
-    </div>
+    <!-- Controles de Navegación (Pestañas) en el Centro - CORREGIDO -->
+    <nav class="w-full px-4 md:px-6 lg:px-8 flex justify-center shrink-0 mb-3 md:mb-4">
+        <div class="w-full max-w-3xl flex bg-black/20 p-1 md:p-2 rounded-2xl gap-1 md:gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
+            <button id="btn-musica" onclick="cambiarSeccion('musica')" class="flex-1 py-2 md:py-3 text-[15px] md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-1 md:gap-2">
+                🎵 Música
+            </button>
+            <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-[15px] md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-1 md:gap-2">
+                🍎 Memorama
+            </button>
+            <button id="btn-videos" onclick="cambiarSeccion('videos')" class="flex-1 py-2 md:py-3 text-[15px] md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-1 md:gap-2">
+                🎬 Videos
+            </button>
+        </div>
+    </nav>
 
-    <!-- Área de Botones -->
-    <main class="flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-2 pb-2 lg:px-8">
+    <!-- Área de Contenido Principal -->
+    <main class="flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-1 pb-2 lg:px-8">
         
         <!-- Contenedor Música -->
         <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block">
-            <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
+            <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6 pb-10">
                 <!-- Botones inyectados vía JS -->
             </div>
         </div>
 
         <!-- Contenedor Memorama -->
-        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center justify-center pt-2 pb-2 md:pb-4 relative w-full overflow-hidden">
+        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center justify-center pb-2 md:pb-4 relative w-full overflow-hidden">
             <div class="w-full flex justify-between items-center mb-2 md:mb-4 px-2 md:px-4 shrink-0 max-w-7xl">
                 <h2 class="text-xl md:text-3xl font-bold text-white drop-shadow-md">Encuentra las parejas</h2>
             </div>
@@ -176,15 +180,15 @@
 
         <!-- Contenedor Videos -->
         <div id="seccion-videos" class="flex-1 hidden flex-col h-full min-h-0 pb-6 relative">
-            <div id="contenedor-reproductor" class="flex-1 w-full bg-black rounded-3xl overflow-hidden shadow-2xl relative flex items-center justify-center min-h-[40vh]">
+            <div id="contenedor-reproductor" class="flex-1 w-full bg-black rounded-3xl overflow-hidden shadow-2xl relative flex items-center justify-center min-h-[30vh]">
                 <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-white/50">
-                    <span class="text-7xl mb-4">📺</span>
-                    <p class="text-xl font-medium">Toca un video abajo para reproducir</p>
+                    <span class="text-6xl md:text-7xl mb-4">📺</span>
+                    <p class="text-lg md:text-xl font-medium">Toca un video abajo para reproducir</p>
                 </div>
 
                 <div id="indicador-carga-video" class="hidden absolute inset-0 bg-black/80 flex-col items-center justify-center z-10 backdrop-blur-sm">
-                    <div class="w-16 h-16 border-8 border-pink-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p class="text-white font-bold text-xl drop-shadow-md">Cargando video...</p>
+                    <div class="w-12 h-12 md:w-16 md:h-16 border-8 border-pink-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-white font-bold text-lg md:text-xl drop-shadow-md">Cargando video...</p>
                 </div>
 
                 <video id="reproductor-video" class="w-full h-full object-contain hidden" controls playsinline preload="none">
@@ -192,9 +196,9 @@
                 </video>
             </div>
 
-            <div class="mt-4 h-32 md:h-40 w-full shrink-0">
+            <div class="mt-4 h-28 md:h-40 w-full shrink-0">
                 <div class="h-full w-full overflow-x-auto overflow-y-hidden pb-2 snap-x snap-mandatory">
-                    <div id="lista-videos" class="flex gap-4 px-2 h-full items-center">
+                    <div id="lista-videos" class="flex gap-3 md:gap-4 px-2 h-full items-center">
                         <!-- Tarjetas de video inyectadas vía JS -->
                     </div>
                 </div>
@@ -202,7 +206,7 @@
         </div>
     </main>
 
-    <!-- Modal PWA -->
+    <!-- Modal PWA y otros elementos -->
     <div id="modal-descarga" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex-col justify-center items-center p-4">
         <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl text-center">
             <h3 class="text-2xl font-bold text-gray-800 mb-2">Preparando iPad 🚀</h3>
@@ -302,8 +306,6 @@
         };
 
         const contenedorMusica = document.getElementById('grid-musica');
-        const contenedorVideos = document.getElementById('seccion-videos');
-        const contenedorReproductor = document.getElementById('contenedor-reproductor');
         const listaVideosUI = document.getElementById('lista-videos');
         const reproductorVideo = document.getElementById('reproductor-video');
         const indicadorCargaVideo = document.getElementById('indicador-carga-video');
@@ -334,7 +336,6 @@
                 indicadorCargaVideo.classList.remove('flex');
                 indicadorCargaVideo.classList.add('hidden');
                 reproductorVideo.classList.remove('hidden');
-                reproductorVideo.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }).catch(e => {
                 indicadorCargaVideo.classList.remove('flex');
                 indicadorCargaVideo.classList.add('hidden');
@@ -342,7 +343,7 @@
             });
         };
 
-        const crearBotones = (datos, contenedor, tipo) => {
+        const crearBotones = (datos, contenedor) => {
             contenedor.innerHTML = '';
             datos.forEach(track => {
                 const articulo = document.createElement('article');
@@ -361,14 +362,14 @@
             listaVideosUI.innerHTML = '';
             videosDatos.forEach(track => {
                 const articulo = document.createElement('article');
-                articulo.className = `snap-center shrink-0 w-40 md:w-56 h-full bg-gray-800 rounded-2xl shadow-xl border-4 border-white/10 overflow-hidden cursor-pointer group relative`;
+                articulo.className = `snap-center shrink-0 w-36 md:w-56 h-full bg-gray-800 rounded-2xl shadow-xl border-4 border-white/10 overflow-hidden cursor-pointer group relative`;
                 
                 articulo.innerHTML = `
                     <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('img/cover-vid-${track.archivo}.webp'); background-color: #4c1d95;">
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
                     </div>
-                    <div class="absolute inset-0 flex flex-col items-center justify-end p-3 text-center z-10">
-                        <span class="text-3xl md:text-4xl mb-2 group-hover:scale-125 transition-transform drop-shadow-lg">▶️</span>
+                    <div class="absolute inset-0 flex flex-col items-center justify-end p-2 md:p-3 text-center z-10">
+                        <span class="text-2xl md:text-4xl mb-1 md:mb-2 group-hover:scale-125 transition-transform drop-shadow-lg">▶️</span>
                         <h3 class="text-white font-bold text-xs md:text-sm leading-tight drop-shadow-md truncate w-full">${track.titulo}</h3>
                     </div>
                 `;
@@ -401,10 +402,10 @@
                 
                 cardEl.innerHTML = `
                     <div class="absolute inset-0 bg-white/20 backdrop-blur-md border-2 md:border-4 border-white/30 rounded-2xl flex items-center justify-center backface-hidden shadow-lg">
-                        <span class="text-3xl md:text-5xl lg:text-5xl opacity-80">❓</span>
+                        <span class="text-3xl md:text-5xl opacity-80">❓</span>
                     </div>
                     <div class="absolute inset-0 bg-white rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 shadow-lg border-2 md:border-4 border-pink-400">
-                        <span class="text-4xl md:text-[4rem] lg:text-[4rem] drop-shadow-sm pointer-events-none">${carta.fruta}</span>
+                        <span class="text-4xl md:text-[4rem] drop-shadow-sm pointer-events-none">${carta.fruta}</span>
                     </div>
                 `;
 
@@ -503,12 +504,12 @@
                     cont.classList.remove('hidden');
                     if (sec.display === 'flex') cont.classList.add('flex');
                     else cont.classList.add('block');
-                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                    btn.className = "flex-1 py-2 md:py-3 text-[15px] md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-1 md:gap-2";
                 } else {
                     cont.classList.add('hidden');
                     if (sec.display === 'flex') cont.classList.remove('flex');
                     else cont.classList.remove('block');
-                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+                    btn.className = "flex-1 py-2 md:py-3 text-[15px] md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-1 md:gap-2";
                 }
             });
         };
@@ -533,7 +534,7 @@
             }
         };
 
-        const CACHE_NAME = 'djemmy-cache-v16'; 
+        const CACHE_NAME = 'djemmy-cache-v17'; 
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
@@ -573,7 +574,7 @@
                     textoPorcentaje.innerText = `${porcentaje}%`;
                 }
 
-                textoProgreso.innerText = "¡Listo! iPad listo para modo avión ✈️";
+                textoProgreso.innerText = "¡Listo! iPad preparado para modo avión ✈️";
                 btnCerrar.classList.remove('hidden');
 
             } catch (error) {
@@ -601,7 +602,7 @@
                 if(videosDatos.length === 0) videosDatos = [{ archivo: "error", titulo: "Video Mockup 1" }];
             }
 
-            crearBotones(musica, contenedorMusica, 'musica');
+            crearBotones(musica, contenedorMusica);
             iniciarMemorama();
             crearBotonesVideos();
 
