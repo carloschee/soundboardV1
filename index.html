@@ -188,19 +188,16 @@
                 <!-- Pila de Cartas Encontradas (Barra horizontal inferior) -->
                 <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center p-2 md:p-3 gap-3 shadow-inner overflow-x-auto min-h-[4rem] md:min-h-[5.5rem] shrink-0">
                     <span class="text-white/70 font-bold text-sm md:text-base uppercase tracking-widest pl-2 pr-2">Pares</span>
-                    <div id="stack-parejas" class="flex flex-row gap-2 md:gap-4 w-full justify-start items-center">
+                    <div id="stack-parejas" class="flex flex-row gap-2 md:gap-3 w-full justify-start items-center">
                         <!-- Frutas apiladas por JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- Overlay de Victoria -->
-            <div id="mensaje-victoria" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm flex-col items-center justify-center z-10 rounded-3xl m-2">
-                <span class="text-7xl mb-4 animate-bounce">🏆</span>
-                <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 drop-shadow-lg mb-6">¡Ganaste!</h2>
-                <button onclick="iniciarMemorama()" class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-8 py-3 rounded-2xl font-bold text-xl shadow-xl hover:scale-105 active:scale-95 transition-all border-2 border-white/50">
-                    Jugar otra vez
-                </button>
+            <!-- Overlay de Victoria (Transparente, sin botón y con animación de desvanecimiento) -->
+            <div id="mensaje-victoria" class="hidden absolute inset-0 flex-col items-center justify-center z-50 pointer-events-none transition-opacity duration-1000 opacity-0">
+                <span class="text-8xl md:text-[9rem] mb-4 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">🏆</span>
+                <h2 class="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">¡Ganaste!</h2>
             </div>
         </div>
 
@@ -285,8 +282,8 @@
             { archivo: "r", titulo: "El baile de la ensalada", interprete: "Plim Plim", emoji: "🥗", color: "bg-lime-500" }
         ];
 
-        // --- DATOS DEL JUEGO MEMORAMA ---
-        const frutasMemorama = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍍', '🥝', '🍒'];
+        // --- DATOS DEL JUEGO MEMORAMA (Ahora con 12 pares / 24 cartas) ---
+        const frutasMemorama = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍍', '🥝', '🍒', '🥭', '🥥', '🥑', '🍋'];
         let cartasJuego = [];
         let cartasVolteadas = [];
         let parejasEncontradas = 0;
@@ -529,7 +526,9 @@
             
             grid.innerHTML = '';
             stack.innerHTML = '';
-            mensajeVictoria.classList.replace('flex', 'hidden');
+            mensajeVictoria.classList.add('hidden');
+            mensajeVictoria.classList.remove('flex');
+            mensajeVictoria.classList.replace('opacity-100', 'opacity-0');
             cartasVolteadas = [];
             parejasEncontradas = 0;
             memoramaBloqueado = false;
@@ -543,13 +542,13 @@
                 const cardEl = document.createElement('div');
                 cardEl.className = 'tarjeta-memorama relative aspect-square cursor-pointer transform-style-3d';
                 
-                // Las dos caras de la carta (Fuentes dinámicas dependiendo si está en vertical u horizontal)
+                // Las dos caras de la carta (Textos reajustados para el tablero de 24 cartas)
                 cardEl.innerHTML = `
                     <div class="absolute inset-0 bg-white/20 backdrop-blur-md border-2 md:border-4 border-white/30 rounded-2xl flex items-center justify-center backface-hidden shadow-lg">
-                        <span class="text-4xl md:text-7xl lg:text-6xl opacity-80">❓</span>
+                        <span class="text-3xl md:text-5xl lg:text-5xl opacity-80">❓</span>
                     </div>
                     <div class="absolute inset-0 bg-white rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 shadow-lg border-2 md:border-4 border-pink-400">
-                        <span class="text-5xl md:text-[5rem] lg:text-6xl drop-shadow-sm pointer-events-none">${carta.fruta}</span>
+                        <span class="text-4xl md:text-[4rem] lg:text-[4rem] drop-shadow-sm pointer-events-none">${carta.fruta}</span>
                     </div>
                 `;
 
@@ -591,10 +590,10 @@
                     carta1.cardEl.classList.add('scale-0', 'opacity-0');
                     carta2.cardEl.classList.add('scale-0', 'opacity-0');
                     
-                    // Añadir la fruta encontrada a la pila lateral con animación
+                    // Añadir la fruta encontrada a la pila lateral con animación (tamaño reducido para que quepan 12)
                     const pilaEl = document.getElementById('stack-parejas');
                     const frutaStack = document.createElement('div');
-                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-xl w-10 h-10 md:w-16 md:h-16 flex items-center justify-center text-2xl md:text-4xl anim-pop shadow-md shrink-0';
+                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-xl w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-xl md:text-3xl anim-pop shadow-md shrink-0';
                     frutaStack.innerText = fruta;
                     pilaEl.appendChild(frutaStack);
 
@@ -602,9 +601,27 @@
                     cartasVolteadas = [];
                     
                     if (parejasEncontradas === frutasMemorama.length) {
-                        document.getElementById('mensaje-victoria').classList.replace('hidden', 'flex');
+                        const victoriaEl = document.getElementById('mensaje-victoria');
+                        victoriaEl.classList.remove('hidden');
+                        victoriaEl.classList.add('flex');
+                        
+                        // Permitir que el DOM se actualice antes de aplicar opacidad
+                        setTimeout(() => {
+                            victoriaEl.classList.replace('opacity-0', 'opacity-100');
+                        }, 50);
+
                         sonidoVictoria();
                         lanzarConfeti();
+
+                        // Desvanecer el mensaje y recargar automáticamente tras pasar el confeti
+                        setTimeout(() => {
+                            victoriaEl.classList.replace('opacity-100', 'opacity-0');
+                            
+                            setTimeout(() => {
+                                iniciarMemorama(); // Reinicia el tablero al ocultarse el trofeo
+                            }, 1000); // 1 segundo que dura la transición de opacidad
+                            
+                        }, 5500); // 5.5 segs (Tiempo suficiente para que termine la lluvia de confeti)
                     }
                 }, 600);
             } else {
@@ -714,7 +731,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v13'; // VERSIÓN 13 (Memorama Ancho Completo)
+        const CACHE_NAME = 'djemmy-cache-v14'; // VERSIÓN 14 (24 Cartas y reinicio automático sin modal)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
