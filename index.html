@@ -190,7 +190,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v21</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v23</span>
             </div>
         </div>
 
@@ -236,25 +236,26 @@
         </div>
 
         <!-- Contenedor Memorama (Ancho completo responsivo) -->
-        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center justify-center pt-2 pb-2 md:pb-4 relative w-full overflow-hidden">
-            <div class="w-full flex justify-between items-center mb-2 md:mb-4 px-2 md:px-4 shrink-0 max-w-7xl">
-                <h2 class="text-xl md:text-3xl font-bold text-white drop-shadow-md">Encuentra las parejas</h2>
-                <button onclick="iniciarMemorama()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-2 text-sm md:text-lg z-20">
+        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center pt-1 pb-2 relative w-full overflow-hidden">
+            <!-- Título + Reiniciar: siempre visible, altura fija -->
+            <div class="w-full flex justify-between items-center mb-1 md:mb-2 px-2 md:px-4 shrink-0 max-w-7xl">
+                <h2 class="text-base md:text-xl font-bold text-white drop-shadow-md">Encuentra las parejas</h2>
+                <button onclick="iniciarMemorama()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 md:px-5 md:py-2 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-2 text-sm md:text-base z-20">
                     <span>🔄</span> <span class="hidden md:inline">Reiniciar</span>
                 </button>
             </div>
-            
+
             <!-- Contenedor Principal del Juego y Pila -->
-            <div class="flex flex-col w-full max-w-7xl justify-center items-center gap-3 md:gap-5 px-2 md:px-4 flex-1 min-h-0">
-                <!-- Tablero (4 columnas en vertical, 8 en horizontal para usar el ancho perfecto sin scroll) -->
-                <div id="grid-memorama" class="grid grid-cols-4 lg:grid-cols-8 gap-2 md:gap-4 w-full perspective-1000 shrink-0">
+            <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
+                <!-- Tablero: ocupa el espacio disponible, cartas con altura controlada -->
+                <div id="grid-memorama" class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0" style="grid-auto-rows: var(--card-h, 14vw)">
                     <!-- Tarjetas inyectadas vía JS -->
                 </div>
 
-                <!-- Pila de Cartas Encontradas (Barra horizontal inferior) -->
-                <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center p-2 md:p-3 gap-3 shadow-inner overflow-x-auto min-h-[4rem] md:min-h-[5.5rem] shrink-0">
-                    <span class="text-white/70 font-bold text-sm md:text-base uppercase tracking-widest pl-2 pr-2">Pares</span>
-                    <div id="stack-parejas" class="flex flex-row gap-2 md:gap-4 w-full justify-start items-center">
+                <!-- Pila de Cartas Encontradas: altura fija garantizada -->
+                <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center px-2 py-1.5 md:px-3 md:py-2 gap-2 shadow-inner overflow-x-auto shrink-0" style="min-height:3.5rem">
+                    <span class="text-white/70 font-bold text-xs md:text-sm uppercase tracking-widest pl-1 pr-2 shrink-0">Pares</span>
+                    <div id="stack-parejas" class="flex flex-row gap-1.5 md:gap-3 w-full justify-start items-center">
                         <!-- Frutas apiladas por JS -->
                     </div>
                 </div>
@@ -611,13 +612,16 @@
                         <div class="carta-frente-marco rounded-lg"></div>
                         <span class="carta-corner" style="top:5px;left:6px">${carta.fruta}</span>
                         <span class="carta-corner" style="bottom:5px;right:6px;transform:rotate(180deg)">${carta.fruta}</span>
-                        <span class="text-4xl md:text-5xl lg:text-4xl xl:text-5xl drop-shadow pointer-events-none" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">${carta.fruta}</span>
+                        <span class="text-5xl md:text-6xl lg:text-5xl xl:text-6xl drop-shadow pointer-events-none" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">${carta.fruta}</span>
                     </div>
                 `;
 
                 cardEl.addEventListener('click', () => voltearCarta(cardEl, index));
                 grid.appendChild(cardEl);
             });
+
+            // Ajustar altura de cartas tras renderizar
+            requestAnimationFrame(() => ajustarAlturaCartas());
         };
 
         const voltearCarta = (cardEl, index) => {
@@ -656,7 +660,7 @@
                     // Añadir la fruta encontrada a la pila lateral con animación
                     const pilaEl = document.getElementById('stack-parejas');
                     const frutaStack = document.createElement('div');
-                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-xl w-10 h-10 md:w-16 md:h-16 flex items-center justify-center text-2xl md:text-4xl anim-pop shadow-md shrink-0';
+                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center text-xl md:text-2xl anim-pop shadow-md shrink-0';
                     frutaStack.innerText = fruta;
                     pilaEl.appendChild(frutaStack);
 
@@ -719,6 +723,7 @@
                     if (sec.display === 'flex') cont.classList.add('flex');
                     else cont.classList.add('block');
                     btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                    if (sec.id === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
                 } else {
                     cont.classList.add('hidden');
                     if (sec.display === 'flex') cont.classList.remove('flex');
@@ -728,7 +733,26 @@
             });
         };
 
-        // --- INICIALIZACIÓN ASÍNCRONA (carga JSONs externos antes de pintar la UI) ---
+        // Calcular altura de fila del grid memorama según espacio disponible real
+        const ajustarAlturaCartas = () => {
+            const seccion = document.getElementById('seccion-memorama');
+            if (!seccion || seccion.classList.contains('hidden')) return;
+            const grid = document.getElementById('grid-memorama');
+            const stack = seccion.querySelector('.shrink-0:last-of-type');
+            const header = seccion.querySelector('.shrink-0:first-of-type');
+            const totalH = seccion.clientHeight;
+            const headerH = header ? header.offsetHeight : 32;
+            const stackH = stack ? stack.offsetHeight : 56;
+            const gaps = 6; // gap + padding aproximados en px
+            const filas = 3;
+            const disponible = totalH - headerH - stackH - gaps * 2;
+            const alturaFila = Math.floor(disponible / filas);
+            grid.style.setProperty('--card-h', alturaFila + 'px');
+            grid.style.gridAutoRows = alturaFila + 'px';
+        };
+
+        window.addEventListener('resize', ajustarAlturaCartas);
+        // Se llama también tras iniciarMemorama (ver abajo)
         const inicializarApp = async () => {
             try {
                 const [resAudios, resVids] = await Promise.all([
@@ -821,7 +845,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v21'; // VERSIÓN 21 (Cartas realistas + sonido al voltear par)
+        const CACHE_NAME = 'djemmy-cache-v23'; // VERSIÓN 23 (Layout memorama balanceado)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
