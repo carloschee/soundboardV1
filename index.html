@@ -101,7 +101,70 @@
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
-        .tarjeta-memorama { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1), opacity 0.5s ease; }
+        .tarjeta-memorama { transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1), opacity 0.5s ease; }
+
+        /* Cara trasera: patrón de carta clásica */
+        .carta-dorso {
+            background-color: #1a237e;
+            background-image:
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255,255,255,0.04) 0px,
+                    rgba(255,255,255,0.04) 1px,
+                    transparent 1px,
+                    transparent 8px
+                ),
+                repeating-linear-gradient(
+                    -45deg,
+                    rgba(255,255,255,0.04) 0px,
+                    rgba(255,255,255,0.04) 1px,
+                    transparent 1px,
+                    transparent 8px
+                );
+            border: 3px solid #283593;
+            box-shadow: inset 0 0 0 4px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .carta-dorso::after {
+            content: '🎴';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            opacity: 0.35;
+        }
+        /* Marco interior del dorso */
+        .carta-dorso-marco {
+            position: absolute;
+            inset: 5px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        /* Cara delantera: carta blanca con marco decorativo */
+        .carta-frente {
+            background: linear-gradient(145deg, #fffef7 0%, #faf8ee 100%);
+            border: 2px solid #e0d9c8;
+            box-shadow: inset 0 0 0 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .carta-frente-marco {
+            position: absolute;
+            inset: 5px;
+            border: 1.5px solid rgba(180,160,100,0.35);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        /* Número en esquinas estilo baraja */
+        .carta-corner {
+            position: absolute;
+            font-size: clamp(0.5rem, 1.2vw, 0.75rem);
+            font-weight: 900;
+            color: #c0392b;
+            line-height: 1;
+            pointer-events: none;
+        }
 
         /* Animación Confeti y Pila */
         @keyframes pop-in {
@@ -127,7 +190,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v20</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v21</span>
             </div>
         </div>
 
@@ -536,15 +599,19 @@
 
             cartasJuego.forEach((carta, index) => {
                 const cardEl = document.createElement('div');
-                cardEl.className = 'tarjeta-memorama relative aspect-square cursor-pointer transform-style-3d';
-                
-                // Las dos caras de la carta (Fuentes dinámicas dependiendo si está en vertical u horizontal)
+                cardEl.className = 'tarjeta-memorama relative aspect-[2/3] cursor-pointer transform-style-3d';
+
                 cardEl.innerHTML = `
-                    <div class="absolute inset-0 bg-white/20 backdrop-blur-md border-2 md:border-4 border-white/30 rounded-2xl flex items-center justify-center backface-hidden shadow-lg">
-                        <span class="text-4xl md:text-7xl lg:text-6xl opacity-80">❓</span>
+                    <!-- DORSO -->
+                    <div class="carta-dorso absolute inset-0 rounded-xl flex items-center justify-center backface-hidden overflow-hidden">
+                        <div class="carta-dorso-marco rounded-lg"></div>
                     </div>
-                    <div class="absolute inset-0 bg-white rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 shadow-lg border-2 md:border-4 border-pink-400">
-                        <span class="text-5xl md:text-[5rem] lg:text-6xl drop-shadow-sm pointer-events-none">${carta.fruta}</span>
+                    <!-- FRENTE -->
+                    <div class="carta-frente absolute inset-0 rounded-xl flex items-center justify-center backface-hidden rotate-y-180 overflow-hidden">
+                        <div class="carta-frente-marco rounded-lg"></div>
+                        <span class="carta-corner" style="top:5px;left:6px">${carta.fruta}</span>
+                        <span class="carta-corner" style="bottom:5px;right:6px;transform:rotate(180deg)">${carta.fruta}</span>
+                        <span class="text-4xl md:text-5xl lg:text-4xl xl:text-5xl drop-shadow pointer-events-none" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">${carta.fruta}</span>
                     </div>
                 `;
 
@@ -558,13 +625,13 @@
 
             pararTodo(); // Silenciar música o videos si se empieza a jugar
             initAudio(); // Activa el motor de audio de iOS
-            sonidoFlip();
-            
+
             cartasJuego[index].volteada = true;
             cardEl.classList.add('rotate-y-180');
             cartasVolteadas.push({ cardEl, index });
 
             if (cartasVolteadas.length === 2) {
+                sonidoFlip(); // Suena cuando ambas cartas ya están volteadas
                 verificarPareja();
             }
         };
@@ -754,7 +821,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v20'; // VERSIÓN 20 (Video offline vía blob URL directo desde Cache API)
+        const CACHE_NAME = 'djemmy-cache-v21'; // VERSIÓN 21 (Cartas realistas + sonido al voltear par)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
