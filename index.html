@@ -127,7 +127,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v19</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v20</span>
             </div>
         </div>
 
@@ -349,7 +349,11 @@
 
             // Detener y resetear video para que muestre la imagen poster
             reproductorVideo.pause();
-            reproductorVideo.removeAttribute('src'); // Quitar fuente para forzar el póster
+            if (reproductorVideo._blobUrl) {
+                URL.revokeObjectURL(reproductorVideo._blobUrl);
+                reproductorVideo._blobUrl = null;
+            }
+            reproductorVideo.removeAttribute('src');
             reproductorVideo.load();
             indicadorCargaVideo.classList.add('hidden'); // Ocultar carga si se presionó parar
 
@@ -391,30 +395,53 @@
             });
         };
 
-        const reproducirVideo = (track) => {
+        const reproducirVideo = async (track) => {
             const articulo = document.getElementById(`btn-vid-${track.archivo}`);
             if (!articulo) return;
 
-            // Detener música si está sonando
             if (cancionActual) {
                 cancionActual.pause();
                 cancionActual.currentTime = 0;
             }
             document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
-            
-            articulo.classList.add('reproduciendo');
-            indicadorCargaVideo.classList.remove('hidden'); // Mostrar "Cargando..."
 
-            // Configurar y reproducir video leyendo la carpeta "vid"
-            reproductorVideo.src = `vid/${track.archivo}.mp4`;
-            
-            // Cuando el video tenga suficientes datos, ocultar el indicador
+            articulo.classList.add('reproduciendo');
+            indicadorCargaVideo.classList.remove('hidden');
+
+            const rutaVideo = `vid/${track.archivo}.mp4`;
+            const urlAbsoluta = makeAbsolute(rutaVideo);
+            let srcFinal = rutaVideo; // Por defecto: URL normal (con red)
+
+            // Intentar leer desde Cache API para reproducción offline
+            try {
+                if ('caches' in window) {
+                    const cache = await caches.open(CACHE_NAME);
+                    const respuesta = await cache.match(urlAbsoluta);
+                    if (respuesta) {
+                        const blob = await respuesta.blob();
+                        srcFinal = URL.createObjectURL(blob);
+                        console.log('Video servido desde caché local (blob):', track.archivo);
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo leer caché de video, usando red:', e);
+            }
+
+            // Liberar blob URL anterior si existía
+            if (reproductorVideo._blobUrl) {
+                URL.revokeObjectURL(reproductorVideo._blobUrl);
+                reproductorVideo._blobUrl = null;
+            }
+            if (srcFinal.startsWith('blob:')) reproductorVideo._blobUrl = srcFinal;
+
+            reproductorVideo.src = srcFinal;
+
             reproductorVideo.oncanplay = () => {
                 indicadorCargaVideo.classList.add('hidden');
             };
 
             reproductorVideo.play().catch(e => {
-                console.warn("Sin video real en la carpeta local. Simulando...", e);
+                console.warn('Error al reproducir video:', e);
                 clearTimeout(temporizadorSimulador);
                 temporizadorSimulador = setTimeout(() => {
                     articulo.classList.remove('reproduciendo');
@@ -423,12 +450,15 @@
                     indicadorCargaVideo.classList.add('hidden');
                 }, 5000);
             });
-            
-            // Volver a la imagen inicial al terminar (Aun con loop, lo mantenemos por si acaso)
+
             reproductorVideo.onended = () => {
                 articulo.classList.remove('reproduciendo');
+                if (reproductorVideo._blobUrl) {
+                    URL.revokeObjectURL(reproductorVideo._blobUrl);
+                    reproductorVideo._blobUrl = null;
+                }
                 reproductorVideo.removeAttribute('src');
-                reproductorVideo.load(); 
+                reproductorVideo.load();
             };
         };
 
@@ -724,7 +754,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v19'; // VERSIÓN 19 (Fix Range Requests + Wake Lock)
+        const CACHE_NAME = 'djemmy-cache-v20'; // VERSIÓN 20 (Video offline vía blob URL directo desde Cache API)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
