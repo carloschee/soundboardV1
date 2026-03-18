@@ -190,7 +190,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v23</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v24</span>
             </div>
         </div>
 
@@ -600,7 +600,7 @@
 
             cartasJuego.forEach((carta, index) => {
                 const cardEl = document.createElement('div');
-                cardEl.className = 'tarjeta-memorama relative aspect-[2/3] cursor-pointer transform-style-3d';
+                cardEl.className = 'tarjeta-memorama relative w-full h-full cursor-pointer transform-style-3d';
 
                 cardEl.innerHTML = `
                     <!-- DORSO -->
@@ -738,17 +738,35 @@
             const seccion = document.getElementById('seccion-memorama');
             if (!seccion || seccion.classList.contains('hidden')) return;
             const grid = document.getElementById('grid-memorama');
-            const stack = seccion.querySelector('.shrink-0:last-of-type');
-            const header = seccion.querySelector('.shrink-0:first-of-type');
-            const totalH = seccion.clientHeight;
+
+            // Medir elementos fijos
+            const header = seccion.querySelector('div.shrink-0');
+            const stack  = seccion.querySelector('div.shrink-0:last-of-type');
+            const totalH  = seccion.clientHeight;
             const headerH = header ? header.offsetHeight : 32;
-            const stackH = stack ? stack.offsetHeight : 56;
-            const gaps = 6; // gap + padding aproximados en px
+            const stackH  = stack  ? stack.offsetHeight  : 56;
+
+            // Columnas activas según breakpoint
+            const cols = window.innerWidth >= 1024 ? 8 : 4;
             const filas = 3;
-            const disponible = totalH - headerH - stackH - gaps * 2;
-            const alturaFila = Math.floor(disponible / filas);
-            grid.style.setProperty('--card-h', alturaFila + 'px');
-            grid.style.gridAutoRows = alturaFila + 'px';
+
+            // Gap real entre celdas (gap-1.5 = 6px, gap-2 = 8px en md)
+            const gapPx = window.innerWidth >= 768 ? 8 : 6;
+
+            // Espacio vertical disponible para el grid (margen superior + gaps entre filas)
+            const verticalOcupado = headerH + stackH + gapPx * 4 + (filas - 1) * gapPx;
+            const alturaFila = Math.floor((totalH - verticalOcupado) / filas);
+
+            // Ancho de carta según columnas y gaps horizontales
+            const gridW = grid.clientWidth;
+            const anchoCarta = Math.floor((gridW - gapPx * (cols - 1)) / cols);
+
+            // Usar el menor de los dos para que la carta no exceda ni en alto ni en ancho
+            // Mantenemos proporción 2:3 (ancho:alto)
+            const alturaDesdeAncho = Math.floor(anchoCarta * 3 / 2);
+            const filaFinal = Math.min(alturaFila, alturaDesdeAncho);
+
+            grid.style.gridAutoRows = filaFinal + 'px';
         };
 
         window.addEventListener('resize', ajustarAlturaCartas);
@@ -845,7 +863,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v23'; // VERSIÓN 23 (Layout memorama balanceado)
+        const CACHE_NAME = 'djemmy-cache-v24'; // VERSIÓN 24 (Cartas sin encimamiento)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
@@ -1051,4 +1069,4 @@
 
     </script>
 </body>
-</html> 
+</html>
