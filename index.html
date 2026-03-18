@@ -127,7 +127,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-semibold text-white/60 tracking-widest uppercase leading-none">v16</span>
+                <span class="text-[9px] md:text-[10px] font-semibold text-white/60 tracking-widest uppercase leading-none">v17</span>
             </div>
         </div>
 
@@ -233,15 +233,7 @@
         </div>
     </main>
 
-    <!-- Modal de Instalación PWA (Solo se muestra en Safari iOS/iPadOS) -->
-    <div id="pwa-prompt" class="hidden absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white text-purple-800 p-4 rounded-2xl shadow-2xl items-center gap-4 z-50 border-2 border-purple-300 animate-bounce">
-        <span class="text-3xl">📱</span>
-        <div>
-            <p class="font-bold">Instala DJ Emmy en tu iPad</p>
-            <p class="text-sm">Toca el botón <strong>Compartir</strong> y luego <strong>"Agregar a Inicio"</strong>.</p>
-        </div>
-        <button onclick="document.getElementById('pwa-prompt').style.display='none'" class="bg-gray-200 p-2 rounded-full px-4 font-bold ml-2">Cerrar</button>
-    </div>
+
 
     <!-- NUEVO: Modal de Progreso de Descarga Offline -->
     <div id="modal-descarga" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
@@ -732,7 +724,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v16'; // VERSIÓN 16 (Frutas actualizadas + victoria auto-reset)
+        const CACHE_NAME = 'djemmy-cache-v17'; // VERSIÓN 17 (Sin prompt de instalación)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
@@ -860,18 +852,7 @@
             });
         }
 
-        // 4. Detectar iPadOS/iOS para mostrar prompt de instalación
-        const esIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const enModoStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-        
-        if (esIos && !enModoStandalone) {
-            // Mostrar mensajito de cómo instalar en el iPad después de 2 segundos
-            setTimeout(() => {
-                const prompt = document.getElementById('pwa-prompt');
-                prompt.classList.remove('hidden');
-                prompt.classList.add('flex');
-            }, 2000);
-        }
+
     </script>
 </body>
 </html>
