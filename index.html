@@ -263,27 +263,9 @@
     </div>
 
     <script>
-        // --- BASE DE DATOS DE PISTAS ---
-        const musica = [
-            { archivo: "a", titulo: "Un pequeño dedo", interprete: "Super Simple", emoji: "☝️", color: "bg-red-400" },
-            { archivo: "b", titulo: "¿Por qué lloras?", interprete: "Nene León", emoji: "😢", color: "bg-blue-400" },
-            { archivo: "c", titulo: "Los medios de transporte", interprete: "Nene León", emoji: "🚗", color: "bg-green-400" },
-            { archivo: "d", titulo: "Como los animalitos", interprete: "Plim Plim", emoji: "🐾", color: "bg-yellow-400" },
-            { archivo: "e", titulo: "Soy una taza", interprete: "Plim Plim", emoji: "☕", color: "bg-orange-400" },
-            { archivo: "f", titulo: "Abejita chiquitita", interprete: "Plim Plim", emoji: "🐝", color: "bg-amber-500" },
-            { archivo: "g", titulo: "Peekaboo", interprete: "Super Simple", emoji: "🙈", color: "bg-pink-400" },
-            { archivo: "h", titulo: "Los animales en la granja", interprete: "Super Simple", emoji: "🐄", color: "bg-emerald-500" },
-            { archivo: "i", titulo: "Canción del ombligo", interprete: "CoComelon", emoji: "👶", color: "bg-cyan-400" },
-            { archivo: "j", titulo: "¿Cómo hace el caballito?", interprete: "Plim Plim", emoji: "🐴", color: "bg-orange-500" },
-            { archivo: "k", titulo: "¿Cómo hace el perrito?", interprete: "Plim Plim", emoji: "🐶", color: "bg-yellow-500" },
-            { archivo: "l", titulo: "¿Cómo hace la tortuga?", interprete: "Plim Plim", emoji: "🐢", color: "bg-green-500" },
-            { archivo: "m", titulo: "¿Cómo hace el gatito?", interprete: "Plim Plim", emoji: "🐱", color: "bg-orange-300" },
-            { archivo: "n", titulo: "Hora del baño", interprete: "Nene León", emoji: "🛁", color: "bg-blue-300" },
-            { archivo: "o", titulo: "Cabeza, hombros...", interprete: "Super Simple", emoji: "👤", color: "bg-indigo-400" },
-            { archivo: "p", titulo: "Toodly Doodly Doo", interprete: "Super Simple", emoji: "🎶", color: "bg-purple-400" },
-            { archivo: "q", titulo: "¿Estrellita dónde estás?", interprete: "Super Simple", emoji: "⭐", color: "bg-yellow-300" },
-            { archivo: "r", titulo: "El baile de la ensalada", interprete: "Plim Plim", emoji: "🥗", color: "bg-lime-500" }
-        ];
+        // --- BASE DE DATOS DE PISTAS (cargada desde JSON externo) ---
+        let musica = [];
+        let videosDatos = [];
 
         // --- DATOS DEL JUEGO MEMORAMA ---
         const frutasMemorama = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍍', '🥝', '🍒'];
@@ -355,14 +337,6 @@
                 setTimeout(() => confeti.remove(), (duracion + delay) * 1000);
             }
         };
-
-        const videosDatos = [
-            { archivo: "a", titulo: "Golden Live The Tonight Show" },
-            { archivo: "b", titulo: "Golden Live A Year in TIME" },
-            { archivo: "c", titulo: "Golden Live Jimmy Kimmel" },
-            { archivo: "d", titulo: "Golden Live 2026 BAFTA Film Awards" },
-            { archivo: "e", titulo: "Golden Live Dick Clark NYE 2026" }
-        ];
 
         // --- CACHÉ DE ELEMENTOS DEL DOM ---
         const contenedorMusica = document.getElementById('grid-musica');
@@ -645,10 +619,35 @@
             });
         };
 
-        // Inicializar UI
-        crearBotones(musica, contenedorMusica, 'musica');
-        iniciarMemorama();
-        crearBotonesVideos();
+        // --- INICIALIZACIÓN ASÍNCRONA (carga JSONs externos antes de pintar la UI) ---
+        const inicializarApp = async () => {
+            try {
+                const [resAudios, resVids] = await Promise.all([
+                    fetch('./audios.json'),
+                    fetch('./vids.json')
+                ]);
+
+                if (!resAudios.ok) throw new Error(`audios.json: ${resAudios.status}`);
+                if (!resVids.ok)   throw new Error(`vids.json: ${resVids.status}`);
+
+                musica      = await resAudios.json();
+                videosDatos = await resVids.json();
+
+                // Agregar archivos de media a la lista de caché offline
+                musica.forEach(t => urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`)));
+                videosDatos.forEach(t => {
+                    urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
+                    urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
+                });
+            } catch (err) {
+                console.error('Error cargando JSON de contenido:', err);
+            }
+
+            // Pintar UI con los datos (vacía o llena según lo que haya cargado)
+            crearBotones(musica, contenedorMusica, 'musica');
+            iniciarMemorama();
+            crearBotonesVideos();
+        };
 
         // --- SISTEMA PWA EN UN SOLO ARCHIVO (MAGIA) ---
         // 1. Inyectar Manifest.json
@@ -661,7 +660,7 @@
             "theme_color": "#8b5cf6",
             "description": "Botonera musical infantil",
             "icons": [{
-                "src": window.appIconPNG, // Usa la imagen PNG Premium generada arriba
+                "src": window.appIconPNG,
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any maskable"
@@ -671,19 +670,18 @@
         document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
 
         // 2. Preparar lista de todos los archivos CON URLS ABSOLUTAS (Soluciona bug de iOS Blob)
+        //    Los archivos de media se agregan en inicializarApp() tras cargar los JSONs
         const baseHref = window.location.href.split('?')[0].replace(/index\.html$/, '');
         const makeAbsolute = (path) => new URL(path, baseHref).href;
 
-        const urlsParaCachear = [
+        let urlsParaCachear = [
             makeAbsolute('./'),
-            makeAbsolute('index.html')
+            makeAbsolute('index.html'),
+            makeAbsolute('audios.json'),
+            makeAbsolute('vids.json')
         ];
-        
-        musica.forEach(t => urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`)));
-        videosDatos.forEach(t => {
-            urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
-            urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
-        });
+
+        inicializarApp();
 
         // NUEVO: Función para limpiar caché completamente y recargar
         const borrarCacheYRecargar = async () => {
