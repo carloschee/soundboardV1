@@ -127,7 +127,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-semibold text-white/60 tracking-widest uppercase leading-none">v18</span>
+                <span class="text-[9px] md:text-[10px] font-semibold text-white/60 tracking-widest uppercase leading-none">v19</span>
             </div>
         </div>
 
@@ -724,7 +724,7 @@
         };
 
         // 2.5 Lógica del botón para Forzar Descarga Manualmente con Barra de Progreso
-        const CACHE_NAME = 'djemmy-cache-v18'; // VERSIÓN 18 (Memorama 12 frutas × 2 = 24 cartas)
+        const CACHE_NAME = 'djemmy-cache-v19'; // VERSIÓN 19 (Fix Range Requests + Wake Lock)
         
         const iniciarDescargaOffline = async () => {
             const modal = document.getElementById('modal-descarga');
@@ -790,7 +790,6 @@
 
             self.addEventListener('install', (event) => {
                 self.skipWaiting();
-                // Sigue instalando en segundo plano, pero con URLs absolutas arregladas
                 event.waitUntil(
                     caches.open(CACHE_NAME_SW).then((cache) => {
                         return Promise.all(
@@ -802,32 +801,66 @@
                 );
             });
 
-            // Evento Activate para limpiar cachés antiguas
             self.addEventListener('activate', (event) => {
                 event.waitUntil(
                     caches.keys().then((cacheNames) => {
                         return Promise.all(
                             cacheNames.map((cacheName) => {
                                 if (cacheName !== CACHE_NAME_SW) {
-                                    console.log('Borrando caché antigua:', cacheName);
                                     return caches.delete(cacheName);
                                 }
                             })
                         );
-                    }).then(() => self.clients.claim()) 
+                    }).then(() => self.clients.claim())
                 );
             });
 
             self.addEventListener('fetch', (event) => {
-                // Solo interceptar peticiones GET
                 if (event.request.method !== 'GET') return;
-                
+
+                const url = event.request.url;
+                const isMedia = /\\.(mp4|mp3|webp|png|jpg|jpeg)$/i.test(url);
+
+                if (isMedia) {
+                    event.respondWith(
+                        caches.open(CACHE_NAME_SW).then(async (cache) => {
+                            const cached = await cache.match(url);
+                            if (!cached) {
+                                // No está en caché: ir a la red y guardar
+                                const networkResp = await fetch(event.request);
+                                if (networkResp.ok) cache.put(url, networkResp.clone());
+                                return networkResp;
+                            }
+
+                            // Está en caché: manejar Range Requests para que los videos funcionen
+                            const rangeHeader = event.request.headers.get('range');
+                            if (!rangeHeader) return cached;
+
+                            const blob = await cached.blob();
+                            const bytes = /bytes=(\\d+)-(\\d*)/.exec(rangeHeader);
+                            const start = parseInt(bytes[1]);
+                            const end   = bytes[2] ? parseInt(bytes[2]) : blob.size - 1;
+                            const sliced = blob.slice(start, end + 1);
+
+                            return new Response(sliced, {
+                                status: 206,
+                                statusText: 'Partial Content',
+                                headers: {
+                                    'Content-Type':  cached.headers.get('Content-Type') || 'video/mp4',
+                                    'Content-Range': \`bytes \${start}-\${end}/\${blob.size}\`,
+                                    'Content-Length': sliced.size,
+                                    'Accept-Ranges': 'bytes'
+                                }
+                            });
+                        }).catch(() => fetch(event.request))
+                    );
+                    return;
+                }
+
+                // Recursos no-media: cache-first, luego red
                 event.respondWith(
                     caches.match(event.request).then((cachedResponse) => {
-                        if (cachedResponse) {
-                            return cachedResponse; // Devolver desde caché instantáneamente
-                        }
-                        // Intento de red
+                        if (cachedResponse) return cachedResponse;
                         return fetch(event.request).then((networkResponse) => {
                             return caches.open(CACHE_NAME_SW).then((cache) => {
                                 cache.put(event.request, networkResponse.clone());
@@ -843,14 +876,56 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Registramos el Service Worker simplificado sin los indicadores visuales
                 navigator.serviceWorker.register(urlSW, { scope: './' }).then(reg => {
-                    console.log('Service Worker registrado correctamente.', reg.scope);
+                    console.log('Service Worker registrado.', reg.scope);
                 }).catch(err => {
                     console.log('Error en Service Worker', err);
                 });
             });
         }
+
+        // --- WAKE LOCK: evitar que la pantalla se apague ---
+        // Estrategia dual: Screen Wake Lock API (moderna) + video silencioso en loop (fallback iOS)
+        let wakeLock = null;
+
+        // Fallback: video invisible de 1×1 px en loop que engaña a iOS para no dormir la pantalla
+        const videoKeepAwake = document.createElement('video');
+        videoKeepAwake.setAttribute('loop', '');
+        videoKeepAwake.setAttribute('playsinline', '');
+        videoKeepAwake.setAttribute('muted', '');
+        videoKeepAwake.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;';
+        // Video MP4 de 1×1 pixel negro codificado en base64 (~300 bytes)
+        videoKeepAwake.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAs1tZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAPZWxpYnggAAAHAm////+B';
+        document.body.appendChild(videoKeepAwake);
+
+        const activarWakeLock = async () => {
+            // 1. Intentar Screen Wake Lock API
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock activado (API nativa).');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock liberado, reactivando...');
+                        // Si la página sigue visible, reactivar
+                        if (document.visibilityState === 'visible') activarWakeLock();
+                    });
+                    return;
+                } catch (e) {
+                    console.warn('Wake Lock API no disponible, usando fallback de video:', e);
+                }
+            }
+            // 2. Fallback: reproducir el video silencioso en loop
+            videoKeepAwake.play().catch(() => {});
+        };
+
+        // Activar al primer toque del usuario (requisito de iOS para autoplay)
+        document.addEventListener('click', () => activarWakeLock(), { once: true });
+        document.addEventListener('touchstart', () => activarWakeLock(), { once: true });
+
+        // Reactivar Wake Lock si el usuario vuelve a la pestaña
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') activarWakeLock();
+        });
 
 
     </script>
