@@ -4,7 +4,15 @@
     "titulo": "Flashcards Las frutas"
   },
   {
-    "archivo": "lectura-frutas-pictogramas",
-    "titulo": "Lectura pictogramas frutas"
+    "archivo": "100-fruits",
+    "titulo": "100 fruits"
+  },
+  {
+    "archivo": "fruit-a-z",
+    "titulo": "Fruits A to Z"
+  },
+  {
+    "archivo": "fruit-salad",
+    "titulo": "Fruit salad"
   }
 ]
