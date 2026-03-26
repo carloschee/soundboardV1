@@ -10,22 +10,25 @@
 ║    🎵  Música   — Botonera de canciones infantiles con audio MP3              ║
 ║    🍎  Memorama — Juego de pares con cartas de frutas                         ║
 ║    🎬  Videos   — Reproductor de video con miniaturas seleccionables          ║
+║    📚  Libros   — Lector de libros en formato PDF página a página             ║
 ║                                                                              ║
 ║  CARACTERÍSTICAS TÉCNICAS:                                                   ║
 ║    • PWA instalable en iPad (manifest + service worker dinámicos)            ║
-║    • Modo avión: caché de audio y video via Cache API                        ║
+║    • Modo avión: caché de audio, video y PDFs via Cache API                  ║
 ║    • Video offline: blob URL directo desde caché (bypass de range requests)  ║
 ║    • Wake Lock: evita que la pantalla se apague durante el uso               ║
-║    • Contenido cargado desde JSONs externos (audios.json, vids.json)         ║
+║    • Contenido cargado desde JSONs externos                                  ║
 ║    • Ícono generado dinámicamente en canvas (compatibilidad iOS)             ║
 ║                                                                              ║
 ║  ESTRUCTURA DE ARCHIVOS EN EL SERVIDOR:                                      ║
 ║    /index.html            → Esta app                                         ║
 ║    /audios.json           → Catálogo de canciones                            ║
 ║    /vids.json             → Catálogo de videos                               ║
+║    /libros.json           → Catálogo de libros                               ║
 ║    /audio/*.mp3           → Archivos de audio                                ║
 ║    /vid/*.mp4             → Archivos de video                                ║
 ║    /img/cover-vid-*.webp  → Miniaturas de videos                             ║
+║    /libros/*.pdf          → Archivos de libros                               ║
 ║                                                                              ║
 ║  FORMATO DE audios.json:                                                     ║
 ║    [{ "archivo": "a", "titulo": "Nombre", "interprete": "Artista",           ║
@@ -34,7 +37,11 @@
 ║  FORMATO DE vids.json:                                                       ║
 ║    [{ "archivo": "a", "titulo": "Título del video" }, ...]                   ║
 ║                                                                              ║
-║  VERSIÓN ACTUAL: v25                                                         ║
+║  FORMATO DE libros.json:                                                     ║
+║    [{ "archivo": "cuento", "titulo": "El nombre del libro" }, ...]           ║
+║    → El archivo se busca en /libros/cuento.pdf                               ║
+║                                                                              ║
+║  VERSIÓN ACTUAL: v26                                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
 <html lang="es">
@@ -63,6 +70,10 @@
 
     <!-- Tailwind CSS: framework de utilidades CSS cargado desde CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PDF.js: librería de Mozilla para renderizar PDFs en el navegador.
+         Versión 3.x es compatible con Safari/iOS sin Worker externo. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!--
       Manifest y íconos se generan dinámicamente con JavaScript más abajo.
@@ -253,6 +264,20 @@
 
         /* Feedback táctil: los botones de música se comprimen al tocarlos */
         article:active { transform: scale(0.95); transition: transform 0.1s; }
+
+        /* ── LECTOR DE LIBROS ──────────────────────────────────────────────*/
+        /* Libro activo en el panel lateral: resaltado con borde y fondo */
+        .libro-activo {
+            border-color: white !important;
+            background: rgba(255,255,255,0.25) !important;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+        }
+        /* Deshabilitar botones de navegación visualmente */
+        #btn-pag-anterior:disabled,
+        #btn-pag-siguiente:disabled { opacity: 0.3; pointer-events: none; }
+        /* Ocultar flechas del input number (no necesarias en el contexto táctil) */
+        #input-pagina::-webkit-inner-spin-button,
+        #input-pagina::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 
@@ -291,7 +316,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v25</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v26</span>
             </div>
         </div>
 
@@ -303,6 +328,7 @@
             <button id="btn-musica"   onclick="cambiarSeccion('musica')"   class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa  flex items-center justify-center gap-2">🎵 Música</button>
             <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">🍎 Memorama</button>
             <button id="btn-videos"   onclick="cambiarSeccion('videos')"   class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">🎬 Videos</button>
+            <button id="btn-libros"   onclick="cambiarSeccion('libros')"   class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">📚 Libros</button>
         </div>
 
         <!-- BOTONES DE ACCIÓN GLOBAL -->
@@ -440,6 +466,89 @@
             </div>
         </div>
 
+        <!-- ── SECCIÓN: LIBROS ──────────────────────────────────────
+             Layout horizontal de dos paneles:
+               Izquierda: Panel lateral con miniaturas y títulos de libros
+               Derecha:   Visor principal del PDF (canvas + controles)
+
+             Al tocar un libro en el panel lateral se carga en el visor.
+             PDF.js renderiza cada página en un <canvas>.
+             La navegación es página a página con botones y swipe táctil.
+             Los libros se leen de libros.json y los PDFs de /libros/*.pdf -->
+        <div id="seccion-libros" class="flex-1 min-h-0 hidden flex-row gap-3 pb-1">
+
+            <!-- PANEL LATERAL — Lista de libros disponibles
+                 Ancho fijo (w-36/w-44), scroll vertical si hay muchos títulos.
+                 Cada item muestra la miniatura de la portada (pág. 1) y el título. -->
+            <div class="flex-none w-36 md:w-44 flex flex-col gap-2 overflow-y-auto pr-1">
+                <!-- Encabezado del panel -->
+                <p class="text-white/60 text-xs font-bold uppercase tracking-widest text-center shrink-0 pt-1">Biblioteca</p>
+                <!-- Lista de libros inyectada por crearListaLibros() -->
+                <div id="lista-libros" class="flex flex-col gap-2">
+                    <!-- Items inyectados dinámicamente -->
+                </div>
+            </div>
+
+            <!-- VISOR PRINCIPAL — Renderizado del PDF activo
+                 Ocupa todo el espacio restante (flex-1).
+                 Estructura vertical:
+                   1. Área de canvas (flex-1, scroll si la página es más alta)
+                   2. Barra de controles de navegación (fija, shrink-0) -->
+            <div class="flex-1 min-w-0 flex flex-col gap-2">
+
+                <!-- Área de canvas: donde PDF.js dibuja cada página -->
+                <div id="visor-pdf-contenedor"
+                    class="flex-1 min-h-0 rounded-2xl overflow-hidden bg-white/5 border-2 border-white/10 shadow-inner flex items-center justify-center relative">
+
+                    <!-- Estado inicial: instrucción cuando no hay libro seleccionado -->
+                    <div id="visor-placeholder" class="flex flex-col items-center gap-3 text-white/40 pointer-events-none">
+                        <span class="text-6xl">📖</span>
+                        <p class="text-base font-semibold">Selecciona un libro</p>
+                    </div>
+
+                    <!-- Spinner de carga mientras PDF.js procesa la página -->
+                    <div id="visor-spinner" class="hidden absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-2xl">
+                        <div class="bg-black/70 text-white px-5 py-3 rounded-xl flex items-center gap-3">
+                            <svg class="animate-spin h-6 w-6 text-pink-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="font-bold tracking-wide">Cargando...</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas donde PDF.js renderiza la página activa.
+                         Se redimensiona automáticamente para caber en el contenedor. -->
+                    <canvas id="visor-canvas" class="hidden max-w-full max-h-full object-contain rounded-xl shadow-2xl"></canvas>
+                </div>
+
+                <!-- Barra de navegación de páginas (siempre visible) -->
+                <div class="flex-none flex items-center justify-between gap-3 bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-2 shrink-0">
+
+                    <!-- Botón: Página anterior -->
+                    <button id="btn-pag-anterior" onclick="cambiarPaginaPDF(-1)"
+                        class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-xl transition-all flex items-center justify-center disabled:opacity-30"
+                        disabled>‹</button>
+
+                    <!-- Indicador de página actual / total -->
+                    <div class="flex items-center gap-2 text-white">
+                        <span class="text-sm font-semibold opacity-60">Página</span>
+                        <!-- Input editable: permite ir a una página específica escribiendo el número -->
+                        <input id="input-pagina" type="number" min="1" value="1"
+                            onchange="irAPaginaPDF(this.value)"
+                            class="w-12 md:w-14 text-center bg-white/20 border border-white/30 rounded-lg px-1 py-0.5 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
+                        <span class="text-sm font-semibold opacity-60">de</span>
+                        <span id="total-paginas" class="font-bold text-sm">—</span>
+                    </div>
+
+                    <!-- Botón: Página siguiente -->
+                    <button id="btn-pag-siguiente" onclick="cambiarPaginaPDF(1)"
+                        class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-xl transition-all flex items-center justify-center disabled:opacity-30"
+                        disabled>›</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- ════════════════════════════════════════════════════════════
@@ -499,6 +608,7 @@
 
         let musica      = []; // Catálogo de canciones: [{archivo, titulo, interprete, emoji, color}]
         let videosDatos = []; // Catálogo de videos:    [{archivo, titulo}]
+        let librosDatos = []; // Catálogo de libros:    [{archivo, titulo}]
 
         // ── Variables del Memorama ──────────────────────────────────────────
         const frutasMemorama = ['🍇','🍉','🍊','🍌','🍍','🍎','🍐','🍋','🍑','🍒','🍓','🥝'];
@@ -1019,6 +1129,242 @@
 
 
         /* ═══════════════════════════════════════════════════════════════════
+           § 8b. LECTOR DE LIBROS PDF
+           Usa PDF.js (Mozilla) para renderizar PDFs en un <canvas> del DOM.
+
+           FLUJO:
+             1. inicializarApp() carga libros.json y guarda librosDatos[]
+             2. crearListaLibros() genera los items del panel lateral con
+                miniatura de la portada (página 1) renderizada en canvas
+             3. abrirLibroPDF(libro) carga el PDF en PDF.js y muestra pág. 1
+             4. renderizarPaginaPDF(n) dibuja la página n en el canvas principal,
+                escalada para caber en el contenedor sin scroll
+             5. cambiarPaginaPDF(±1) e irAPaginaPDF(n) controlan la navegación
+
+           ESCALADO:
+             La página se escala para ocupar el máximo espacio disponible
+             sin desbordar el contenedor, respetando el aspect-ratio original.
+
+           SWIPE TÁCTIL:
+             Se detecta el swipe horizontal para pasar páginas en iPad.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        // ── Estado del lector PDF ───────────────────────────────────────────
+        let pdfDoc          = null;  // Objeto PDFDocumentProxy de PDF.js
+        let pdfPaginaActual = 1;     // Número de página actualmente visible (1-based)
+        let pdfRenderTask   = null;  // Tarea de renderizado activa (para cancelar si cambia la pág.)
+        let libroActivoEl   = null;  // Elemento DOM del libro seleccionado en el panel lateral
+
+        // Configurar PDF.js: deshabilitar el worker externo para máxima compatibilidad
+        // en entornos PWA/offline donde no se puede cargar un worker desde CDN
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        /**
+         * Genera los items del panel lateral con miniatura y título.
+         * Renderiza la portada (página 1) de cada PDF en un canvas pequeño.
+         */
+        const crearListaLibros = async () => {
+            const lista = document.getElementById('lista-libros');
+            lista.innerHTML = '';
+
+            for (const libro of librosDatos) {
+                // Contenedor del item
+                const item = document.createElement('button');
+                item.id        = `libro-item-${libro.archivo}`;
+                item.className = 'w-full flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 border-white/20 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-left';
+
+                // Canvas para la miniatura de portada
+                const miniCanvas = document.createElement('canvas');
+                miniCanvas.className = 'w-full rounded-lg shadow-md bg-white';
+                miniCanvas.style.aspectRatio = '3/4'; // Proporción libro por defecto
+
+                // Título del libro
+                const titulo = document.createElement('p');
+                titulo.className = 'text-white text-xs font-bold text-center leading-tight w-full px-1 line-clamp-2';
+                titulo.textContent = libro.titulo;
+
+                item.appendChild(miniCanvas);
+                item.appendChild(titulo);
+                item.addEventListener('click', () => abrirLibroPDF(libro, item));
+                lista.appendChild(item);
+
+                // Intentar renderizar la miniatura de la portada en segundo plano
+                try {
+                    const urlPDF = `libros/${libro.archivo}.pdf`;
+                    const docMini = await pdfjsLib.getDocument(urlPDF).promise;
+                    const pagina  = await docMini.getPage(1);
+                    const escala  = miniCanvas.offsetWidth > 0
+                        ? miniCanvas.offsetWidth / pagina.getViewport({ scale: 1 }).width
+                        : 0.3;
+                    const viewport = pagina.getViewport({ scale: Math.max(escala, 0.2) });
+                    miniCanvas.width  = viewport.width;
+                    miniCanvas.height = viewport.height;
+                    await pagina.render({
+                        canvasContext: miniCanvas.getContext('2d'),
+                        viewport
+                    }).promise;
+                } catch (e) {
+                    // Si falla la miniatura, mostrar ícono genérico de libro
+                    const ctx = miniCanvas.getContext('2d');
+                    miniCanvas.width  = 120;
+                    miniCanvas.height = 160;
+                    ctx.fillStyle = '#e8e0f0';
+                    ctx.fillRect(0, 0, 120, 160);
+                    ctx.font = '48px serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('📖', 60, 95);
+                }
+            }
+        };
+
+        /**
+         * Carga un PDF y muestra su primera página en el visor principal.
+         * Actualiza el estado visual del panel lateral (ítem activo).
+         * @param {Object}      libro  Objeto del catálogo {archivo, titulo}
+         * @param {HTMLElement} itemEl Elemento del panel lateral que fue tocado
+         */
+        const abrirLibroPDF = async (libro, itemEl) => {
+            // Actualizar resaltado del panel lateral
+            if (libroActivoEl) libroActivoEl.classList.remove('libro-activo');
+            libroActivoEl = itemEl;
+            itemEl.classList.add('libro-activo');
+
+            // Mostrar spinner y ocultar placeholder/canvas anterior
+            const placeholder = document.getElementById('visor-placeholder');
+            const spinner     = document.getElementById('visor-spinner');
+            const canvas      = document.getElementById('visor-canvas');
+            placeholder.classList.add('hidden');
+            spinner.classList.remove('hidden');
+            canvas.classList.add('hidden');
+
+            try {
+                const urlPDF = `libros/${libro.archivo}.pdf`;
+                pdfDoc          = await pdfjsLib.getDocument(urlPDF).promise;
+                pdfPaginaActual = 1;
+
+                // Actualizar total de páginas en la barra de navegación
+                document.getElementById('total-paginas').textContent = pdfDoc.numPages;
+                document.getElementById('input-pagina').max = pdfDoc.numPages;
+
+                // Habilitar/deshabilitar botones según número de páginas
+                document.getElementById('btn-pag-anterior').disabled = true;
+                document.getElementById('btn-pag-siguiente').disabled = pdfDoc.numPages <= 1;
+
+                await renderizarPaginaPDF(1);
+            } catch (e) {
+                console.error('Error al abrir PDF:', e);
+                spinner.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                document.getElementById('visor-placeholder').innerHTML =
+                    '<span class="text-4xl">⚠️</span><p class="text-sm font-semibold">No se pudo cargar el libro</p>';
+            }
+        };
+
+        /**
+         * Renderiza una página específica del PDF activo en el canvas del visor.
+         * Escala la página para ocupar el máximo espacio disponible del contenedor.
+         * @param {number} numeroPagina Número de página a renderizar (1-based)
+         */
+        const renderizarPaginaPDF = async (numeroPagina) => {
+            if (!pdfDoc) return;
+
+            const spinner = document.getElementById('visor-spinner');
+            const canvas  = document.getElementById('visor-canvas');
+            spinner.classList.remove('hidden');
+            canvas.classList.add('hidden');
+
+            // Cancelar renderizado anterior si aún está en progreso
+            if (pdfRenderTask) {
+                try { pdfRenderTask.cancel(); } catch (e) {}
+                pdfRenderTask = null;
+            }
+
+            try {
+                const pagina   = await pdfDoc.getPage(numeroPagina);
+                const viewport = pagina.getViewport({ scale: 1 });
+
+                // Calcular escala para que la página llene el contenedor sin desbordarlo
+                const contenedor = document.getElementById('visor-pdf-contenedor');
+                const maxW = contenedor.clientWidth  - 16; // margen interior
+                const maxH = contenedor.clientHeight - 16;
+                const escala = Math.min(maxW / viewport.width, maxH / viewport.height);
+                const vpEscalado = pagina.getViewport({ scale: escala });
+
+                canvas.width  = vpEscalado.width;
+                canvas.height = vpEscalado.height;
+
+                // Renderizar la página en el canvas
+                pdfRenderTask = pagina.render({
+                    canvasContext: canvas.getContext('2d'),
+                    viewport:      vpEscalado
+                });
+                await pdfRenderTask.promise;
+
+                // Mostrar canvas y ocultar spinner
+                spinner.classList.add('hidden');
+                canvas.classList.remove('hidden');
+
+                // Actualizar estado de la barra de navegación
+                pdfPaginaActual = numeroPagina;
+                document.getElementById('input-pagina').value = numeroPagina;
+                document.getElementById('btn-pag-anterior').disabled = numeroPagina <= 1;
+                document.getElementById('btn-pag-siguiente').disabled = numeroPagina >= pdfDoc.numPages;
+
+            } catch (e) {
+                if (e.name !== 'RenderingCancelledException') {
+                    console.error('Error al renderizar página:', e);
+                    spinner.classList.add('hidden');
+                }
+            }
+        };
+
+        /**
+         * Navega hacia adelante (+1) o hacia atrás (-1) en el PDF activo.
+         * @param {number} delta +1 para siguiente, -1 para anterior
+         */
+        const cambiarPaginaPDF = (delta) => {
+            if (!pdfDoc) return;
+            const nueva = pdfPaginaActual + delta;
+            if (nueva >= 1 && nueva <= pdfDoc.numPages) {
+                renderizarPaginaPDF(nueva);
+            }
+        };
+
+        /**
+         * Salta a una página específica ingresada en el input de la barra.
+         * @param {string|number} valor Número de página objetivo
+         */
+        const irAPaginaPDF = (valor) => {
+            if (!pdfDoc) return;
+            const n = Math.max(1, Math.min(parseInt(valor) || 1, pdfDoc.numPages));
+            renderizarPaginaPDF(n);
+        };
+
+        // ── Swipe táctil para pasar páginas en iPad ─────────────────────────
+        // Se detecta el inicio y fin del toque para calcular la dirección del swipe
+        let swipeTouchStartX = 0;
+        document.getElementById('visor-pdf-contenedor').addEventListener('touchstart', (e) => {
+            swipeTouchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        document.getElementById('visor-pdf-contenedor').addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].screenX - swipeTouchStartX;
+            if (Math.abs(dx) > 50) {         // Umbral mínimo de 50px para contar como swipe
+                cambiarPaginaPDF(dx < 0 ? 1 : -1); // Swipe izquierda → siguiente, derecha → anterior
+            }
+        }, { passive: true });
+
+        // Recalcular la escala al rotar el iPad (el canvas necesita redibujarse)
+        window.addEventListener('resize', () => {
+            if (pdfDoc && document.getElementById('seccion-libros').classList.contains('flex')) {
+                renderizarPaginaPDF(pdfPaginaActual);
+            }
+        });
+
+
+        /* ═══════════════════════════════════════════════════════════════════
            § 9. NAVEGACIÓN ENTRE SECCIONES
            Muestra la sección solicitada y oculta las demás.
            Actualiza el estilo visual de las pestañas activa/inactiva.
@@ -1032,7 +1378,8 @@
             const seccionesConfig = [
                 { id: 'musica',   display: 'block' }, // Música usa block (grid nativo)
                 { id: 'memorama', display: 'flex'  }, // Memorama usa flex (columna)
-                { id: 'videos',   display: 'flex'  }  // Videos usa flex (columna)
+                { id: 'videos',   display: 'flex'  }, // Videos usa flex (columna)
+                { id: 'libros',   display: 'flex'  }  // Libros usa flex (fila: panel + visor)
             ];
 
             seccionesConfig.forEach(sec => {
@@ -1117,20 +1464,22 @@
 
         const inicializarApp = async () => {
             try {
-                // Cargar ambos JSONs simultáneamente para reducir el tiempo de espera
-                const [resAudios, resVids] = await Promise.all([
+                // Cargar los tres catálogos simultáneamente
+                const [resAudios, resVids, resLibros] = await Promise.all([
                     fetch('./audios.json'),
-                    fetch('./vids.json')
+                    fetch('./vids.json'),
+                    fetch('./libros.json')
                 ]);
 
                 if (!resAudios.ok) throw new Error(`audios.json respondió con ${resAudios.status}`);
                 if (!resVids.ok)   throw new Error(`vids.json respondió con ${resVids.status}`);
+                // libros.json es opcional — si falla, la sección queda vacía sin crashear
+                if (resLibros.ok) librosDatos = await resLibros.json();
 
                 musica      = await resAudios.json();
                 videosDatos = await resVids.json();
 
                 // Registrar las URLs de los archivos de media para la caché offline
-                // (se hace aquí porque las URLs dependen de los datos de los JSONs)
                 musica.forEach(t =>
                     urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`))
                 );
@@ -1138,16 +1487,19 @@
                     urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
                     urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
                 });
+                librosDatos.forEach(t =>
+                    urlsParaCachear.push(makeAbsolute(`libros/${t.archivo}.pdf`))
+                );
 
             } catch (err) {
                 console.error('⚠️ No se pudo cargar el catálogo de contenido:', err);
-                // La app continúa con arrays vacíos; las secciones quedan en blanco
             }
 
-            // Renderizar la interfaz con los datos disponibles (completos o vacíos)
+            // Renderizar la interfaz con los datos disponibles
             crearBotones(musica, contenedorMusica, 'musica');
             iniciarMemorama();
             crearBotonesVideos();
+            crearListaLibros(); // Panel lateral de libros (asíncrono, genera miniaturas)
         };
 
 
@@ -1196,8 +1548,9 @@
             makeAbsolute('./'),
             makeAbsolute('index.html'),
             makeAbsolute('audios.json'),
-            makeAbsolute('vids.json')
-            // Los mp3, mp4 y webp se agregan dinámicamente en inicializarApp()
+            makeAbsolute('vids.json'),
+            makeAbsolute('libros.json')
+            // Los mp3, mp4, webp y pdf se agregan dinámicamente en inicializarApp()
         ];
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
@@ -1213,7 +1566,7 @@
            detectar versiones antiguas y eliminarlas automáticamente.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v25'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v26'; // ← Incrementar en cada deploy
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
