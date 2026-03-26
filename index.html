@@ -316,7 +316,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v26</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v27</span>
             </div>
         </div>
 
@@ -730,7 +730,48 @@
         const indicadorCargaVideo   = document.getElementById('indicador-carga-video');
 
         let temporizadorSimulador = null; // Timeout que simula el fin de audio si no hay archivo real
-        let cancionActual         = null; // Referencia al <audio> activo (para pausarlo antes del siguiente)
+
+        /*
+          SISTEMA BGM / SFX
+          ─────────────────
+          BGM (Background Music): música y video. Solo uno activo a la vez.
+            → Al iniciar un nuevo BGM se detiene el anterior automáticamente.
+          SFX (Sound Effects): sonidos sintéticos del Memorama (flip, éxito, error).
+            → Se reproducen sobre el BGM sin interrumpirlo.
+
+          bgmActual: referencia al BGM en reproducción.
+            { tipo: 'audio', el: <HTMLAudioElement>, btn: <article> }
+            { tipo: 'video' }   ← el video usa el elemento global reproductorVideo
+            null                ← sin BGM activo
+        */
+        let bgmActual = null;
+
+        /**
+         * Detiene el BGM activo (música o video) sin afectar los SFX.
+         * Limpia la animación del botón correspondiente.
+         */
+        const detenerBGM = () => {
+            if (!bgmActual) return;
+
+            if (bgmActual.tipo === 'audio') {
+                bgmActual.el.pause();
+                bgmActual.el.currentTime = 0;
+                if (bgmActual.btn) bgmActual.btn.classList.remove('reproduciendo');
+            } else if (bgmActual.tipo === 'video') {
+                reproductorVideo.pause();
+                if (reproductorVideo._blobUrl) {
+                    URL.revokeObjectURL(reproductorVideo._blobUrl);
+                    reproductorVideo._blobUrl = null;
+                }
+                reproductorVideo.removeAttribute('src');
+                reproductorVideo.load();
+                indicadorCargaVideo.classList.add('hidden');
+                document.querySelectorAll('#lista-videos article').forEach(el => el.classList.remove('reproduciendo'));
+            }
+
+            bgmActual = null;
+            clearTimeout(temporizadorSimulador);
+        };
 
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -738,65 +779,55 @@
            ═══════════════════════════════════════════════════════════════════ */
 
         /**
-         * Detiene toda reproducción activa: audio, video y animaciones.
-         * Se llama al presionar ⏹️ y al comenzar a jugar el Memorama.
+         * Detiene toda reproducción activa: BGM y animaciones de botones.
+         * Los SFX (Web Audio API) no se pueden detener fácilmente y son tan
+         * cortos que no es necesario hacerlo.
+         * Se llama al presionar ⏹️.
          */
         const pararTodo = () => {
-            // Pausar todos los <audio> en el DOM (uno por canción)
-            document.querySelectorAll('audio').forEach(el => { el.pause(); el.currentTime = 0; });
-
-            // Pausar video y liberar el blob URL para evitar fugas de memoria
-            reproductorVideo.pause();
-            if (reproductorVideo._blobUrl) {
-                URL.revokeObjectURL(reproductorVideo._blobUrl);
-                reproductorVideo._blobUrl = null;
-            }
-            reproductorVideo.removeAttribute('src'); // Fuerza la reaparición del poster
-            reproductorVideo.load();
-            indicadorCargaVideo.classList.add('hidden');
-
-            // Quitar la animación de pulso de todos los botones
+            detenerBGM();
+            // Quitar animación de pulso de todos los botones de música/video
             document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
-            cancionActual = null;
-            clearTimeout(temporizadorSimulador);
         };
 
         /**
-         * Reproduce una pista de música.
-         * Pausa la pista anterior si había una activa y no es la misma.
-         * Si no hay archivo de audio real (ej. en desarrollo), simula la duración.
+         * Reproduce una pista de música (BGM).
+         * Detiene el BGM anterior (música o video) antes de iniciar el nuevo.
+         * El video en curso se detiene porque música y video son ambos BGM.
          *
          * @param {Object} track - Objeto de la canción {archivo, titulo, emoji, color, ...}
-         * @param {string} tipo  - 'musica' (único tipo actualmente soportado)
+         * @param {string} tipo  - 'musica'
          */
         const reproducir = (track, tipo) => {
             const audio    = document.getElementById(`audio-${track.archivo}`);
             const articulo = document.getElementById(`btn-${track.archivo}`);
             if (!audio || !articulo) return;
 
-            if (tipo === 'musica') {
-                // Detener la canción anterior si es diferente a la seleccionada
-                if (cancionActual && cancionActual !== audio) {
-                    cancionActual.pause();
-                    cancionActual.currentTime = 0;
-                }
-                reproductorVideo.pause(); // Silenciar el video si había uno activo
-                document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
-                cancionActual = audio;
-            } else {
-                articulo.classList.remove('reproduciendo');
-            }
+            // Detener el BGM anterior (puede ser otra canción o un video)
+            detenerBGM();
+
+            // Quitar el resaltado de todos los botones de música
+            document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
+
+            // Registrar el nuevo BGM
+            bgmActual = { tipo: 'audio', el: audio, btn: articulo };
 
             articulo.classList.add('reproduciendo');
             audio.currentTime = 0;
 
             audio.play().catch(() => {
-                // Fallback para entorno sin archivos reales: simular la duración de la canción
-                clearTimeout(temporizadorSimulador);
+                // Fallback: simular duración si no hay archivo real (entorno de desarrollo)
                 temporizadorSimulador = setTimeout(() => {
                     articulo.classList.remove('reproduciendo');
-                }, tipo === 'musica' ? 4000 : 1500);
+                    bgmActual = null;
+                }, 4000);
             });
+
+            // Al terminar la canción, limpiar el estado BGM
+            audio.onended = () => {
+                articulo.classList.remove('reproduciendo');
+                if (bgmActual && bgmActual.el === audio) bgmActual = null;
+            };
         };
 
 
@@ -818,18 +849,23 @@
            ═══════════════════════════════════════════════════════════════════ */
 
         /**
-         * Reproduce un video, usando la caché local si está disponible (offline).
+         * Reproduce un video (BGM). Detiene el BGM anterior antes de iniciar.
+         * En modo offline lee el MP4 desde la Cache API como blob URL local.
          * @param {Object} track - Objeto del video {archivo, titulo}
          */
         const reproducirVideo = async (track) => {
             const articulo = document.getElementById(`btn-vid-${track.archivo}`);
             if (!articulo) return;
 
-            // Detener música activa antes de reproducir video
-            if (cancionActual) { cancionActual.pause(); cancionActual.currentTime = 0; }
+            // Detener el BGM anterior (canción u otro video)
+            detenerBGM();
             document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
+
             articulo.classList.add('reproduciendo');
             indicadorCargaVideo.classList.remove('hidden');
+
+            // Registrar el video como BGM activo
+            bgmActual = { tipo: 'video' };
 
             const rutaVideo   = `vid/${track.archivo}.mp4`;
             const urlAbsoluta = makeAbsolute(rutaVideo);
@@ -874,7 +910,7 @@
                 }, 5000);
             });
 
-            // Al terminar, regresar al estado inicial (mostrar poster negro)
+            // Al terminar, regresar al estado inicial (mostrar poster negro) y limpiar BGM
             reproductorVideo.onended = () => {
                 articulo.classList.remove('reproduciendo');
                 if (reproductorVideo._blobUrl) {
@@ -883,6 +919,7 @@
                 }
                 reproductorVideo.removeAttribute('src');
                 reproductorVideo.load();
+                bgmActual = null;
             };
         };
 
@@ -1034,8 +1071,7 @@
         const voltearCarta = (cardEl, index) => {
             if (memoramaBloqueado || cartasJuego[index].volteada || cartasJuego[index].encontrada) return;
 
-            pararTodo();  // Detener música/video al empezar a jugar
-            initAudio();  // Activar el motor de audio de iOS (requiere gesto del usuario)
+            initAudio(); // Activar el motor de audio de iOS (requiere gesto del usuario)
 
             // Marcar como volteada y aplicar el flip 3D CSS
             cartasJuego[index].volteada = true;
@@ -1566,7 +1602,7 @@
            detectar versiones antiguas y eliminarlas automáticamente.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v26'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v27'; // ← Incrementar en cada deploy
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
