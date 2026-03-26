@@ -150,18 +150,42 @@
     -->
     <style>
         /* ── COMPORTAMIENTO NATIVO ─────────────────────────────────────────
-           Elimina selección de texto, el menú callout de iOS al mantener
-           presionado, y el rebote de scroll para que la app se sienta nativa.
-           env() aplica el relleno correcto en áreas con notch o esquinas. */
+           Previene el rubber-band scroll (efecto resorte) en modo standalone
+           de iPadOS. La técnica más efectiva es fijar html+body a position:fixed
+           con overflow:hidden, lo que le quita al sistema operativo la superficie
+           que "jala" para producir el rebote.
+           Los contenedores hijos que necesiten scroll usan overflow-y:auto
+           con -webkit-overflow-scrolling:touch para scroll nativo suave. */
+
+        html {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
-            overscroll-behavior-y: none;
+            overscroll-behavior: none;
+            /* Relleno para el notch / esquinas redondeadas del iPad */
             padding-top:    env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
             padding-left:   env(safe-area-inset-left);
             padding-right:  env(safe-area-inset-right);
+        }
+
+        /* Contenedores con scroll interno legítimo:
+           -webkit-overflow-scrolling: touch activa el scroll con inercia nativo
+           de iOS, que sí respeta los límites sin producir rubber-band. */
+        .scroll-nativo {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
 
         /* Ocultar scrollbars visualmente manteniendo el scroll funcional */
@@ -316,7 +340,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v27</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v28</span>
             </div>
         </div>
 
@@ -364,7 +388,7 @@
              Columnas: 3 en móvil, 4 en tablet, 5 en desktop, 6 en xl.
              overflow-y-auto permite scroll cuando hay muchas canciones.
              Los botones (article + audio) se inyectan por crearBotones(). -->
-        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block">
+        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block scroll-nativo">
             <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
                 <!-- Botones de canciones inyectados dinámicamente por crearBotones() -->
             </div>
@@ -405,7 +429,7 @@
                 <!-- Pila de pares encontrados
                      Se llena de izquierda a derecha con animación pop-in.
                      overflow-x-auto permite scroll si hay muchos pares. -->
-                <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center px-2 py-1.5 md:px-3 md:py-2 gap-2 shadow-inner overflow-x-auto shrink-0" style="min-height:3.5rem">
+                <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center px-2 py-1.5 md:px-3 md:py-2 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo" style="min-height:3.5rem">
                     <span class="text-white/70 font-bold text-xs md:text-sm uppercase tracking-widest pl-1 pr-2 shrink-0">Pares</span>
                     <div id="stack-parejas" class="flex flex-row gap-1.5 md:gap-3 w-full justify-start items-center">
                         <!-- Frutas encontradas inyectadas por verificarPareja() -->
@@ -460,7 +484,7 @@
                  scroll horizontal con snap entre items.
                  Los botones se generan dinámicamente por crearBotonesVideos(). -->
             <div class="flex-none h-20 md:h-28 lg:h-32 w-full bg-black/20 backdrop-blur-md border-2 border-white/10 rounded-2xl shadow-inner p-2 md:p-3">
-                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-3 items-center snap-x snap-mandatory scroll-smooth h-full w-full">
+                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-3 items-center snap-x snap-mandatory scroll-smooth h-full w-full scroll-nativo">
                     <!-- Miniaturas inyectadas por crearBotonesVideos() -->
                 </div>
             </div>
@@ -480,7 +504,7 @@
             <!-- PANEL LATERAL — Lista de libros disponibles
                  Ancho fijo (w-36/w-44), scroll vertical si hay muchos títulos.
                  Cada item muestra la miniatura de la portada (pág. 1) y el título. -->
-            <div class="flex-none w-36 md:w-44 flex flex-col gap-2 overflow-y-auto pr-1">
+            <div class="flex-none w-36 md:w-44 flex flex-col gap-2 overflow-y-auto pr-1 scroll-nativo">
                 <!-- Encabezado del panel -->
                 <p class="text-white/60 text-xs font-bold uppercase tracking-widest text-center shrink-0 pt-1">Biblioteca</p>
                 <!-- Lista de libros inyectada por crearListaLibros() -->
@@ -1602,7 +1626,7 @@
            detectar versiones antiguas y eliminarlas automáticamente.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v27'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v28'; // ← Incrementar en cada deploy
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
@@ -1907,6 +1931,66 @@
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') activarWakeLock();
         });
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 16. BLOQUEO DE RUBBER-BAND SCROLL (iPadOS standalone)
+
+           En modo "Agregar a Inicio", Safari en iPadOS permite que el
+           viewport completo rebote verticalmente aunque el body tenga
+           overflow:hidden. Esto ocurre porque el motor WebKit aplica el
+           rubber-band al "documento" antes de que los estilos CSS puedan
+           bloquearlo.
+
+           SOLUCIÓN en tres capas (implementadas en conjunto):
+             1. CSS: html+body con position:fixed + overflow:hidden (arriba)
+             2. CSS: clase .scroll-nativo en contenedores con scroll legítimo
+             3. JS:  touchmove bloqueado a nivel document, con excepción para
+                     elementos cuyo scroll aún no ha llegado al extremo.
+
+           Esta función detecta si el gesto táctil ocurre dentro de un
+           contenedor que tiene scroll disponible en esa dirección, y solo
+           en ese caso deja pasar el evento. En cualquier otro caso lo
+           cancela antes de que WebKit pueda aplicar el rubber-band.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Recorre los ancestros del elemento tocado buscando uno que tenga
+         * scroll disponible en la dirección del gesto.
+         * @param {HTMLElement} el Elemento donde comenzó el toque
+         * @param {number}      dy Delta Y: positivo = gesto hacia arriba (scroll down)
+         * @returns {boolean} true si algún ancestro puede absorber el scroll
+         */
+        const puedeScrollear = (el, dy) => {
+            while (el && el !== document.body) {
+                const overflow = window.getComputedStyle(el).overflowY;
+                if (overflow === 'auto' || overflow === 'scroll') {
+                    const atTop    = el.scrollTop <= 0;
+                    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+                    if (!(atTop && dy > 0) && !(atBottom && dy < 0)) return true;
+                }
+                el = el.parentElement;
+            }
+            return false;
+        };
+
+        let _touchStartY = 0;
+
+        // Registrar posición Y al inicio de cada gesto táctil
+        document.addEventListener('touchstart', (e) => {
+            _touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        // Bloquear touchmove cuando no hay scroll legítimo en esa dirección
+        // passive:false es obligatorio para poder llamar a preventDefault()
+        document.addEventListener('touchmove', (e) => {
+            // Permitir siempre el scroll horizontal (para carruseles, etc.)
+            if (e.touches.length > 1) return; // Gestos de pellizco: no bloquear
+            const dy = _touchStartY - e.touches[0].clientY;
+            if (!puedeScrollear(e.target, dy)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
     </script>
 </body>
