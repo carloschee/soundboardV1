@@ -161,27 +161,23 @@
            todo incluidas las franjas de safe-area del iPad.
            body llena el área útil (descontando safe-area) con height:100%. */
         html {
-            min-height: 100vh;
-            min-height: 100dvh;
-            height: 100%;
             width: 100%;
+            height: 100%;
             overflow: hidden;
-            /* Gradiente en html cubre TODO el viewport incluyendo
-               las franjas del sistema operativo en modo standalone */
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-            background-attachment: fixed;
+            /* Fondo blanco jamás debe verse — si se ve, algo falla en el body */
+            background: #ec4899;
         }
 
         body {
             width: 100%;
-            height: 100%;
+            /* Altura explícita con dvh para que llene el viewport real del iPad */
+            height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             box-sizing: border-box;
-            /* Solo el inset superior e izquierdo/derecho: evitan que el
-               contenido quede bajo la cámara o los bordes curvos.
-               El inset inferior NO se aplica aquí porque genera la franja
-               blanca — el área del home indicator se deja cubierta por
-               el gradiente del html sin padding. */
+            /* Gradiente único en el body con tamaño fijo para que no se corte */
+            background: linear-gradient(to bottom right, #6366f1, #a855f7, #ec4899);
+            background-size: 100% 100%;
             padding-top:   env(safe-area-inset-top);
             padding-left:  env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
@@ -351,7 +347,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v34</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v37</span>
             </div>
         </div>
 
@@ -513,6 +509,1515 @@
         <div id="seccion-libros" class="flex-1 min-h-0 hidden flex-row gap-3 pb-1">
 
             <!-- PANEL LATERAL — Lista de libros disponibles
+                 Ancho fijo (w-36/w-44), scroll vertical si hay muchos títulos.
+                 Cada item muestra la miniatura de la portada (pág. 1) y el título. -->
+            <div class="flex-none w-36 md:w-44 flex flex-col gap-2 overflow-y-auto min-h-0 pr-1 scroll-nativo">
+                <!-- Encabezado del panel -->
+                <p class="text-white/60 text-xs font-bold uppercase tracking-widest text-center shrink-0 pt-1">Biblioteca</p>
+                <!-- Lista de libros inyectada por crearListaLibros() -->
+                <div id="lista-libros" class="flex flex-col gap-2">
+                    <!-- Items inyectados dinámicamente -->
+                </div>
+            </div>
+
+            <!-- VISOR PRINCIPAL — Renderizado del PDF activo
+                 Ocupa todo el espacio restante (flex-1).
+                 Estructura vertical:
+                   1. Área de canvas (flex-1, scroll si la página es más alta)
+                   2. Barra de controles de navegación (fija, shrink-0) -->
+            <div class="flex-1 min-w-0 flex flex-col gap-2">
+
+                <!-- Área de canvas: donde PDF.js dibuja cada página -->
+                <div id="visor-pdf-contenedor"
+                    class="flex-1 min-h-0 rounded-2xl overflow-hidden bg-white/5 border-2 border-white/10 shadow-inner flex items-center justify-center relative">
+
+                    <!-- Estado inicial: instrucción cuando no hay libro seleccionado -->
+                    <div id="visor-placeholder" class="flex flex-col items-center gap-3 text-white/40 pointer-events-none">
+                        <span class="text-6xl">📖</span>
+                        <p class="text-base font-semibold">Selecciona un libro</p>
+                    </div>
+
+                    <!-- Spinner de carga mientras PDF.js procesa la página -->
+                    <div id="visor-spinner" class="hidden absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-2xl">
+                        <div class="bg-black/70 text-white px-5 py-3 rounded-xl flex items-center gap-3">
+                            <svg class="animate-spin h-6 w-6 text-pink-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="font-bold tracking-wide">Cargando...</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas donde PDF.js renderiza la página activa.
+                         Se redimensiona automáticamente para caber en el contenedor. -->
+                    <canvas id="visor-canvas" class="hidden max-w-full max-h-full object-contain rounded-xl shadow-2xl"></canvas>
+                </div>
+
+                <!-- Barra de navegación de páginas (siempre visible) -->
+                <div class="flex-none flex items-center justify-between gap-3 bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-2 shrink-0">
+
+                    <!-- Botón: Página anterior -->
+                    <button id="btn-pag-anterior" onclick="cambiarPaginaPDF(-1)"
+                        class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-xl transition-all flex items-center justify-center disabled:opacity-30"
+                        disabled>‹</button>
+
+                    <!-- Indicador de página actual / total -->
+                    <div class="flex items-center gap-2 text-white">
+                        <span class="text-sm font-semibold opacity-60">Página</span>
+                        <!-- Input editable: permite ir a una página específica escribiendo el número -->
+                        <input id="input-pagina" type="number" min="1" value="1"
+                            onchange="irAPaginaPDF(this.value)"
+                            class="w-12 md:w-14 text-center bg-white/20 border border-white/30 rounded-lg px-1 py-0.5 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
+                        <span class="text-sm font-semibold opacity-60">de</span>
+                        <span id="total-paginas" class="font-bold text-sm">—</span>
+                    </div>
+
+                    <!-- Botón: Página siguiente -->
+                    <button id="btn-pag-siguiente" onclick="cambiarPaginaPDF(1)"
+                        class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-xl transition-all flex items-center justify-center disabled:opacity-30"
+                        disabled>›</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ════════════════════════════════════════════════════════════
+         MODAL — Progreso de descarga offline (Modo Avión)
+         Se muestra al presionar ☁️. Cubre toda la pantalla con
+         un overlay oscuro. Permanece hasta que el usuario lo cierra
+         manualmente tras completar la descarga.
+         ════════════════════════════════════════════════════════════ -->
+    <div id="modal-descarga" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
+        <div class="bg-white text-black p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl flex flex-col items-center text-center">
+            <span class="text-6xl mb-4">✈️</span>
+            <h2 class="text-2xl font-bold mb-2 text-purple-600">Preparando Modo Avión</h2>
+            <p class="text-gray-600 mb-6 font-medium leading-tight">Guardando canciones y videos en el iPad. Por favor, no cierres esta pantalla.</p>
+            <!-- Barra de progreso: se anima mientras se descargan los archivos -->
+            <div class="w-full bg-gray-200 rounded-full h-6 mb-2 overflow-hidden border-2 border-gray-300 shadow-inner">
+                <div id="barra-progreso" class="bg-gradient-to-r from-blue-400 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p id="texto-progreso" class="font-bold text-lg mb-6 text-gray-800">0 / 0 archivos</p>
+            <!-- Aparece solo cuando todos los archivos están guardados -->
+            <button id="btn-cerrar-descarga"
+                onclick="document.getElementById('modal-descarga').classList.replace('flex', 'hidden')"
+                class="hidden bg-purple-500 hover:bg-purple-400 text-white font-bold py-3 px-8 rounded-2xl shadow-lg border-2 border-purple-400 active:scale-95 transition-all text-xl">
+                ¡Listo para jugar!
+            </button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         JAVASCRIPT PRINCIPAL
+         Todo el comportamiento de la app vive en este bloque.
+
+         ÍNDICE DE SECCIONES:
+           §  1. Estado global         — Variables y datos compartidos
+           §  2. Audio sintético       — Tonos para el Memorama
+           §  3. Confeti               — Efecto de celebración
+           §  4. Referencias DOM       — Caché de elementos frecuentes
+           §  5. Reproducción música   — Control de canciones MP3
+           §  6. Reproducción video    — Control de videos con offline
+           §  7. Generación interfaz   — Creación de botones y cartas
+           §  8. Lógica Memorama       — Motor del juego de pares
+           §  9. Navegación secciones  — Cambio entre módulos
+           § 10. Layout dinámico       — Cálculo de tamaño de cartas
+           § 11. Inicialización        — Carga de JSONs y arranque
+           § 12. Sistema PWA           — Manifest y URLs de caché
+           § 13. Caché offline         — Borrar caché y descarga manual
+           § 14. Service Worker        — Interceptor de peticiones de red
+           § 15. Wake Lock             — Evitar que la pantalla se apague
+         ════════════════════════════════════════════════════════════ -->
+    <script>
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 1. ESTADO GLOBAL
+           Variables compartidas por todas las funciones de la app.
+           Los catálogos de contenido empiezan vacíos y se llenan de forma
+           asíncrona desde los archivos JSON externos en inicializarApp().
+           ═══════════════════════════════════════════════════════════════════ */
+
+        let musica      = []; // Catálogo de canciones: [{archivo, titulo, interprete, emoji, color}]
+        let videosDatos = []; // Catálogo de videos:    [{archivo, titulo}]
+        let librosDatos = []; // Catálogo de libros:    [{archivo, titulo}]
+
+        // ── Variables del Memorama ──────────────────────────────────────────
+        const frutasMemorama = ['🍇','🍉','🍊','🍌','🍍','🍎','🍐','🍋','🍑','🍒','🍓','🥝'];
+        // 12 frutas únicas → 24 cartas (12 pares) → 3 filas × 8 columnas
+
+        let cartasJuego       = []; // [{id, fruta, volteada, encontrada}] — estado de cada carta
+        let cartasVolteadas   = []; // Acumulador de la jugada actual (máx. 2 cartas)
+        let parejasEncontradas = 0;
+        let memoramaBloqueado  = false; // true mientras se evalúa un par (evita clics extra)
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 2. SISTEMA DE AUDIO SINTÉTICO (Web Audio API)
+           Genera tonos en tiempo real sin necesitar archivos de audio.
+           Usado exclusivamente por el Memorama para los efectos de sonido.
+           La música de las canciones se reproduce con <audio> estándar (§ 5).
+           ═══════════════════════════════════════════════════════════════════ */
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx; // Instancia única — se crea al primer uso (requisito de iOS)
+
+        /**
+         * Inicializa o reanuda el AudioContext.
+         * iOS suspende el contexto de audio hasta la primera interacción del usuario.
+         * Se debe llamar desde un manejador de evento táctil/click.
+         */
+        const initAudio = () => {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        };
+
+        /**
+         * Genera y reproduce un tono puro con fundido de salida.
+         * @param {number} freq     Frecuencia en Hz (ej: 440 = La4)
+         * @param {string} type     Forma de onda: 'sine'|'triangle'|'sawtooth'|'square'
+         * @param {number} duration Duración total en segundos
+         * @param {number} vol      Volumen inicial 0.0–1.0 (por defecto 0.1)
+         */
+        const playTone = (freq, type, duration, vol = 0.1) => {
+            initAudio();
+            const osc  = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            // Fundido exponencial para evitar el clic al cortar el sonido bruscamente
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        };
+
+        // Sonidos del Memorama — cada uno tiene propósito y retroalimentación distintos
+        const sonidoFlip    = () => playTone(300, 'triangle', 0.05, 0.02);   // Al voltear la 2ª carta
+        const sonidoExito   = () => {                                          // Par correcto (Do + Mi)
+            playTone(523.25, 'sine', 0.1, 0.1);
+            setTimeout(() => playTone(659.25, 'sine', 0.2, 0.1), 100);
+        };
+        const sonidoError   = () => {                                          // Par incorrecto (bajada)
+            playTone(200, 'sawtooth', 0.1, 0.05);
+            setTimeout(() => playTone(150, 'sawtooth', 0.2, 0.05), 100);
+        };
+        const sonidoVictoria = () => {                                         // Fanfarria ascendente
+            [523.25, 659.25, 783.99, 1046.50].forEach((f, i) =>
+                setTimeout(() => playTone(f, 'sine', 0.3, 0.1), i * 150)
+            );
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 3. EFECTO DE CONFETI
+           Crea 80 partículas cuadradas de colores que caen desde arriba
+           usando la Web Animations API. Cada partícula se elimina del DOM
+           al terminar para no acumular nodos innecesarios en la memoria.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        const lanzarConfeti = () => {
+            const colores = ['#fce18a','#ff726d','#b48def','#f4306d','#42c062','#3b82f6','#fbbf24'];
+            for (let i = 0; i < 80; i++) {
+                const confeti = document.createElement('div');
+                confeti.className = 'absolute w-3 h-3 md:w-4 md:h-4 rounded-sm z-50 pointer-events-none';
+                confeti.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                confeti.style.left = Math.random() * 100 + 'vw'; // Posición X aleatoria
+                confeti.style.top  = '-20px';                     // Fuera de la pantalla arriba
+                document.body.appendChild(confeti);
+
+                const duracion = Math.random() * 3 + 2; // 2–5 segundos de caída
+                const delay    = Math.random() * 0.2;   // Desfase 0–0.2s para efecto escalonado
+
+                confeti.animate([
+                    { transform: 'translate3d(0,0,0) rotate(0deg)',                                                          opacity: 1 },
+                    { transform: `translate3d(${Math.random()*300 - 150}px, 100vh, 0) rotate(${Math.random()*720}deg)`,     opacity: 0 }
+                ], {
+                    duration: duracion * 1000,
+                    delay:    delay * 1000,
+                    easing:   'cubic-bezier(.37,0,.63,1)',
+                    fill:     'forwards'
+                });
+
+                // Limpiar el nodo del DOM cuando la animación termina
+                setTimeout(() => confeti.remove(), (duracion + delay) * 1000);
+            }
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 4. REFERENCIAS AL DOM
+           Se cachean los elementos que se consultan frecuentemente para
+           evitar llamadas repetidas a getElementById/querySelector en el
+           ciclo de vida de la app. Solo para elementos que nunca cambian.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        const contenedorMusica      = document.getElementById('grid-musica');
+        const contenedorVideos      = document.getElementById('seccion-videos');
+        const contenedorReproductor = document.getElementById('contenedor-reproductor');
+        const listaVideosUI         = document.getElementById('lista-videos');
+        const reproductorVideo      = document.getElementById('reproductor-video');
+        const indicadorCargaVideo   = document.getElementById('indicador-carga-video');
+
+        let temporizadorSimulador = null; // Timeout que simula el fin de audio si no hay archivo real
+
+        /*
+          SISTEMA BGM / SFX
+          ─────────────────
+          BGM (Background Music): música y video. Solo uno activo a la vez.
+            → Al iniciar un nuevo BGM se detiene el anterior automáticamente.
+          SFX (Sound Effects): sonidos sintéticos del Memorama (flip, éxito, error).
+            → Se reproducen sobre el BGM sin interrumpirlo.
+
+          bgmActual: referencia al BGM en reproducción.
+            { tipo: 'audio', el: <HTMLAudioElement>, btn: <article> }
+            { tipo: 'video' }   ← el video usa el elemento global reproductorVideo
+            null                ← sin BGM activo
+        */
+        let bgmActual = null;
+
+        /**
+         * Detiene el BGM activo (música o video) sin afectar los SFX.
+         * Limpia la animación del botón correspondiente.
+         */
+        const detenerBGM = () => {
+            if (!bgmActual) return;
+
+            if (bgmActual.tipo === 'audio') {
+                bgmActual.el.pause();
+                bgmActual.el.currentTime = 0;
+                if (bgmActual.btn) bgmActual.btn.classList.remove('reproduciendo');
+            } else if (bgmActual.tipo === 'video') {
+                reproductorVideo.pause();
+                if (reproductorVideo._blobUrl) {
+                    URL.revokeObjectURL(reproductorVideo._blobUrl);
+                    reproductorVideo._blobUrl = null;
+                }
+                reproductorVideo.removeAttribute('src');
+                reproductorVideo.load();
+                indicadorCargaVideo.classList.add('hidden');
+                document.querySelectorAll('#lista-videos article').forEach(el => el.classList.remove('reproduciendo'));
+            }
+
+            bgmActual = null;
+            clearTimeout(temporizadorSimulador);
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 5. REPRODUCCIÓN DE MÚSICA
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Detiene toda reproducción activa: BGM y animaciones de botones.
+         * Los SFX (Web Audio API) no se pueden detener fácilmente y son tan
+         * cortos que no es necesario hacerlo.
+         * Se llama al presionar ⏹️.
+         */
+        const pararTodo = () => {
+            detenerBGM();
+            // Quitar animación de pulso de todos los botones de música/video
+            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
+        };
+
+        /**
+         * Reproduce una pista de música (BGM).
+         * Detiene el BGM anterior (música o video) antes de iniciar el nuevo.
+         * El video en curso se detiene porque música y video son ambos BGM.
+         *
+         * @param {Object} track - Objeto de la canción {archivo, titulo, emoji, color, ...}
+         * @param {string} tipo  - 'musica'
+         */
+        const reproducir = (track, tipo) => {
+            const audio    = document.getElementById(`audio-${track.archivo}`);
+            const articulo = document.getElementById(`btn-${track.archivo}`);
+            if (!audio || !articulo) return;
+
+            // Detener el BGM anterior (puede ser otra canción o un video)
+            detenerBGM();
+
+            // Quitar el resaltado de todos los botones de música
+            document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
+
+            // Registrar el nuevo BGM
+            bgmActual = { tipo: 'audio', el: audio, btn: articulo };
+
+            articulo.classList.add('reproduciendo');
+            audio.currentTime = 0;
+
+            audio.play().catch(() => {
+                // Fallback: simular duración si no hay archivo real (entorno de desarrollo)
+                temporizadorSimulador = setTimeout(() => {
+                    articulo.classList.remove('reproduciendo');
+                    bgmActual = null;
+                }, 4000);
+            });
+
+            // Al terminar la canción, limpiar el estado BGM
+            audio.onended = () => {
+                articulo.classList.remove('reproduciendo');
+                if (bgmActual && bgmActual.el === audio) bgmActual = null;
+            };
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 6. REPRODUCCIÓN DE VIDEO (con soporte offline)
+
+           PROBLEMA DE DISEÑO:
+           Safari en iOS/iPadOS solicita los videos con "Range Requests"
+           (peticiones parciales HTTP 206) para hacer streaming progresivo.
+           El Service Worker de esta app está registrado desde un blob: URL,
+           y Safari no le permite interceptar peticiones del mismo origen.
+           Por tanto, el SW NO puede servir los videos cacheados.
+
+           SOLUCIÓN:
+           Al reproducir un video, se lee el archivo MP4 directamente de la
+           Cache API desde el hilo principal (no el SW), se convierte en un
+           blob: URL local, y se asigna al <video>. Así Safari lo reproduce
+           como si fuera un archivo local sin necesitar Range Requests.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Reproduce un video (BGM). Detiene el BGM anterior antes de iniciar.
+         * En modo offline lee el MP4 desde la Cache API como blob URL local.
+         * @param {Object} track - Objeto del video {archivo, titulo}
+         */
+        const reproducirVideo = async (track) => {
+            const articulo = document.getElementById(`btn-vid-${track.archivo}`);
+            if (!articulo) return;
+
+            // Detener el BGM anterior (canción u otro video)
+            detenerBGM();
+            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
+
+            articulo.classList.add('reproduciendo');
+            indicadorCargaVideo.classList.remove('hidden');
+
+            // Registrar el video como BGM activo
+            bgmActual = { tipo: 'video' };
+
+            const rutaVideo   = `vid/${track.archivo}.mp4`;
+            const urlAbsoluta = makeAbsolute(rutaVideo);
+            let srcFinal      = rutaVideo; // Por defecto: URL de red normal
+
+            // Intentar leer el video desde la Cache API para reproducción offline
+            try {
+                if ('caches' in window) {
+                    const cache     = await caches.open(CACHE_NAME);
+                    const respuesta = await cache.match(urlAbsoluta);
+                    if (respuesta) {
+                        const blob = await respuesta.blob();
+                        srcFinal   = URL.createObjectURL(blob); // URL temporal en memoria del dispositivo
+                        console.log('✅ Video reproducido desde caché offline:', track.archivo);
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ Caché de video no disponible, usando red:', e);
+            }
+
+            // Liberar el blob URL del video anterior para liberar memoria
+            if (reproductorVideo._blobUrl) {
+                URL.revokeObjectURL(reproductorVideo._blobUrl);
+                reproductorVideo._blobUrl = null;
+            }
+            // Guardar referencia al nuevo blob URL para poder liberarlo después
+            if (srcFinal.startsWith('blob:')) reproductorVideo._blobUrl = srcFinal;
+
+            reproductorVideo.src = srcFinal;
+
+            // Ocultar el spinner cuando el video tiene suficientes datos para reproducirse
+            reproductorVideo.oncanplay = () => indicadorCargaVideo.classList.add('hidden');
+
+            reproductorVideo.play().catch(() => {
+                // Fallback si no hay video real (entorno de desarrollo)
+                clearTimeout(temporizadorSimulador);
+                temporizadorSimulador = setTimeout(() => {
+                    articulo.classList.remove('reproduciendo');
+                    reproductorVideo.removeAttribute('src');
+                    reproductorVideo.load();
+                    indicadorCargaVideo.classList.add('hidden');
+                }, 5000);
+            });
+
+            // Al terminar, regresar al estado inicial (mostrar poster negro) y limpiar BGM
+            reproductorVideo.onended = () => {
+                articulo.classList.remove('reproduciendo');
+                if (reproductorVideo._blobUrl) {
+                    URL.revokeObjectURL(reproductorVideo._blobUrl);
+                    reproductorVideo._blobUrl = null;
+                }
+                reproductorVideo.removeAttribute('src');
+                reproductorVideo.load();
+                bgmActual = null;
+            };
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 7. GENERACIÓN DE INTERFAZ
+           Funciones que construyen los elementos HTML de forma dinámica a
+           partir de los datos cargados desde los JSONs externos.
+           Se llaman desde inicializarApp() una vez que los datos están listos.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Crea los botones de canciones en el grid de música.
+         * Cada botón es un <article> con emoji, título y un <audio> oculto.
+         * El <audio> tiene preload="auto" para cargar en segundo plano.
+         *
+         * @param {Array}       arreglo    Array de objetos de canciones
+         * @param {HTMLElement} contenedor El grid donde insertar los botones
+         * @param {string}      tipo       'musica' (define la carpeta de audio)
+         */
+        const crearBotones = (arreglo, contenedor, tipo) => {
+            arreglo.forEach((track) => {
+                // Botón principal: usa <article> para semántica de contenido interactivo
+                const articulo = document.createElement('article');
+                articulo.id        = `btn-${track.archivo}`;
+                articulo.className = `${track.color} rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center aspect-square border-4 border-white/20 relative overflow-hidden transition-all`;
+                articulo.innerHTML = `
+                    <span class="text-6xl md:text-7xl mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
+                    <span class="text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-1 pointer-events-none">${track.titulo}</span>
+                `;
+
+                // Elemento <audio> oculto que carga el archivo MP3 real
+                const audioEl   = document.createElement('audio');
+                audioEl.id      = `audio-${track.archivo}`;
+                audioEl.src     = `${tipo === 'musica' ? 'audio/' : 'sonidos/'}${track.archivo}.mp3`;
+                audioEl.preload = 'auto'; // Pre-carga en segundo plano al cargar la página
+
+                // Eventos de interacción
+                articulo.addEventListener('click', () => reproducir(track, tipo));
+                audioEl.addEventListener('ended', () => articulo.classList.remove('reproduciendo'));
+
+                articulo.appendChild(audioEl);
+                contenedor.appendChild(articulo);
+            });
+        };
+
+        /**
+         * Crea los botones de miniaturas en el carrusel de videos.
+         * Cada botón usa la imagen de portada (.webp) como fondo CSS.
+         * Muestra un ícono ▶️ al pasar el cursor/dedo encima.
+         */
+        const crearBotonesVideos = () => {
+            videosDatos.forEach((track) => {
+                const articulo = document.createElement('article');
+                articulo.id        = `btn-vid-${track.archivo}`;
+                articulo.className = `flex-none h-full aspect-video rounded-xl shadow-xl border-2 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
+                // La imagen de portada se sirve desde /img/cover-vid-[letra].webp
+                articulo.style.backgroundImage = `url('img/cover-vid-${track.archivo}.webp')`;
+                // Overlay de play visible al hover o al mantener presionado en iOS
+                articulo.innerHTML = `
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity pointer-events-none">
+                        <span class="text-4xl md:text-5xl drop-shadow-lg">▶️</span>
+                    </div>
+                `;
+                articulo.addEventListener('click', () => reproducirVideo(track));
+                listaVideosUI.appendChild(articulo);
+            });
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 8. LÓGICA DEL MEMORAMA
+
+           FLUJO DEL JUEGO:
+             1. iniciarMemorama() — baraja 24 cartas y las renderiza en el grid
+             2. voltearCarta()    — el usuario toca una carta; se registra
+             3. verificarPareja() — cuando hay 2 cartas volteadas, se comparan:
+                  ✓ PAR CORRECTO  → desaparecen del tablero, aparecen en la pila
+                  ✗ PAR INCORRECTO → se voltean de vuelta tras 1s (tiempo para memorizar)
+             4. Al completar 12 pares → secuencia de victoria:
+                  → sonido + confeti + trofeo 🏆
+                  → el trofeo se desvanece solo tras 2.5s
+                  → se llama a iniciarMemorama() para una nueva partida automática
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Inicializa (o reinicia) el tablero del Memorama.
+         * Baraja las 12 frutas, crea sus pares (24 cartas total),
+         * y genera los elementos del DOM para cada carta.
+         */
+        const iniciarMemorama = () => {
+            const grid            = document.getElementById('grid-memorama');
+            const stack           = document.getElementById('stack-parejas');
+            const mensajeVictoria = document.getElementById('mensaje-victoria');
+
+            // Limpiar estado anterior completamente
+            grid.innerHTML  = '';
+            stack.innerHTML = '';
+            mensajeVictoria.classList.replace('flex', 'hidden');
+            cartasVolteadas    = [];
+            parejasEncontradas = 0;
+            memoramaBloqueado  = false;
+
+            // Crear 24 cartas: duplicar las 12 frutas y barajar aleatoriamente
+            cartasJuego = [...frutasMemorama, ...frutasMemorama]
+                .sort(() => Math.random() - 0.5) // Fisher-Yates simplificado
+                .map((fruta, index) => ({ id: index, fruta, volteada: false, encontrada: false }));
+
+            // Renderizar cada carta con dorso y frente
+            cartasJuego.forEach((carta, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'tarjeta-memorama relative w-full h-full cursor-pointer transform-style-3d';
+
+                cardEl.innerHTML = `
+                    <!-- DORSO: cara azul marino con patrón de baraja clásica -->
+                    <div class="carta-dorso absolute inset-0 rounded-xl flex items-center justify-center backface-hidden overflow-hidden">
+                        <div class="carta-dorso-marco rounded-lg"></div>
+                    </div>
+                    <!-- FRENTE: papel crema con la fruta al centro y en las esquinas -->
+                    <div class="carta-frente absolute inset-0 rounded-xl flex items-center justify-center backface-hidden rotate-y-180 overflow-hidden">
+                        <div class="carta-frente-marco rounded-lg"></div>
+                        <!-- Emoji pequeño esquina superior izquierda (estilo baraja real) -->
+                        <span class="carta-corner" style="top:5px;left:6px">${carta.fruta}</span>
+                        <!-- Emoji pequeño esquina inferior derecha, rotado 180° -->
+                        <span class="carta-corner" style="bottom:5px;right:6px;transform:rotate(180deg)">${carta.fruta}</span>
+                        <!-- Emoji grande central con sombra suave -->
+                        <span class="text-5xl md:text-6xl lg:text-5xl xl:text-6xl drop-shadow pointer-events-none"
+                            style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">${carta.fruta}</span>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', () => voltearCarta(cardEl, index));
+                grid.appendChild(cardEl);
+            });
+
+            // Recalcular el tamaño de las cartas una vez que el DOM está pintado
+            requestAnimationFrame(() => ajustarAlturaCartas());
+        };
+
+        /**
+         * Maneja el toque de una carta individual.
+         * Ignora el toque si: el juego está bloqueado, la carta ya está volteada,
+         * o ya fue encontrada. El sonido suena al voltear la SEGUNDA carta
+         * (cuando hay un par completo para evaluar).
+         *
+         * @param {HTMLElement} cardEl Elemento DOM de la carta tocada
+         * @param {number}      index  Índice de la carta en cartasJuego[]
+         */
+        const voltearCarta = (cardEl, index) => {
+            if (memoramaBloqueado || cartasJuego[index].volteada || cartasJuego[index].encontrada) return;
+
+            initAudio(); // Activar el motor de audio de iOS (requiere gesto del usuario)
+
+            // Marcar como volteada y aplicar el flip 3D CSS
+            cartasJuego[index].volteada = true;
+            cardEl.classList.add('rotate-y-180');
+            cartasVolteadas.push({ cardEl, index });
+
+            // Cuando hay 2 cartas volteadas → evaluar si son par
+            if (cartasVolteadas.length === 2) {
+                sonidoFlip(); // Suena cuando AMBAS cartas están visibles
+                verificarPareja();
+            }
+        };
+
+        /**
+         * Compara las 2 cartas actualmente volteadas.
+         * Activa la lógica de par correcto o incorrecto según el resultado.
+         */
+        const verificarPareja = () => {
+            memoramaBloqueado = true; // Bloquear nuevos clics durante la evaluación
+            const [carta1, carta2] = cartasVolteadas;
+            const fruta = cartasJuego[carta1.index].fruta;
+
+            if (fruta === cartasJuego[carta2.index].fruta) {
+                // ✓ PAR CORRECTO ──────────────────────────────────────────────────
+                cartasJuego[carta1.index].encontrada = true;
+                cartasJuego[carta2.index].encontrada = true;
+                parejasEncontradas++;
+                sonidoExito();
+
+                setTimeout(() => {
+                    // Animar desaparición de las cartas del tablero
+                    carta1.cardEl.classList.add('scale-0', 'opacity-0');
+                    carta2.cardEl.classList.add('scale-0', 'opacity-0');
+
+                    // Añadir la fruta a la pila inferior con animación pop-in
+                    const pilaEl     = document.getElementById('stack-parejas');
+                    const frutaStack = document.createElement('div');
+                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center text-xl md:text-2xl anim-pop shadow-md shrink-0';
+                    frutaStack.innerText = fruta;
+                    pilaEl.appendChild(frutaStack);
+
+                    memoramaBloqueado = false;
+                    cartasVolteadas   = [];
+
+                    // ¿Se completaron todos los pares? → Secuencia de victoria
+                    if (parejasEncontradas === frutasMemorama.length) {
+                        sonidoVictoria();
+                        lanzarConfeti();
+
+                        // Mostrar trofeo con animación pop-in
+                        const overlay = document.getElementById('mensaje-victoria');
+                        const trofeo  = document.getElementById('trofeo-victoria');
+                        overlay.classList.replace('hidden', 'flex');
+                        overlay.style.opacity = '1';
+                        requestAnimationFrame(() => {
+                            trofeo.style.transform = 'scale(1)';
+                            trofeo.style.opacity   = '1';
+                        });
+
+                        // Desvanecer el trofeo y reiniciar el juego automáticamente
+                        setTimeout(() => {
+                            overlay.style.opacity  = '0';
+                            trofeo.style.opacity   = '0';
+                            trofeo.style.transform = 'scale(0)';
+                            setTimeout(() => {
+                                overlay.classList.replace('flex', 'hidden');
+                                overlay.style.opacity  = '1';
+                                trofeo.style.transform = 'scale(0)';
+                                trofeo.style.opacity   = '0';
+                                iniciarMemorama(); // Nueva partida automática
+                            }, 1000); // Esperar a que termine el fundido
+                        }, 2500); // Mostrar el trofeo durante 2.5 segundos
+                    }
+                }, 600); // Pequeño delay para que el sonido de éxito se escuche primero
+
+            } else {
+                // ✗ PAR INCORRECTO ─────────────────────────────────────────────
+                // Esperar 1 segundo para que el jugador pueda memorizar las frutas
+                setTimeout(() => {
+                    sonidoError();
+                    // Voltear de vuelta las dos cartas (revertir la rotación CSS)
+                    carta1.cardEl.classList.remove('rotate-y-180');
+                    carta2.cardEl.classList.remove('rotate-y-180');
+                    cartasJuego[carta1.index].volteada = false;
+                    cartasJuego[carta2.index].volteada = false;
+                    memoramaBloqueado = false;
+                    cartasVolteadas   = [];
+                }, 1000);
+            }
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 8b. LECTOR DE LIBROS PDF
+           Usa PDF.js (Mozilla) para renderizar PDFs en un <canvas> del DOM.
+
+           FLUJO:
+             1. inicializarApp() carga libros.json y guarda librosDatos[]
+             2. crearListaLibros() genera los items del panel lateral con
+                miniatura de la portada (página 1) renderizada en canvas
+             3. abrirLibroPDF(libro) carga el PDF en PDF.js y muestra pág. 1
+             4. renderizarPaginaPDF(n) dibuja la página n en el canvas principal,
+                escalada para caber en el contenedor sin scroll
+             5. cambiarPaginaPDF(±1) e irAPaginaPDF(n) controlan la navegación
+
+           ESCALADO:
+             La página se escala para ocupar el máximo espacio disponible
+             sin desbordar el contenedor, respetando el aspect-ratio original.
+
+           SWIPE TÁCTIL:
+             Se detecta el swipe horizontal para pasar páginas en iPad.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        // ── Estado del lector PDF ───────────────────────────────────────────
+        let pdfDoc          = null;  // Objeto PDFDocumentProxy de PDF.js
+        let pdfPaginaActual = 1;     // Número de página actualmente visible (1-based)
+        let pdfRenderTask   = null;  // Tarea de renderizado activa (para cancelar si cambia la pág.)
+        let libroActivoEl   = null;  // Elemento DOM del libro seleccionado en el panel lateral
+
+        // Configurar PDF.js: deshabilitar el worker externo para máxima compatibilidad
+        // en entornos PWA/offline donde no se puede cargar un worker desde CDN
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        /**
+         * Genera los items del panel lateral con miniatura y título.
+         * Renderiza la portada (página 1) de cada PDF en un canvas pequeño.
+         */
+        const crearListaLibros = async () => {
+            const lista = document.getElementById('lista-libros');
+            lista.innerHTML = '';
+
+            for (const libro of librosDatos) {
+                // Contenedor del item
+                const item = document.createElement('button');
+                item.id        = `libro-item-${libro.archivo}`;
+                item.className = 'w-full flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 border-white/20 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-left';
+
+                // Canvas para la miniatura de portada
+                const miniCanvas = document.createElement('canvas');
+                miniCanvas.className = 'w-full rounded-lg shadow-md bg-white';
+                miniCanvas.style.aspectRatio = '3/4'; // Proporción libro por defecto
+
+                // Título del libro
+                const titulo = document.createElement('p');
+                titulo.className = 'text-white text-xs font-bold text-center leading-tight w-full px-1 line-clamp-2';
+                titulo.textContent = libro.titulo;
+
+                item.appendChild(miniCanvas);
+                item.appendChild(titulo);
+                item.addEventListener('click', () => abrirLibroPDF(libro, item));
+                lista.appendChild(item);
+
+                // Intentar renderizar la miniatura de la portada en segundo plano
+                try {
+                    const urlPDF = `libros/${libro.archivo}.pdf`;
+                    const docMini = await pdfjsLib.getDocument(urlPDF).promise;
+                    const pagina  = await docMini.getPage(1);
+                    const escala  = miniCanvas.offsetWidth > 0
+                        ? miniCanvas.offsetWidth / pagina.getViewport({ scale: 1 }).width
+                        : 0.3;
+                    const viewport = pagina.getViewport({ scale: Math.max(escala, 0.2) });
+                    miniCanvas.width  = viewport.width;
+                    miniCanvas.height = viewport.height;
+                    await pagina.render({
+                        canvasContext: miniCanvas.getContext('2d'),
+                        viewport
+                    }).promise;
+                } catch (e) {
+                    // Si falla la miniatura, mostrar ícono genérico de libro
+                    const ctx = miniCanvas.getContext('2d');
+                    miniCanvas.width  = 120;
+                    miniCanvas.height = 160;
+                    ctx.fillStyle = '#e8e0f0';
+                    ctx.fillRect(0, 0, 120, 160);
+                    ctx.font = '48px serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('📖', 60, 95);
+                }
+            }
+        };
+
+        /**
+         * Carga un PDF y muestra su primera página en el visor principal.
+         * Actualiza el estado visual del panel lateral (ítem activo).
+         * @param {Object}      libro  Objeto del catálogo {archivo, titulo}
+         * @param {HTMLElement} itemEl Elemento del panel lateral que fue tocado
+         */
+        const abrirLibroPDF = async (libro, itemEl) => {
+            // Actualizar resaltado del panel lateral
+            if (libroActivoEl) libroActivoEl.classList.remove('libro-activo');
+            libroActivoEl = itemEl;
+            itemEl.classList.add('libro-activo');
+
+            // Mostrar spinner y ocultar placeholder/canvas anterior
+            const placeholder = document.getElementById('visor-placeholder');
+            const spinner     = document.getElementById('visor-spinner');
+            const canvas      = document.getElementById('visor-canvas');
+            placeholder.classList.add('hidden');
+            spinner.classList.remove('hidden');
+            canvas.classList.add('hidden');
+
+            try {
+                const urlPDF = `libros/${libro.archivo}.pdf`;
+                pdfDoc          = await pdfjsLib.getDocument(urlPDF).promise;
+                pdfPaginaActual = 1;
+
+                // Actualizar total de páginas en la barra de navegación
+                document.getElementById('total-paginas').textContent = pdfDoc.numPages;
+                document.getElementById('input-pagina').max = pdfDoc.numPages;
+
+                // Habilitar/deshabilitar botones según número de páginas
+                document.getElementById('btn-pag-anterior').disabled = true;
+                document.getElementById('btn-pag-siguiente').disabled = pdfDoc.numPages <= 1;
+
+                await renderizarPaginaPDF(1);
+            } catch (e) {
+                console.error('Error al abrir PDF:', e);
+                spinner.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                document.getElementById('visor-placeholder').innerHTML =
+                    '<span class="text-4xl">⚠️</span><p class="text-sm font-semibold">No se pudo cargar el libro</p>';
+            }
+        };
+
+        /**
+         * Renderiza una página específica del PDF activo en el canvas del visor.
+         * Escala la página para ocupar el máximo espacio disponible del contenedor.
+         * @param {number} numeroPagina Número de página a renderizar (1-based)
+         */
+        const renderizarPaginaPDF = async (numeroPagina) => {
+            if (!pdfDoc) return;
+
+            const spinner = document.getElementById('visor-spinner');
+            const canvas  = document.getElementById('visor-canvas');
+            spinner.classList.remove('hidden');
+            canvas.classList.add('hidden');
+
+            // Cancelar renderizado anterior si aún está en progreso
+            if (pdfRenderTask) {
+                try { pdfRenderTask.cancel(); } catch (e) {}
+                pdfRenderTask = null;
+            }
+
+            try {
+                const pagina   = await pdfDoc.getPage(numeroPagina);
+                const viewport = pagina.getViewport({ scale: 1 });
+
+                // Calcular escala para que la página llene el contenedor sin desbordarlo
+                const contenedor = document.getElementById('visor-pdf-contenedor');
+                const maxW = contenedor.clientWidth  - 16; // margen interior
+                const maxH = contenedor.clientHeight - 16;
+                const escala = Math.min(maxW / viewport.width, maxH / viewport.height);
+                const vpEscalado = pagina.getViewport({ scale: escala });
+
+                canvas.width  = vpEscalado.width;
+                canvas.height = vpEscalado.height;
+
+                // Renderizar la página en el canvas
+                pdfRenderTask = pagina.render({
+                    canvasContext: canvas.getContext('2d'),
+                    viewport:      vpEscalado
+                });
+                await pdfRenderTask.promise;
+
+                // Mostrar canvas y ocultar spinner
+                spinner.classList.add('hidden');
+                canvas.classList.remove('hidden');
+
+                // Actualizar estado de la barra de navegación
+                pdfPaginaActual = numeroPagina;
+                document.getElementById('input-pagina').value = numeroPagina;
+                document.getElementById('btn-pag-anterior').disabled = numeroPagina <= 1;
+                document.getElementById('btn-pag-siguiente').disabled = numeroPagina >= pdfDoc.numPages;
+
+            } catch (e) {
+                if (e.name !== 'RenderingCancelledException') {
+                    console.error('Error al renderizar página:', e);
+                    spinner.classList.add('hidden');
+                }
+            }
+        };
+
+        /**
+         * Navega hacia adelante (+1) o hacia atrás (-1) en el PDF activo.
+         * @param {number} delta +1 para siguiente, -1 para anterior
+         */
+        const cambiarPaginaPDF = (delta) => {
+            if (!pdfDoc) return;
+            const nueva = pdfPaginaActual + delta;
+            if (nueva >= 1 && nueva <= pdfDoc.numPages) {
+                renderizarPaginaPDF(nueva);
+            }
+        };
+
+        /**
+         * Salta a una página específica ingresada en el input de la barra.
+         * @param {string|number} valor Número de página objetivo
+         */
+        const irAPaginaPDF = (valor) => {
+            if (!pdfDoc) return;
+            const n = Math.max(1, Math.min(parseInt(valor) || 1, pdfDoc.numPages));
+            renderizarPaginaPDF(n);
+        };
+
+        // ── Swipe táctil para pasar páginas en iPad ─────────────────────────
+        // Se detecta el inicio y fin del toque para calcular la dirección del swipe
+        let swipeTouchStartX = 0;
+        document.getElementById('visor-pdf-contenedor').addEventListener('touchstart', (e) => {
+            swipeTouchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        document.getElementById('visor-pdf-contenedor').addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].screenX - swipeTouchStartX;
+            if (Math.abs(dx) > 50) {         // Umbral mínimo de 50px para contar como swipe
+                cambiarPaginaPDF(dx < 0 ? 1 : -1); // Swipe izquierda → siguiente, derecha → anterior
+            }
+        }, { passive: true });
+
+        // Recalcular la escala al rotar el iPad (el canvas necesita redibujarse)
+        window.addEventListener('resize', () => {
+            if (pdfDoc && document.getElementById('seccion-libros').classList.contains('flex')) {
+                renderizarPaginaPDF(pdfPaginaActual);
+            }
+        });
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 9. NAVEGACIÓN ENTRE SECCIONES
+           Muestra la sección solicitada y oculta las demás.
+           Actualiza el estilo visual de las pestañas activa/inactiva.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Cambia la sección visible de la app.
+         * @param {string} seccion Identificador: 'musica' | 'memorama' | 'videos'
+         */
+        const cambiarSeccion = (seccion) => {
+            const seccionesConfig = [
+                { id: 'musica',   display: 'block' }, // Música usa block (grid nativo)
+                { id: 'memorama', display: 'flex'  }, // Memorama usa flex (columna)
+                { id: 'videos',   display: 'flex'  }, // Videos usa flex (columna)
+                { id: 'libros',   display: 'flex'  }  // Libros usa flex (fila: panel + visor)
+            ];
+
+            seccionesConfig.forEach(sec => {
+                const cont = document.getElementById(`seccion-${sec.id}`);
+                const btn  = document.getElementById(`btn-${sec.id}`);
+
+                if (sec.id === seccion) {
+                    // Mostrar la sección activa
+                    cont.classList.remove('hidden');
+                    cont.classList.add(sec.display === 'flex' ? 'flex' : 'block');
+                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
+                    // Al entrar al Memorama, recalcular el tamaño óptimo de las cartas
+                    if (sec.id === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
+                } else {
+                    // Ocultar las secciones inactivas
+                    cont.classList.add('hidden');
+                    cont.classList.remove(sec.display === 'flex' ? 'flex' : 'block');
+                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+                }
+            });
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 10. LAYOUT DINÁMICO DEL MEMORAMA
+           PROBLEMA: Las cartas tienen proporción 2:3 (ancho:alto) pero el
+           grid debe caber en el espacio vertical disponible sin que el título
+           ni la pila inferior queden fuera de la pantalla.
+
+           SOLUCIÓN: Medir en tiempo real el espacio restante después de
+           restar el header y la pila, dividirlo entre 3 filas, y asignarlo
+           como grid-auto-rows. Además verificar que el alto calculado no
+           exceda el ancho de columna × 1.5 (proporción 2:3).
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Calcula y aplica la altura óptima de filas del grid de cartas.
+         * Se invoca al: cambiar a la sección Memorama, reiniciar el juego,
+         * y al rotar/redimensionar la pantalla (evento resize).
+         */
+        const ajustarAlturaCartas = () => {
+            const seccion = document.getElementById('seccion-memorama');
+            if (!seccion || seccion.classList.contains('hidden')) return;
+            const grid = document.getElementById('grid-memorama');
+
+            // Medir la altura real de los elementos fijos (fuera del grid)
+            const header  = seccion.querySelector('div.shrink-0');           // Barra título
+            const stack   = seccion.querySelector('div.shrink-0:last-of-type'); // Pila pares
+            const totalH  = seccion.clientHeight;
+            const headerH = header ? header.offsetHeight : 32;
+            const stackH  = stack  ? stack.offsetHeight  : 56;
+
+            // Parámetros del grid según breakpoint activo
+            const cols  = window.innerWidth >= 1024 ? 8 : 4; // Columnas (lg:grid-cols-8)
+            const filas = 3;
+            const gapPx = window.innerWidth >= 768 ? 8 : 6;  // Tailwind: gap-2 / gap-1.5
+
+            // Calcular altura de fila desde el espacio vertical disponible
+            const verticalOcupado = headerH + stackH + gapPx * 4 + (filas - 1) * gapPx;
+            const alturaFila      = Math.floor((totalH - verticalOcupado) / filas);
+
+            // Calcular altura máxima permitida por la proporción 2:3 del ancho de columna
+            const anchoCarta       = Math.floor((grid.clientWidth - gapPx * (cols - 1)) / cols);
+            const alturaDesdeAncho = Math.floor(anchoCarta * 3 / 2);
+
+            // Usar el menor valor: garantiza que la carta quepa en ambas dimensiones
+            grid.style.gridAutoRows = Math.min(alturaFila, alturaDesdeAncho) + 'px';
+        };
+
+        // Recalcular al rotar el iPad o redimensionar la ventana del navegador
+        window.addEventListener('resize', ajustarAlturaCartas);
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 11. INICIALIZACIÓN ASÍNCRONA
+           Punto de entrada principal de la app. Carga los catálogos de
+           contenido desde los JSONs externos en paralelo (Promise.all),
+           luego renderiza los tres módulos de la interfaz.
+           Si la carga falla (sin conexión), la app arranca con los arrays
+           vacíos sin crashear — el usuario verá las secciones vacías.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        const inicializarApp = async () => {
+            try {
+                // Cargar los tres catálogos simultáneamente
+                const [resAudios, resVids, resLibros] = await Promise.all([
+                    fetch('./audios.json'),
+                    fetch('./vids.json'),
+                    fetch('./libros.json')
+                ]);
+
+                if (!resAudios.ok) throw new Error(`audios.json respondió con ${resAudios.status}`);
+                if (!resVids.ok)   throw new Error(`vids.json respondió con ${resVids.status}`);
+                // libros.json es opcional — si falla, la sección queda vacía sin crashear
+                if (resLibros.ok) librosDatos = await resLibros.json();
+
+                musica      = await resAudios.json();
+                videosDatos = await resVids.json();
+
+                // Registrar las URLs de los archivos de media para la caché offline
+                musica.forEach(t =>
+                    urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`))
+                );
+                videosDatos.forEach(t => {
+                    urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
+                    urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
+                });
+                librosDatos.forEach(t =>
+                    urlsParaCachear.push(makeAbsolute(`libros/${t.archivo}.pdf`))
+                );
+
+            } catch (err) {
+                console.error('⚠️ No se pudo cargar el catálogo de contenido:', err);
+            }
+
+            // Renderizar la interfaz con los datos disponibles
+            crearBotones(musica, contenedorMusica, 'musica');
+            iniciarMemorama();
+            crearBotonesVideos();
+            crearListaLibros(); // Panel lateral de libros (asíncrono, genera miniaturas)
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 12. SISTEMA PWA (Progressive Web App)
+           Genera el manifest.json y prepara la lista de URLs para cachear.
+
+           ¿POR QUÉ TODO ES DINÁMICO?
+           Esta app es un único archivo HTML (sin archivos JS/CSS separados).
+           El manifest no puede ser un archivo estático si el ícono se genera
+           en canvas. Por eso se crea como blob: URL y se inyecta en el <link>.
+           Lo mismo aplica al Service Worker (ver § 14).
+           ═══════════════════════════════════════════════════════════════════ */
+
+        // Definición del manifest de la PWA
+        const pwaManifest = {
+            name:             "DJ Emmy Reproductor",
+            short_name:       "DJ Emmy",
+            start_url:        ".",
+            display:          "standalone",   // Sin barra de dirección del navegador
+            background_color: "#8b5cf6",
+            theme_color:      "#8b5cf6",
+            description:      "Botonera musical infantil",
+            icons: [{
+                src:     window.appIconPNG,   // PNG generado en canvas al cargar la página
+                sizes:   "512x512",
+                type:    "image/png",
+                purpose: "any maskable"       // "maskable" para íconos adaptables en Android
+            }]
+        };
+        const blobManifest = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
+        document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
+
+        /*
+          Lista de URLs a cachear para el modo offline.
+          IMPORTANTE: se usan URLs absolutas (no relativas) para evitar un bug
+          de Safari/iOS donde el Service Worker registrado desde un blob: URL
+          no puede resolver rutas relativas correctamente.
+          Los archivos de media se añaden en inicializarApp() una vez que
+          los catálogos JSON están disponibles y se conocen los nombres de archivo.
+        */
+        const baseHref     = window.location.href.split('?')[0].replace(/index\.html$/, '');
+        const makeAbsolute = (path) => new URL(path, baseHref).href;
+
+        let urlsParaCachear = [
+            makeAbsolute('./'),
+            makeAbsolute('index.html'),
+            makeAbsolute('audios.json'),
+            makeAbsolute('vids.json'),
+            makeAbsolute('libros.json')
+            // Los mp3, mp4, webp y pdf se agregan dinámicamente en inicializarApp()
+        ];
+
+        // Iniciar la app (carga de JSONs → renderizado de UI)
+        inicializarApp();
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 13. GESTIÓN DE CACHÉ Y DESCARGA OFFLINE
+
+           CACHE_NAME: identificador único de esta versión de la caché.
+           ⚠️ IMPORTANTE: Incrementar este número con cada nueva versión
+           desplegada en el servidor. El Service Worker usa este nombre para
+           detectar versiones antiguas y eliminarlas automáticamente.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        const CACHE_NAME = 'djemmy-cache-v37'; // ← Incrementar en cada deploy
+
+        /**
+         * Borra toda la caché del origen y desregistra el Service Worker,
+         * luego recarga la página para obtener la versión más reciente.
+         * Se activa al presionar el botón 🔄 en el header.
+         */
+        const borrarCacheYRecargar = async () => {
+            const iconoBtn = document.getElementById('icono-actualizar');
+            if (iconoBtn) iconoBtn.innerText = '⏳';
+
+            try {
+                // 1. Borrar todas las cachés registradas bajo este origen
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+                // 2. Desregistrar el Service Worker para que el próximo sea limpio
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of registrations) await reg.unregister();
+                }
+                // 3. Forzar recarga desde el servidor (no desde caché del navegador)
+                window.location.reload();
+            } catch (error) {
+                console.error('Error al limpiar caché:', error);
+                window.location.reload(); // Recargar de todos modos si algo falla
+            }
+        };
+
+        /**
+         * Descarga todos los archivos listados en urlsParaCachear, uno por uno,
+         * y los guarda en la Cache API. Omite los que ya están guardados.
+         * Actualiza la barra de progreso del modal con cada archivo completado.
+         * Se activa al presionar el botón ☁️ en el header.
+         */
+        const iniciarDescargaOffline = async () => {
+            const modal     = document.getElementById('modal-descarga');
+            const barra     = document.getElementById('barra-progreso');
+            const texto     = document.getElementById('texto-progreso');
+            const btnCerrar = document.getElementById('btn-cerrar-descarga');
+
+            // Mostrar el modal y reiniciar el estado de la barra
+            modal.classList.replace('hidden', 'flex');
+            btnCerrar.classList.add('hidden');
+            barra.style.width = '0%';
+            barra.classList.remove('bg-red-500');
+            barra.classList.add('from-blue-400', 'to-indigo-500');
+
+            try {
+                const cache = await caches.open(CACHE_NAME);
+                let completados = 0;
+                const total     = urlsParaCachear.length;
+                texto.innerText = 'Calculando...';
+
+                // Descargar uno por uno (no en paralelo) para poder animar la barra
+                for (let i = 0; i < total; i++) {
+                    const url = urlsParaCachear[i];
+                    try {
+                        // Verificar si ya está en caché para no desperdiciar ancho de banda
+                        const enCache = await cache.match(url);
+                        if (!enCache) {
+                            const respuesta = await fetch(url, { cache: 'no-store' }); // Sin caché del navegador
+                            if (respuesta.ok) await cache.put(url, respuesta);
+                            else console.warn('⚠️ Omitido (no encontrado en servidor):', url);
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ Fallo de red al descargar:', url, e);
+                    }
+
+                    // Actualizar contador y barra de progreso
+                    completados++;
+                    barra.style.width = `${Math.round((completados / total) * 100)}%`;
+                    texto.innerText   = `${completados} de ${total} guardados`;
+                }
+
+                // Descarga exitosa
+                barra.classList.remove('from-blue-400', 'to-indigo-500');
+                barra.classList.add('bg-green-500');
+                texto.innerText = '¡Todo descargado con éxito! ✅';
+                btnCerrar.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error crítico en descarga offline:', error);
+                barra.classList.remove('from-blue-400', 'to-indigo-500');
+                barra.classList.add('bg-red-500');
+                texto.innerText = 'Error de conexión. Intenta de nuevo. ❌';
+                btnCerrar.classList.remove('hidden');
+            }
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 14. SERVICE WORKER
+           Intercepta peticiones de red para servir contenido desde la
+           caché cuando no hay internet disponible.
+
+           ARQUITECTURA:
+           El SW se inyecta como un blob: URL (técnica de app de un solo
+           archivo). Esto tiene una limitación importante en Safari/iOS:
+           el SW no puede interceptar las Range Requests de <video> porque
+           el scope del blob: URL no coincide con el origen real.
+
+           Por eso existen DOS estrategias de caché paralelas:
+             • HTML, JSON, audio → servidos por el SW (cache-first)
+             • Video → servido directamente desde Cache API en reproducirVideo()
+                       como blob: URL local (sin pasar por el SW)
+
+           El SW sí guarda los videos en caché durante la descarga offline (☁️),
+           pero NO los sirve directamente al <video>. Eso lo hace § 6.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        const swCodigo = `
+            const CACHE_NAME_SW = '${CACHE_NAME}';
+            const urlsToCache   = ${JSON.stringify(urlsParaCachear)};
+
+            /*
+              INSTALL: Pre-cachear los archivos base al instalar el SW.
+              skipWaiting() activa el SW inmediatamente sin esperar al cierre
+              de otras pestañas que tengan la versión anterior activa.
+            */
+            self.addEventListener('install', (event) => {
+                self.skipWaiting();
+                event.waitUntil(
+                    caches.open(CACHE_NAME_SW).then((cache) =>
+                        Promise.all(
+                            urlsToCache.map(url =>
+                                cache.add(url).catch(() => console.warn('No pre-cacheado:', url))
+                            )
+                        )
+                    )
+                );
+            });
+
+            /*
+              ACTIVATE: Eliminar cachés de versiones anteriores.
+              clients.claim() toma control inmediato de las pestañas abiertas
+              sin necesitar un refresh manual.
+            */
+            self.addEventListener('activate', (event) => {
+                event.waitUntil(
+                    caches.keys().then((cacheNames) =>
+                        Promise.all(
+                            cacheNames
+                                .filter(name => name !== CACHE_NAME_SW)
+                                .map(name => {
+                                    console.log('Eliminando caché antigua:', name);
+                                    return caches.delete(name);
+                                })
+                        )
+                    ).then(() => self.clients.claim())
+                );
+            });
+
+            /*
+              FETCH: Interceptar peticiones GET y servir desde caché si existe.
+              Estrategia diferenciada:
+                • Archivos de media (mp4, mp3, webp, img): cache-first con manejo
+                  de Range Requests (necesario para que el <video> funcione con
+                  archivos cacheados — devuelve HTTP 206 Partial Content).
+                • Resto de recursos: cache-first con fallback a red y guardado.
+            */
+            self.addEventListener('fetch', (event) => {
+                if (event.request.method !== 'GET') return; // Solo interceptar GET
+
+                const url     = event.request.url;
+                const isMedia = /\\.(mp4|mp3|webp|png|jpg|jpeg)$/i.test(url);
+
+                if (isMedia) {
+                    event.respondWith(
+                        caches.open(CACHE_NAME_SW).then(async (cache) => {
+                            const cached = await cache.match(url);
+
+                            if (!cached) {
+                                // No está en caché: ir a la red y guardar para después
+                                const networkResp = await fetch(event.request);
+                                if (networkResp.ok) cache.put(url, networkResp.clone());
+                                return networkResp;
+                            }
+
+                            // Está en caché: verificar si hay un Range Request (streaming de video)
+                            const rangeHeader = event.request.headers.get('range');
+                            if (!rangeHeader) return cached; // Sin rango: devolver completo
+
+                            // Con rango: recortar el blob y devolver HTTP 206 Partial Content
+                            const blob   = await cached.blob();
+                            const bytes  = /bytes=(\\d+)-(\\d*)/.exec(rangeHeader);
+                            const start  = parseInt(bytes[1]);
+                            const end    = bytes[2] ? parseInt(bytes[2]) : blob.size - 1;
+                            const sliced = blob.slice(start, end + 1);
+
+                            return new Response(sliced, {
+                                status:     206,
+                                statusText: 'Partial Content',
+                                headers: {
+                                    'Content-Type':   cached.headers.get('Content-Type') || 'video/mp4',
+                                    'Content-Range':  \`bytes \${start}-\${end}/\${blob.size}\`,
+                                    'Content-Length': sliced.size,
+                                    'Accept-Ranges':  'bytes'
+                                }
+                            });
+                        }).catch(() => fetch(event.request)) // Si todo falla, ir a la red
+                    );
+                    return;
+                }
+
+                // Recursos no-media (HTML, JSON, CSS): cache-first con guardado en red
+                event.respondWith(
+                    caches.match(event.request).then((cached) => {
+                        if (cached) return cached; // Servir desde caché instantáneamente
+                        return fetch(event.request).then((networkResp) =>
+                            caches.open(CACHE_NAME_SW).then((cache) => {
+                                cache.put(event.request, networkResp.clone()); // Guardar para próxima vez
+                                return networkResp;
+                            })
+                        );
+                    }).catch(() => new Response('Sin conexión — contenido no disponible offline'))
+                );
+            });
+        `;
+
+        // Convertir el código del SW a un blob URL y registrarlo
+        const blobSW = new Blob([swCodigo], { type: 'application/javascript' });
+        const urlSW  = URL.createObjectURL(blobSW);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(urlSW, { scope: './' })
+                    .then(reg  => console.log('✅ Service Worker registrado:', reg.scope))
+                    .catch(err => console.warn('❌ Error al registrar Service Worker:', err));
+            });
+        }
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 15. WAKE LOCK — Evitar que la pantalla se apague
+
+           PROBLEMA: iOS/iPadOS apaga la pantalla si no hay interacción
+           física durante unos minutos, interrumpiendo la música y los videos.
+
+           SOLUCIÓN: Estrategia dual con fallback automático:
+
+             1. Screen Wake Lock API (navigator.wakeLock)
+                → Nativa en Safari 16.4+ / iPadOS 16.4+.
+                → Se reactiva automáticamente si el sistema la libera.
+                → Requiere un gesto previo del usuario (restricción de iOS).
+
+             2. Video silencioso en loop (fallback)
+                → Un <video> de 1×1 px, mudo, invisible, en loop continuo.
+                → iOS no apaga la pantalla mientras hay un elemento <video> activo.
+                → Truco usado por apps de presentaciones, lectores, etc.
+                → Se activa si la Wake Lock API no está disponible.
+
+           Ambos métodos se inicializan en el primer click o touchstart.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        let wakeLock = null; // Referencia al WakeLockSentinel de la API nativa
+
+        /*
+          Video de 1×1 px negro, mudo, en loop — fallback de Wake Lock.
+          Está codificado en base64 para no requerir un archivo externo en el servidor.
+          Es completamente invisible (opacity: 0, tamaño 1px, pointer-events: none).
+        */
+        const videoKeepAwake = document.createElement('video');
+        videoKeepAwake.setAttribute('loop', '');
+        videoKeepAwake.setAttribute('playsinline', '');
+        videoKeepAwake.setAttribute('muted', '');
+        videoKeepAwake.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;';
+        videoKeepAwake.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAs1tZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAPZWxpYnggAAAHAm////+B';
+        document.body.appendChild(videoKeepAwake);
+
+        /**
+         * Activa el Wake Lock usando la API nativa o el fallback de video.
+         * La API nativa se auto-reactiva si el sistema la libera (ej. al minimizar la app).
+         */
+        const activarWakeLock = async () => {
+            // Intento 1: Screen Wake Lock API (nativa, más limpia)
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('💡 Wake Lock activo (API nativa).');
+                    // Si el sistema libera el lock (ej. al cambiar de app), reactivarlo al volver
+                    wakeLock.addEventListener('release', () => {
+                        console.log('💤 Wake Lock liberado por el sistema.');
+                        if (document.visibilityState === 'visible') activarWakeLock();
+                    });
+                    return; // Éxito — no necesitamos el fallback
+                } catch (e) {
+                    console.warn('Wake Lock API no disponible, activando fallback de video:', e);
+                }
+            }
+            // Intento 2: Video silencioso en loop (fallback universal para iOS)
+            videoKeepAwake.play().catch(() => {
+                console.warn('⚠️ Fallback de Wake Lock también falló.');
+            });
+        };
+
+        // Activar al primer gesto del usuario (requerimiento de iOS para media y Wake Lock)
+        document.addEventListener('click',      () => activarWakeLock(), { once: true });
+        document.addEventListener('touchstart', () => activarWakeLock(), { once: true });
+
+        // Reactivar el Wake Lock si el usuario vuelve a la app después de minimizarla
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') activarWakeLock();
+        });
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 16. BLOQUEO DE RUBBER-BAND SCROLL (iPadOS standalone)
+
+           En modo "Agregar a Inicio", Safari en iPadOS permite que el
+           viewport completo rebote verticalmente aunque el body tenga
+           overflow:hidden. Esto ocurre porque el motor WebKit aplica el
+           rubber-band al "documento" antes de que los estilos CSS puedan
+           bloquearlo.
+
+           SOLUCIÓN en tres capas (implementadas en conjunto):
+             1. CSS: html+body con position:fixed + overflow:hidden (arriba)
+             2. CSS: clase .scroll-nativo en contenedores con scroll legítimo
+             3. JS:  touchmove bloqueado a nivel document, con excepción para
+                     elementos cuyo scroll aún no ha llegado al extremo.
+
+           Esta función detecta si el gesto táctil ocurre dentro de un
+           contenedor que tiene scroll disponible en esa dirección, y solo
+           en ese caso deja pasar el evento. En cualquier otro caso lo
+           cancela antes de que WebKit pueda aplicar el rubber-band.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Determina si el elemento (o algún ancestro) puede absorber el
+         * gesto táctil en la dirección indicada, en cualquiera de los dos ejes.
+         *
+         * NOTA sobre el signo de dy:
+         *   dy = touchStart.Y - touchCurrent.Y
+         *   dy > 0  → dedo se mueve hacia arriba  → quiere hacer scroll DOWN
+         *   dy < 0  → dedo se mueve hacia abajo   → quiere hacer scroll UP
+         *
+         * @param {HTMLElement} el Elemento donde comenzó el toque
+         * @param {number}      dy Delta Y del gesto
+         * @param {number}      dx Delta X del gesto
+         * @returns {boolean}
+         */
+        const puedeScrollear = (el, dy, dx) => {
+            while (el && el !== document.documentElement) {
+                const style     = window.getComputedStyle(el);
+                const overflowY = style.overflowY;
+                const overflowX = style.overflowX;
+
+                // Verificar eje Y
+                if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                    if (dy > 0 && el.scrollTop < el.scrollHeight - el.clientHeight) return true; // puede bajar
+                    if (dy < 0 && el.scrollTop > 0) return true;                                  // puede subir
+                }
+
+                // Verificar eje X (carruseles horizontales)
+                if ((overflowX === 'auto' || overflowX === 'scroll') && el.scrollWidth > el.clientWidth) {
+                    if (dx > 0 && el.scrollLeft < el.scrollWidth - el.clientWidth) return true; // puede ir derecha
+                    if (dx < 0 && el.scrollLeft > 0) return true;                                // puede ir izquierda
+                }
+
+                el = el.parentElement;
+            }
+            return false;
+        };
+
+        let _touchStartX = 0;
+        let _touchStartY = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            _touchStartX = e.touches[0].clientX;
+            _touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) return; // pellizco: no bloquear
+            const dy = _touchStartY - e.touches[0].clientY;
+            const dx = _touchStartX - e.touches[0].clientX;
+            if (!puedeScrollear(e.target, dy, dx)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+    </script>
+</body>
+</html>onibles
                  Ancho fijo (w-36/w-44), scroll vertical si hay muchos títulos.
                  Cada item muestra la miniatura de la portada (pág. 1) y el título. -->
             <div class="flex-none w-36 md:w-44 flex flex-col gap-2 overflow-y-auto min-h-0 pr-1 scroll-nativo">
