@@ -166,20 +166,25 @@
             height: 100%;
             width: 100%;
             overflow: hidden;
+            /* Gradiente en html cubre TODO el viewport incluyendo
+               las franjas del sistema operativo en modo standalone */
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
             background-attachment: fixed;
         }
 
         body {
-            /* Ocupa exactamente el área segura del viewport */
             width: 100%;
             height: 100%;
             overflow: hidden;
             box-sizing: border-box;
-            padding-top:    env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left:   env(safe-area-inset-left);
-            padding-right:  env(safe-area-inset-right);
+            /* Solo el inset superior e izquierdo/derecho: evitan que el
+               contenido quede bajo la cámara o los bordes curvos.
+               El inset inferior NO se aplica aquí porque genera la franja
+               blanca — el área del home indicator se deja cubierta por
+               el gradiente del html sin padding. */
+            padding-top:   env(safe-area-inset-top);
+            padding-left:  env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
@@ -346,7 +351,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v33</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v34</span>
             </div>
         </div>
 
@@ -1632,7 +1637,7 @@
            detectar versiones antiguas y eliminarlas automáticamente.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v33'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v34'; // ← Incrementar en cada deploy
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
