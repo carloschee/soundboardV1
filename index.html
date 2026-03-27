@@ -158,10 +158,8 @@
 
         html {
             overflow: hidden;
-            height: 100%;
             width: 100%;
-            /* dvh = dynamic viewport height: se adapta al área real visible
-               en Safari iPadOS standalone, excluyendo barras del sistema */
+            height: 100%;
             height: 100dvh;
         }
 
@@ -170,10 +168,9 @@
             width: 100%;
             height: 100%;
             height: 100dvh;
-            /* El gradiente debe cubrir toda la pantalla incluso en las
-               zonas de safe-area (notch, esquinas). background-attachment
-               asegura que no se corte al aplicar padding. */
-            background-attachment: fixed;
+            /* border-box: el padding del safe-area se resta del interior,
+               no se suma al exterior. Evita que el body supere el viewport. */
+            box-sizing: border-box;
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
@@ -344,7 +341,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v30</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v31</span>
             </div>
         </div>
 
@@ -1630,7 +1627,7 @@
            detectar versiones antiguas y eliminarlas automáticamente.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v30'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v31'; // ← Incrementar en cada deploy
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
