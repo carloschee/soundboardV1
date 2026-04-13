@@ -351,7 +351,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v34</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v35</span>
             </div>
         </div>
 
@@ -1229,9 +1229,34 @@
         // Configurar PDF.js: deshabilitar el worker externo para máxima compatibilidad
         // en entornos PWA/offline donde no se puede cargar un worker desde CDN
         if (window.pdfjsLib) {
+            // El worker se sirve desde caché cuando está disponible (modo avión)
             pdfjsLib.GlobalWorkerOptions.workerSrc =
                 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
+
+        /**
+         * Intenta obtener un PDF desde la Cache API y devuelve una blob URL.
+         * Si no está en caché, devuelve la URL original (requiere red).
+         * Mismo patrón que reproducirVideo() para máxima compatibilidad offline.
+         * @param {string} rutaRelativa  Ej: 'libros/cuento.pdf'
+         * @returns {Promise<string>}    blob URL o ruta relativa
+         */
+        const obtenerUrlPDF = async (rutaRelativa) => {
+            try {
+                if ('caches' in window) {
+                    const cache     = await caches.open(CACHE_NAME);
+                    const urlAbs    = makeAbsolute(rutaRelativa);
+                    const respuesta = await cache.match(urlAbs);
+                    if (respuesta) {
+                        const blob = await respuesta.blob();
+                        return URL.createObjectURL(blob);
+                    }
+                }
+            } catch (e) {
+                console.warn('Caché PDF no disponible, usando red:', rutaRelativa, e);
+            }
+            return rutaRelativa; // fallback a red
+        };
 
         /**
          * Genera los items del panel lateral con miniatura y título.
@@ -1264,7 +1289,7 @@
 
                 // Intentar renderizar la miniatura de la portada en segundo plano
                 try {
-                    const urlPDF = `libros/${libro.archivo}.pdf`;
+                    const urlPDF  = await obtenerUrlPDF(`libros/${libro.archivo}.pdf`);
                     const docMini = await pdfjsLib.getDocument(urlPDF).promise;
                     const pagina  = await docMini.getPage(1);
                     const escala  = miniCanvas.offsetWidth > 0
@@ -1312,8 +1337,11 @@
             canvas.classList.add('hidden');
 
             try {
-                const urlPDF = `libros/${libro.archivo}.pdf`;
+                const rutaPDF   = `libros/${libro.archivo}.pdf`;
+                const urlPDF    = await obtenerUrlPDF(rutaPDF);
                 pdfDoc          = await pdfjsLib.getDocument(urlPDF).promise;
+                // Liberar el blob URL una vez que PDF.js ya tiene los datos en memoria
+                if (urlPDF.startsWith('blob:')) URL.revokeObjectURL(urlPDF);
                 pdfPaginaActual = 1;
 
                 // Actualizar total de páginas en la barra de navegación
@@ -1620,7 +1648,10 @@
             makeAbsolute('index.html'),
             makeAbsolute('audios.json'),
             makeAbsolute('vids.json'),
-            makeAbsolute('libros.json')
+            makeAbsolute('libros.json'),
+            // PDF.js desde CDN — necesarios para el lector de libros offline
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
             // Los mp3, mp4, webp y pdf se agregan dinámicamente en inicializarApp()
         ];
 
@@ -1637,7 +1668,7 @@
            detectar versiones antiguas y eliminarlas automáticamente.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v34'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v35'; // ← Incrementar en cada deploy
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
@@ -1803,7 +1834,7 @@
                 if (event.request.method !== 'GET') return; // Solo interceptar GET
 
                 const url     = event.request.url;
-                const isMedia = /\\.(mp4|mp3|webp|png|jpg|jpeg)$/i.test(url);
+                const isMedia = /\.(mp4|mp3|webp|png|jpg|jpeg|pdf)$/i.test(url);
 
                 if (isMedia) {
                     event.respondWith(
