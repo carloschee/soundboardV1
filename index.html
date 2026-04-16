@@ -351,7 +351,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v35</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v36</span>
             </div>
         </div>
 
@@ -1003,17 +1003,31 @@
 
         /**
          * Crea los botones de miniaturas en el carrusel de videos.
-         * Cada botón usa la imagen de portada (.webp) como fondo CSS.
-         * Muestra un ícono ▶️ al pasar el cursor/dedo encima.
+         * Las imágenes de portada se leen desde la Cache API como blob URLs
+         * para que funcionen en modo avión (igual que los videos y PDFs).
          */
-        const crearBotonesVideos = () => {
-            videosDatos.forEach((track) => {
+        const crearBotonesVideos = async () => {
+            for (const track of videosDatos) {
                 const articulo = document.createElement('article');
                 articulo.id        = `btn-vid-${track.archivo}`;
                 articulo.className = `flex-none h-full aspect-video rounded-xl shadow-xl border-2 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
-                // La imagen de portada se sirve desde /img/cover-vid-[letra].webp
-                articulo.style.backgroundImage = `url('img/cover-vid-${track.archivo}.webp')`;
-                // Overlay de play visible al hover o al mantener presionado en iOS
+
+                // Intentar cargar la miniatura desde caché como blob URL
+                const rutaWebp   = `img/cover-vid-${track.archivo}.webp`;
+                const urlAbsWebp = makeAbsolute(rutaWebp);
+                let srcMiniatura = rutaWebp; // fallback: URL de red
+                try {
+                    if ('caches' in window) {
+                        const cache     = await caches.open(CACHE_NAME);
+                        const respuesta = await cache.match(urlAbsWebp);
+                        if (respuesta) {
+                            const blob = await respuesta.blob();
+                            srcMiniatura = URL.createObjectURL(blob);
+                        }
+                    }
+                } catch (e) { /* usar URL de red como fallback */ }
+
+                articulo.style.backgroundImage = `url('${srcMiniatura}')`;
                 articulo.innerHTML = `
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity pointer-events-none">
                         <span class="text-4xl md:text-5xl drop-shadow-lg">▶️</span>
@@ -1021,7 +1035,7 @@
                 `;
                 articulo.addEventListener('click', () => reproducirVideo(track));
                 listaVideosUI.appendChild(articulo);
-            });
+            }
         };
 
 
@@ -1649,15 +1663,12 @@
             makeAbsolute('audios.json'),
             makeAbsolute('vids.json'),
             makeAbsolute('libros.json'),
-            // PDF.js desde CDN — necesarios para el lector de libros offline
+            // Dependencias externas CDN — necesarias para funcionar offline
+            'https://cdn.tailwindcss.com',
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
             // Los mp3, mp4, webp y pdf se agregan dinámicamente en inicializarApp()
         ];
-
-        // Iniciar la app (carga de JSONs → renderizado de UI)
-        inicializarApp();
-
 
         /* ═══════════════════════════════════════════════════════════════════
            § 13. GESTIÓN DE CACHÉ Y DESCARGA OFFLINE
@@ -1666,9 +1677,14 @@
            ⚠️ IMPORTANTE: Incrementar este número con cada nueva versión
            desplegada en el servidor. El Service Worker usa este nombre para
            detectar versiones antiguas y eliminarlas automáticamente.
+           Debe declararse ANTES de inicializarApp() porque crearBotonesVideos
+           y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v35'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v36'; // ← Incrementar en cada deploy
+
+        // Iniciar la app (carga de JSONs → renderizado de UI)
+        inicializarApp();
 
         /**
          * Borra toda la caché del origen y desregistra el Service Worker,
