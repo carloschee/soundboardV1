@@ -351,7 +351,7 @@
             <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
             <div class="flex flex-col justify-center leading-none gap-0.5">
                 <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v36</span>
+                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v37</span>
             </div>
         </div>
 
@@ -1681,7 +1681,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v36'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v37'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
@@ -1777,107 +1777,76 @@
 
 
         /* ═══════════════════════════════════════════════════════════════════
-           § 14. SERVICE WORKER
-           Intercepta peticiones de red para servir contenido desde la
-           caché cuando no hay internet disponible.
+           § 14. SERVICE WORKER Y PERSISTENCIA DE CACHÉ
 
-           ARQUITECTURA:
-           El SW se inyecta como un blob: URL (técnica de app de un solo
-           archivo). Esto tiene una limitación importante en Safari/iOS:
-           el SW no puede interceptar las Range Requests de <video> porque
-           el scope del blob: URL no coincide con el origen real.
+           CONTEXTO — cómo Safari/iPadOS trata la caché:
+             • Safari puede purgar la Cache API si el dispositivo tiene poco
+               espacio, o si la app no se usa durante ~7 días (Safari 16+).
+             • En modo standalone ("Agregar a Inicio") la persistencia es
+               mayor que en una pestaña normal, pero no garantizada.
 
-           Por eso existen DOS estrategias de caché paralelas:
-             • HTML, JSON, audio → servidos por el SW (cache-first)
-             • Video → servido directamente desde Cache API en reproducirVideo()
-                       como blob: URL local (sin pasar por el SW)
-
-           El SW sí guarda los videos en caché durante la descarga offline (☁️),
-           pero NO los sirve directamente al <video>. Eso lo hace § 6.
+           ESTRATEGIAS implementadas para maximizar la persistencia:
+             A. navigator.storage.persist() — solicita al SO que no purgue
+                esta caché automáticamente. En standalone suele concederse.
+             B. SW cache-first universal — guarda automáticamente cualquier
+                recurso que pase por la red, aunque no se haya descargado
+                manualmente con ☁️.
+             C. Heartbeat cada 4 min — el SW "toca" los recursos cacheados
+                para renovar su marca de último acceso y evitar la expiración.
+             D. Re-registro automático del SW al volver a la app — Safari
+                puede terminar el SW tras un tiempo en segundo plano.
            ═══════════════════════════════════════════════════════════════════ */
 
         const swCodigo = `
             const CACHE_NAME_SW = '${CACHE_NAME}';
             const urlsToCache   = ${JSON.stringify(urlsParaCachear)};
 
-            /*
-              INSTALL: Pre-cachear los archivos base al instalar el SW.
-              skipWaiting() activa el SW inmediatamente sin esperar al cierre
-              de otras pestañas que tengan la versión anterior activa.
-            */
             self.addEventListener('install', (event) => {
                 self.skipWaiting();
                 event.waitUntil(
                     caches.open(CACHE_NAME_SW).then((cache) =>
-                        Promise.all(
-                            urlsToCache.map(url =>
-                                cache.add(url).catch(() => console.warn('No pre-cacheado:', url))
-                            )
-                        )
+                        Promise.all(urlsToCache.map(url =>
+                            cache.add(url).catch(() => {})
+                        ))
                     )
                 );
             });
 
-            /*
-              ACTIVATE: Eliminar cachés de versiones anteriores.
-              clients.claim() toma control inmediato de las pestañas abiertas
-              sin necesitar un refresh manual.
-            */
             self.addEventListener('activate', (event) => {
                 event.waitUntil(
-                    caches.keys().then((cacheNames) =>
-                        Promise.all(
-                            cacheNames
-                                .filter(name => name !== CACHE_NAME_SW)
-                                .map(name => {
-                                    console.log('Eliminando caché antigua:', name);
-                                    return caches.delete(name);
-                                })
-                        )
-                    ).then(() => self.clients.claim())
+                    caches.keys()
+                        .then(names => Promise.all(
+                            names.filter(n => n !== CACHE_NAME_SW).map(n => caches.delete(n))
+                        ))
+                        .then(() => self.clients.claim())
                 );
             });
 
-            /*
-              FETCH: Interceptar peticiones GET y servir desde caché si existe.
-              Estrategia diferenciada:
-                • Archivos de media (mp4, mp3, webp, img): cache-first con manejo
-                  de Range Requests (necesario para que el <video> funcione con
-                  archivos cacheados — devuelve HTTP 206 Partial Content).
-                • Resto de recursos: cache-first con fallback a red y guardado.
-            */
             self.addEventListener('fetch', (event) => {
-                if (event.request.method !== 'GET') return; // Solo interceptar GET
+                if (event.request.method !== 'GET') return;
 
                 const url     = event.request.url;
-                const isMedia = /\.(mp4|mp3|webp|png|jpg|jpeg|pdf)$/i.test(url);
+                const isMedia = /\\.(mp4|mp3|webp|png|jpg|jpeg|pdf)$/i.test(url);
 
                 if (isMedia) {
                     event.respondWith(
                         caches.open(CACHE_NAME_SW).then(async (cache) => {
                             const cached = await cache.match(url);
-
                             if (!cached) {
-                                // No está en caché: ir a la red y guardar para después
-                                const networkResp = await fetch(event.request);
-                                if (networkResp.ok) cache.put(url, networkResp.clone());
-                                return networkResp;
+                                const resp = await fetch(event.request);
+                                if (resp.ok) cache.put(url, resp.clone());
+                                return resp;
                             }
-
-                            // Está en caché: verificar si hay un Range Request (streaming de video)
+                            // Range Request para video/PDF (HTTP 206)
                             const rangeHeader = event.request.headers.get('range');
-                            if (!rangeHeader) return cached; // Sin rango: devolver completo
-
-                            // Con rango: recortar el blob y devolver HTTP 206 Partial Content
+                            if (!rangeHeader) return cached;
                             const blob   = await cached.blob();
                             const bytes  = /bytes=(\\d+)-(\\d*)/.exec(rangeHeader);
                             const start  = parseInt(bytes[1]);
                             const end    = bytes[2] ? parseInt(bytes[2]) : blob.size - 1;
                             const sliced = blob.slice(start, end + 1);
-
                             return new Response(sliced, {
-                                status:     206,
-                                statusText: 'Partial Content',
+                                status: 206, statusText: 'Partial Content',
                                 headers: {
                                     'Content-Type':   cached.headers.get('Content-Type') || 'video/mp4',
                                     'Content-Range':  \`bytes \${start}-\${end}/\${blob.size}\`,
@@ -1885,37 +1854,80 @@
                                     'Accept-Ranges':  'bytes'
                                 }
                             });
-                        }).catch(() => fetch(event.request)) // Si todo falla, ir a la red
+                        }).catch(() => fetch(event.request))
                     );
                     return;
                 }
 
-                // Recursos no-media (HTML, JSON, CSS): cache-first con guardado en red
+                // No-media: cache-first con guardado automático en red
                 event.respondWith(
-                    caches.match(event.request).then((cached) => {
-                        if (cached) return cached; // Servir desde caché instantáneamente
-                        return fetch(event.request).then((networkResp) =>
-                            caches.open(CACHE_NAME_SW).then((cache) => {
-                                cache.put(event.request, networkResp.clone()); // Guardar para próxima vez
-                                return networkResp;
+                    caches.match(event.request).then(cached => {
+                        if (cached) return cached;
+                        return fetch(event.request).then(resp =>
+                            caches.open(CACHE_NAME_SW).then(cache => {
+                                cache.put(event.request, resp.clone());
+                                return resp;
                             })
                         );
-                    }).catch(() => new Response('Sin conexión — contenido no disponible offline'))
+                    }).catch(() => new Response('Sin conexión', { status: 503 }))
                 );
+            });
+
+            /* C. HEARTBEAT — renueva la marca de acceso de los recursos ligeros
+               para que Safari no los marque como inactivos tras varios días. */
+            self.addEventListener('message', async (event) => {
+                if (event.data?.tipo !== 'heartbeat') return;
+                try {
+                    const cache = await caches.open(CACHE_NAME_SW);
+                    const keys  = await cache.keys();
+                    for (const req of keys) {
+                        if (/\\.(json|html)$|\\/\$/.test(req.url)) {
+                            const resp = await cache.match(req);
+                            if (resp) await cache.put(req, resp.clone());
+                        }
+                    }
+                } catch (e) {}
             });
         `;
 
-        // Convertir el código del SW a un blob URL y registrarlo
         const blobSW = new Blob([swCodigo], { type: 'application/javascript' });
         const urlSW  = URL.createObjectURL(blobSW);
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register(urlSW, { scope: './' })
-                    .then(reg  => console.log('✅ Service Worker registrado:', reg.scope))
-                    .catch(err => console.warn('❌ Error al registrar Service Worker:', err));
+        const registrarSW = () => {
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.register(urlSW, { scope: './' })
+                .then(reg => {
+                    console.log('✅ SW registrado:', reg.scope);
+
+                    // A. Solicitar almacenamiento persistente
+                    if (navigator.storage?.persist) {
+                        navigator.storage.persist().then(ok =>
+                            console.log(ok
+                                ? '🔒 Almacenamiento persistente concedido'
+                                : '⚠️ Safari puede purgar la caché por inactividad')
+                        );
+                    }
+
+                    // C. Heartbeat cada 4 minutos
+                    setInterval(() => {
+                        reg.active?.postMessage({ tipo: 'heartbeat' });
+                    }, 4 * 60 * 1000);
+                })
+                .catch(err => console.warn('❌ Error en SW:', err));
+        };
+
+        window.addEventListener('load', registrarSW);
+
+        // D. Re-registrar SW si Safari lo terminó en segundo plano
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            navigator.serviceWorker?.getRegistrations().then(regs => {
+                if (regs.length === 0) {
+                    console.log('SW perdido — re-registrando...');
+                    registrarSW();
+                }
             });
-        }
+        });
 
 
         /* ═══════════════════════════════════════════════════════════════════
