@@ -221,6 +221,14 @@
         .tab-activa   { background-color: white; color: #8b5cf6; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .tab-inactiva { background-color: rgba(255,255,255,0.2); color: white; }
 
+        /* ── TARJETAS DEL MENÚ DE INICIO ───────────────────────────────────── */
+        .menu-card:active { transform: scale(0.97) !important; }
+
+        /* ── TRANSICIÓN SUAVE DE NAVEGACIÓN ────────────────────────────────── */
+        #menu-inicio, #main-secciones, #header-seccion {
+            transition: opacity 0.18s ease;
+        }
+
         /* ── MEMORAMA: FLIP 3D ─────────────────────────────────────────────
            Para que el volteo de cartas funcione en 3D se necesitan 3 capas:
              1. perspective en el contenedor padre (grid)
@@ -333,73 +341,151 @@
 <body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 overflow-hidden text-white font-sans flex flex-col">
 
     <!-- ════════════════════════════════════════════════════════════
-         HEADER — Barra superior fija
-         Tres zonas horizontales:
-           Izquierda: Logo/identificador con badge de versión
-           Centro:    Pestañas de navegación
-           Derecha:   Botones de acción global
-         Optimizado para iPad landscape (padding reducido).
+         MENÚ DE INICIO — Pantalla principal
+         Grid de 4 tarjetas grandes que ocupan toda la pantalla.
+         Se oculta al entrar a cualquier sección.
          ════════════════════════════════════════════════════════════ -->
-    <header class="flex-none p-2 md:p-4 lg:px-8 flex items-center justify-between gap-4">
+    <div id="menu-inicio" class="flex-1 flex flex-col min-h-0 p-4 md:p-6 lg:p-8 gap-4 md:gap-6">
 
-        <!-- LOGO / IDENTIFICADOR
-             Píldora con glassmorphism que contiene:
-             - Ícono circular (🎧)
-             - Nombre de la app
-             - Badge de versión (se actualiza manualmente con cada cambio) -->
-        <div class="flex items-center gap-3 bg-white/20 backdrop-blur-md rounded-2xl p-2 md:p-3 border border-white/30 shadow-lg">
-            <div class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🎧</div>
-            <div class="flex flex-col justify-center leading-none gap-0.5">
-                <h1 class="text-xl md:text-2xl font-bold tracking-wider leading-none m-0">DJ Emmy</h1>
-                <span class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase leading-none bg-white/90 text-purple-700 px-1.5 py-0.5 rounded-full">v37</span>
+        <!-- Encabezado del menú -->
+        <div class="flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 md:w-14 md:h-14 bg-white rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-lg">🎧</div>
+                <div class="leading-none">
+                    <h1 class="text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
+                    <span class="text-[10px] font-bold tracking-widest uppercase opacity-60">v38</span>
+                </div>
+            </div>
+            <!-- Botones de acción global -->
+            <div class="flex items-center gap-2 md:gap-3">
+                <button onclick="borrarCacheYRecargar()" title="Actualizar"
+                    class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-11 h-11 md:w-13 md:h-13 rounded-2xl shadow flex items-center justify-center text-xl transition-all border border-white/20">
+                    <span id="icono-actualizar">🔄</span>
+                </button>
+                <button onclick="iniciarDescargaOffline()" title="Descargar offline"
+                    class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-11 h-11 md:w-13 md:h-13 rounded-2xl shadow flex items-center justify-center text-xl transition-all border border-white/20">
+                    ☁️
+                </button>
+                <button onclick="pararTodo()"
+                    class="bg-red-500/80 hover:bg-red-500 active:scale-95 text-white px-4 h-11 rounded-2xl shadow font-bold text-sm md:text-base transition-all border border-red-400/30 flex items-center gap-1.5">
+                    ⏹️ <span class="hidden md:inline">Parar</span>
+                </button>
             </div>
         </div>
 
-        <!-- PESTAÑAS DE NAVEGACIÓN
-             Al tocar cada pestaña se llama a cambiarSeccion('id'),
-             que muestra la sección correspondiente y oculta las demás.
-             La activa tiene fondo blanco; las inactivas son semitransparentes. -->
-        <div class="flex-1 max-w-3xl mx-2 flex bg-black/20 p-1 md:p-2 rounded-2xl gap-1 md:gap-2 backdrop-blur-md border-b-4 border-pink-400 shadow-inner">
-            <button id="btn-musica"   onclick="cambiarSeccion('musica')"   class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa  flex items-center justify-center gap-2">🎵 Música</button>
-            <button id="btn-memorama" onclick="cambiarSeccion('memorama')" class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">🍎 Memorama</button>
-            <button id="btn-videos"   onclick="cambiarSeccion('videos')"   class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">🎬 Videos</button>
-            <button id="btn-libros"   onclick="cambiarSeccion('libros')"   class="flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2">📚 Libros</button>
+        <!-- Grid de tarjetas de módulos -->
+        <div class="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-4 md:gap-6">
+
+            <!-- Tarjeta: Música -->
+            <button onclick="cambiarSeccion('musica')"
+                class="menu-card group relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 active:scale-95 transition-all duration-200"
+                style="background: linear-gradient(135deg, #f97316, #ef4444)">
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+                <!-- Patrón decorativo de fondo -->
+                <div class="absolute -right-6 -bottom-6 text-[8rem] md:text-[10rem] opacity-20 pointer-events-none select-none leading-none">🎵</div>
+                <div class="relative z-10 h-full flex flex-col items-start justify-end p-5 md:p-7">
+                    <span class="text-5xl md:text-6xl mb-3 drop-shadow-lg">🎵</span>
+                    <h2 class="text-2xl md:text-3xl font-black leading-none text-white drop-shadow">Música</h2>
+                    <p class="text-white/70 text-sm md:text-base mt-1 font-medium">Canciones infantiles</p>
+                </div>
+            </button>
+
+            <!-- Tarjeta: Memorama -->
+            <button onclick="cambiarSeccion('memorama')"
+                class="menu-card group relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 active:scale-95 transition-all duration-200"
+                style="background: linear-gradient(135deg, #10b981, #059669)">
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+                <div class="absolute -right-6 -bottom-6 text-[8rem] md:text-[10rem] opacity-20 pointer-events-none select-none leading-none">🍎</div>
+                <div class="relative z-10 h-full flex flex-col items-start justify-end p-5 md:p-7">
+                    <span class="text-5xl md:text-6xl mb-3 drop-shadow-lg">🍎</span>
+                    <h2 class="text-2xl md:text-3xl font-black leading-none text-white drop-shadow">Memorama</h2>
+                    <p class="text-white/70 text-sm md:text-base mt-1 font-medium">Encuentra las parejas</p>
+                </div>
+            </button>
+
+            <!-- Tarjeta: Videos -->
+            <button onclick="cambiarSeccion('videos')"
+                class="menu-card group relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 active:scale-95 transition-all duration-200"
+                style="background: linear-gradient(135deg, #3b82f6, #6366f1)">
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+                <div class="absolute -right-6 -bottom-6 text-[8rem] md:text-[10rem] opacity-20 pointer-events-none select-none leading-none">🎬</div>
+                <div class="relative z-10 h-full flex flex-col items-start justify-end p-5 md:p-7">
+                    <span class="text-5xl md:text-6xl mb-3 drop-shadow-lg">🎬</span>
+                    <h2 class="text-2xl md:text-3xl font-black leading-none text-white drop-shadow">Videos</h2>
+                    <p class="text-white/70 text-sm md:text-base mt-1 font-medium">Ver mis favoritos</p>
+                </div>
+            </button>
+
+            <!-- Tarjeta: Libros -->
+            <button onclick="cambiarSeccion('libros')"
+                class="menu-card group relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 active:scale-95 transition-all duration-200"
+                style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+                <div class="absolute -right-6 -bottom-6 text-[8rem] md:text-[10rem] opacity-20 pointer-events-none select-none leading-none">📚</div>
+                <div class="relative z-10 h-full flex flex-col items-start justify-end p-5 md:p-7">
+                    <span class="text-5xl md:text-6xl mb-3 drop-shadow-lg">📚</span>
+                    <h2 class="text-2xl md:text-3xl font-black leading-none text-white drop-shadow">Libros</h2>
+                    <p class="text-white/70 text-sm md:text-base mt-1 font-medium">Leer cuentos</p>
+                </div>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         HEADER DE SECCIÓN — aparece solo dentro de cada módulo
+         Minimalista: solo logo, título de la sección activa,
+         botón de regreso al menú y controles esenciales.
+         ════════════════════════════════════════════════════════════ -->
+    <header id="header-seccion" class="hidden flex-none px-3 md:px-5 py-2 md:py-3 flex items-center gap-3">
+
+        <!-- Botón regreso al menú -->
+        <button onclick="volverAlMenu()"
+            class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-11 h-11 rounded-2xl flex items-center justify-center text-xl font-bold transition-all border border-white/20 shrink-0">
+            ←
+        </button>
+
+        <!-- Logo compacto + título de sección -->
+        <div class="flex items-center gap-2 min-w-0">
+            <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-base shadow shrink-0">🎧</div>
+            <div class="leading-none min-w-0">
+                <p class="text-[10px] font-bold tracking-widest uppercase opacity-50 leading-none">DJ Emmy</p>
+                <h2 id="titulo-seccion-activa" class="text-base md:text-lg font-black leading-tight truncate"></h2>
+            </div>
         </div>
 
-        <!-- BOTONES DE ACCIÓN GLOBAL -->
-        <div class="flex items-center gap-2 md:gap-3">
-            <!-- 🔄 Limpiar caché y recargar: útil al desplegar una nueva versión -->
-            <button onclick="borrarCacheYRecargar()" title="Actualizar app"
-                class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-lg flex items-center justify-center text-2xl md:text-3xl transition-all border-2 border-orange-400/50 shrink-0">
-                <span id="icono-actualizar">🔄</span>
+        <!-- Separador flexible -->
+        <div class="flex-1"></div>
+
+        <!-- Controles de acción (siempre visibles en sección) -->
+        <div class="flex items-center gap-2 shrink-0">
+            <button onclick="borrarCacheYRecargar()" title="Actualizar"
+                class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all border border-white/15">
+                <span id="icono-actualizar-sec">🔄</span>
             </button>
-            <!-- ☁️ Guardar todo para uso sin internet (modo avión) -->
-            <button onclick="iniciarDescargaOffline()" title="Descargar para uso sin internet"
-                class="bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-lg flex items-center justify-center text-2xl md:text-3xl transition-all border-2 border-blue-400/50 shrink-0">
-                <span>☁️</span>
+            <button onclick="iniciarDescargaOffline()" title="Descargar offline"
+                class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all border border-white/15">
+                ☁️
             </button>
-            <!-- ⏹️ Detener toda reproducción activa (música + video) -->
             <button onclick="pararTodo()"
-                class="bg-red-500 hover:bg-red-400 active:bg-red-600 text-white p-3 md:px-6 h-12 md:h-14 rounded-2xl shadow-lg flex items-center justify-center gap-2 font-bold text-lg md:text-xl transition-colors border-2 border-red-400/50 shrink-0">
-                <span>⏹️</span> <span class="hidden md:inline">Parar</span>
+                class="bg-red-500/80 hover:bg-red-500 active:scale-95 text-white px-3 h-10 rounded-xl font-bold text-sm transition-all border border-red-400/30 flex items-center gap-1">
+                ⏹️ <span class="hidden md:inline">Parar</span>
             </button>
         </div>
     </header>
 
     <!-- ════════════════════════════════════════════════════════════
-         MAIN — Área de contenido principal
-         flex-1 hace que crezca para llenar el espacio entre el
-         header y el borde inferior. min-h-0 es necesario para que
-         los hijos flex puedan tener overflow sin romper el layout.
+         MAIN — Área de contenido de secciones
+         Oculto mientras el menú de inicio está visible.
          ════════════════════════════════════════════════════════════ -->
-    <main class="flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-2 pb-2 lg:px-8">
+    <main id="main-secciones" class="hidden flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-2 pb-2 lg:px-8">
 
         <!-- ── SECCIÓN: MÚSICA ──────────────────────────────────────
              Grid responsive de botones de canciones.
              Columnas: 3 en móvil, 4 en tablet, 5 en desktop, 6 en xl.
              overflow-y-auto permite scroll cuando hay muchas canciones.
              Los botones (article + audio) se inyectan por crearBotones(). -->
-        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 block scroll-nativo">
+        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 hidden scroll-nativo">
             <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
                 <!-- Botones de canciones inyectados dinámicamente por crearBotones() -->
             </div>
@@ -1478,41 +1564,81 @@
 
 
         /* ═══════════════════════════════════════════════════════════════════
-           § 9. NAVEGACIÓN ENTRE SECCIONES
-           Muestra la sección solicitada y oculta las demás.
-           Actualiza el estilo visual de las pestañas activa/inactiva.
+           § 9. NAVEGACIÓN — menú de inicio ↔ secciones
            ═══════════════════════════════════════════════════════════════════ */
 
+        // Mapa de secciones: id → { display, titulo }
+        const SECCIONES = {
+            musica:   { display: 'block', titulo: '🎵 Música'   },
+            memorama: { display: 'flex',  titulo: '🍎 Memorama' },
+            videos:   { display: 'flex',  titulo: '🎬 Videos'   },
+            libros:   { display: 'flex',  titulo: '📚 Libros'   }
+        };
+
         /**
-         * Cambia la sección visible de la app.
-         * @param {string} seccion Identificador: 'musica' | 'memorama' | 'videos'
+         * Navega desde el menú de inicio a una sección.
+         * Oculta el menú, muestra el header de sección y el main.
+         * @param {string} seccion  'musica' | 'memorama' | 'videos' | 'libros'
          */
         const cambiarSeccion = (seccion) => {
-            const seccionesConfig = [
-                { id: 'musica',   display: 'block' }, // Música usa block (grid nativo)
-                { id: 'memorama', display: 'flex'  }, // Memorama usa flex (columna)
-                { id: 'videos',   display: 'flex'  }, // Videos usa flex (columna)
-                { id: 'libros',   display: 'flex'  }  // Libros usa flex (fila: panel + visor)
-            ];
+            const cfg = SECCIONES[seccion];
+            if (!cfg) return;
 
-            seccionesConfig.forEach(sec => {
-                const cont = document.getElementById(`seccion-${sec.id}`);
-                const btn  = document.getElementById(`btn-${sec.id}`);
+            // Ocultar menú de inicio
+            document.getElementById('menu-inicio').classList.add('hidden');
+            document.getElementById('menu-inicio').classList.remove('flex');
 
-                if (sec.id === seccion) {
-                    // Mostrar la sección activa
-                    cont.classList.remove('hidden');
-                    cont.classList.add(sec.display === 'flex' ? 'flex' : 'block');
-                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-activa flex items-center justify-center gap-2";
-                    // Al entrar al Memorama, recalcular el tamaño óptimo de las cartas
-                    if (sec.id === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
+            // Mostrar header de sección con título correcto
+            const headerSec = document.getElementById('header-seccion');
+            headerSec.classList.remove('hidden');
+            headerSec.classList.add('flex');
+            document.getElementById('titulo-seccion-activa').textContent = cfg.titulo;
+
+            // Mostrar contenedor de secciones
+            const mainSec = document.getElementById('main-secciones');
+            mainSec.classList.remove('hidden');
+            mainSec.classList.add('flex');
+
+            // Mostrar solo la sección pedida, ocultar las demás
+            Object.keys(SECCIONES).forEach(id => {
+                const el  = document.getElementById(`seccion-${id}`);
+                const dis = SECCIONES[id].display;
+                if (id === seccion) {
+                    el.classList.remove('hidden');
+                    el.classList.add(dis === 'flex' ? 'flex' : 'block');
                 } else {
-                    // Ocultar las secciones inactivas
-                    cont.classList.add('hidden');
-                    cont.classList.remove(sec.display === 'flex' ? 'flex' : 'block');
-                    btn.className = "flex-1 py-2 md:py-3 text-lg md:text-xl font-bold rounded-xl transition-all tab-inactiva flex items-center justify-center gap-2";
+                    el.classList.add('hidden');
+                    el.classList.remove(dis === 'flex' ? 'flex' : 'block');
                 }
             });
+
+            // Acciones específicas por sección
+            if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
+            if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
+        };
+
+        /**
+         * Regresa al menú de inicio desde cualquier sección.
+         * Oculta el header de sección y el main, muestra el menú.
+         */
+        const volverAlMenu = () => {
+            // Ocultar header y main de sección
+            document.getElementById('header-seccion').classList.add('hidden');
+            document.getElementById('header-seccion').classList.remove('flex');
+            document.getElementById('main-secciones').classList.add('hidden');
+            document.getElementById('main-secciones').classList.remove('flex');
+
+            // Ocultar todas las secciones
+            Object.keys(SECCIONES).forEach(id => {
+                const el  = document.getElementById(`seccion-${id}`);
+                const dis = SECCIONES[id].display;
+                el.classList.add('hidden');
+                el.classList.remove(dis === 'flex' ? 'flex' : 'block');
+            });
+
+            // Mostrar menú de inicio
+            document.getElementById('menu-inicio').classList.remove('hidden');
+            document.getElementById('menu-inicio').classList.add('flex');
         };
 
 
@@ -1681,7 +1807,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v37'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v38'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
@@ -1692,8 +1818,8 @@
          * Se activa al presionar el botón 🔄 en el header.
          */
         const borrarCacheYRecargar = async () => {
-            const iconoBtn = document.getElementById('icono-actualizar');
-            if (iconoBtn) iconoBtn.innerText = '⏳';
+            document.querySelectorAll('#icono-actualizar, #icono-actualizar-sec')
+                .forEach(el => el.innerText = '⏳');
 
             try {
                 // 1. Borrar todas las cachés registradas bajo este origen
