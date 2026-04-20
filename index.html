@@ -342,33 +342,31 @@
 
     <!-- ════════════════════════════════════════════════════════════
          MENÚ DE INICIO — Pantalla principal
-         Grid de 4 tarjetas grandes que ocupan toda la pantalla.
-         Se oculta al entrar a cualquier sección.
          ════════════════════════════════════════════════════════════ -->
     <div id="menu-inicio" class="flex-1 flex flex-col min-h-0 p-4 md:p-6 lg:p-8 gap-4 md:gap-6">
 
-        <!-- Encabezado del menú -->
+        <!-- Encabezado del menú: logo + indicador offline + engranaje config -->
         <div class="flex items-center justify-between shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 md:w-14 md:h-14 bg-white rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[10px] font-bold tracking-widest uppercase opacity-60">v38</span>
+                    <span class="text-[10px] font-bold tracking-widest uppercase opacity-60">v39</span>
                 </div>
             </div>
-            <!-- Botones de acción global -->
-            <div class="flex items-center gap-2 md:gap-3">
-                <button onclick="borrarCacheYRecargar()" title="Actualizar"
-                    class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-11 h-11 md:w-13 md:h-13 rounded-2xl shadow flex items-center justify-center text-xl transition-all border border-white/20">
-                    <span id="icono-actualizar">🔄</span>
-                </button>
-                <button onclick="iniciarDescargaOffline()" title="Descargar offline"
-                    class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-11 h-11 md:w-13 md:h-13 rounded-2xl shadow flex items-center justify-center text-xl transition-all border border-white/20">
-                    ☁️
-                </button>
-                <button onclick="pararTodo()"
-                    class="bg-red-500/80 hover:bg-red-500 active:scale-95 text-white px-4 h-11 rounded-2xl shadow font-bold text-sm md:text-base transition-all border border-red-400/30 flex items-center gap-1.5">
-                    ⏹️ <span class="hidden md:inline">Parar</span>
+            <div class="flex items-center gap-2">
+                <!-- Indicador de contenido descargado: verde = todo listo, gris = pendiente -->
+                <div id="indicador-offline" title="Estado de descarga offline"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all"
+                    style="background:rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5)">
+                    <span id="indicador-offline-dot" class="w-2 h-2 rounded-full bg-white/30 shrink-0"></span>
+                    <span id="indicador-offline-texto">Verificando...</span>
+                </div>
+                <!-- Botón de configuración protegida por suma -->
+                <button onclick="abrirConfig()"
+                    class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all border border-white/15"
+                    title="Configuración">
+                    ⚙️
                 </button>
             </div>
         </div>
@@ -381,7 +379,6 @@
                 class="menu-card group relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 active:scale-95 transition-all duration-200"
                 style="background: linear-gradient(135deg, #f97316, #ef4444)">
                 <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
-                <!-- Patrón decorativo de fondo -->
                 <div class="absolute -right-6 -bottom-6 text-[8rem] md:text-[10rem] opacity-20 pointer-events-none select-none leading-none">🎵</div>
                 <div class="relative z-10 h-full flex flex-col items-start justify-end p-5 md:p-7">
                     <span class="text-5xl md:text-6xl mb-3 drop-shadow-lg">🎵</span>
@@ -433,45 +430,23 @@
     </div>
 
     <!-- ════════════════════════════════════════════════════════════
-         HEADER DE SECCIÓN — aparece solo dentro de cada módulo
-         Minimalista: solo logo, título de la sección activa,
-         botón de regreso al menú y controles esenciales.
+         HEADER DE SECCIÓN — minimalista, sin logo ni título
+         Solo: flecha regreso | emoji sección | botón parar discreto
          ════════════════════════════════════════════════════════════ -->
-    <header id="header-seccion" class="hidden flex-none px-3 md:px-5 py-2 md:py-3 flex items-center gap-3">
-
-        <!-- Botón regreso al menú -->
+    <header id="header-seccion" class="hidden flex-none px-3 py-1.5 flex items-center gap-2">
+        <!-- Botón regreso -->
         <button onclick="volverAlMenu()"
-            class="bg-white/20 hover:bg-white/30 active:scale-95 text-white w-11 h-11 rounded-2xl flex items-center justify-center text-xl font-bold transition-all border border-white/20 shrink-0">
+            class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-9 h-9 rounded-xl flex items-center justify-center text-base font-bold transition-all border border-white/15 shrink-0">
             ←
         </button>
-
-        <!-- Logo compacto + título de sección -->
-        <div class="flex items-center gap-2 min-w-0">
-            <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-base shadow shrink-0">🎧</div>
-            <div class="leading-none min-w-0">
-                <p class="text-[10px] font-bold tracking-widest uppercase opacity-50 leading-none">DJ Emmy</p>
-                <h2 id="titulo-seccion-activa" class="text-base md:text-lg font-black leading-tight truncate"></h2>
-            </div>
-        </div>
-
-        <!-- Separador flexible -->
-        <div class="flex-1"></div>
-
-        <!-- Controles de acción (siempre visibles en sección) -->
-        <div class="flex items-center gap-2 shrink-0">
-            <button onclick="borrarCacheYRecargar()" title="Actualizar"
-                class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all border border-white/15">
-                <span id="icono-actualizar-sec">🔄</span>
-            </button>
-            <button onclick="iniciarDescargaOffline()" title="Descargar offline"
-                class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all border border-white/15">
-                ☁️
-            </button>
-            <button onclick="pararTodo()"
-                class="bg-red-500/80 hover:bg-red-500 active:scale-95 text-white px-3 h-10 rounded-xl font-bold text-sm transition-all border border-red-400/30 flex items-center gap-1">
-                ⏹️ <span class="hidden md:inline">Parar</span>
-            </button>
-        </div>
+        <!-- Emoji + nombre de la sección activa (compacto) -->
+        <span id="titulo-seccion-activa" class="text-sm font-bold opacity-70 truncate flex-1"></span>
+        <!-- Botón parar: pequeño, discreto, en el extremo derecho -->
+        <button id="btn-parar-flotante" onclick="pararTodo()"
+            class="bg-white/10 hover:bg-red-500/60 active:scale-95 text-white/50 hover:text-white w-9 h-9 rounded-xl flex items-center justify-center text-base transition-all border border-white/10 hover:border-red-400/30 shrink-0"
+            title="Detener reproducción">
+            ⏹
+        </button>
     </header>
 
     <!-- ════════════════════════════════════════════════════════════
@@ -698,7 +673,62 @@
     </div>
 
     <!-- ════════════════════════════════════════════════════════════
-         JAVASCRIPT PRINCIPAL
+         MODAL CONFIGURACIÓN — protegido por suma simple
+         Un adulto resuelve la suma para acceder a las opciones de
+         mantenimiento (actualizar, descargar offline). El infante
+         no puede acceder accidentalmente.
+         ════════════════════════════════════════════════════════════ -->
+    <div id="modal-config" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-6">
+        <div class="bg-white text-gray-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+
+            <!-- Pantalla de verificación matemática -->
+            <div id="config-verificacion" class="p-7 flex flex-col items-center text-center">
+                <span class="text-5xl mb-3">🔐</span>
+                <h2 class="text-xl font-black mb-1 text-gray-800">Zona de adultos</h2>
+                <p class="text-gray-500 text-sm mb-5">Resuelve la suma para continuar</p>
+                <div id="config-pregunta" class="text-4xl font-black text-purple-600 mb-5 tracking-wide"></div>
+                <div class="flex gap-2 w-full mb-4">
+                    <input id="config-respuesta" type="number"
+                        class="flex-1 border-2 border-gray-200 rounded-2xl px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:border-purple-400 text-gray-800"
+                        placeholder="?" inputmode="numeric">
+                    <button onclick="verificarConfig()"
+                        class="bg-purple-500 hover:bg-purple-400 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-lg transition-all">
+                        →
+                    </button>
+                </div>
+                <p id="config-error" class="text-red-500 text-sm font-semibold hidden">Incorrecto, intenta de nuevo</p>
+                <button onclick="cerrarConfig()" class="text-gray-400 text-sm mt-3 hover:text-gray-600">Cancelar</button>
+            </div>
+
+            <!-- Pantalla de opciones (visible tras resolver la suma) -->
+            <div id="config-opciones" class="hidden p-7 flex-col gap-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xl font-black text-gray-800">⚙️ Configuración</h2>
+                    <button onclick="cerrarConfig()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+                </div>
+
+                <!-- Opción: Descargar para modo avión -->
+                <button onclick="cerrarConfig(); iniciarDescargaOffline();"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all text-left active:scale-98">
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl shrink-0">☁️</div>
+                    <div>
+                        <p class="font-bold text-gray-800">Descargar para modo avión</p>
+                        <p class="text-gray-500 text-sm">Guarda todo el contenido en el iPad</p>
+                    </div>
+                </button>
+
+                <!-- Opción: Actualizar app -->
+                <button onclick="cerrarConfig(); borrarCacheYRecargar();"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 transition-all text-left active:scale-98">
+                    <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-2xl shrink-0">🔄</div>
+                    <div>
+                        <p class="font-bold text-gray-800">Actualizar aplicación</p>
+                        <p class="text-gray-500 text-sm">Borra la caché y recarga desde el servidor</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
          Todo el comportamiento de la app vive en este bloque.
 
          ÍNDICE DE SECCIONES:
@@ -1639,11 +1669,107 @@
             // Mostrar menú de inicio
             document.getElementById('menu-inicio').classList.remove('hidden');
             document.getElementById('menu-inicio').classList.add('flex');
+            verificarEstadoOffline();
         };
 
 
         /* ═══════════════════════════════════════════════════════════════════
-           § 10. LAYOUT DINÁMICO DEL MEMORAMA
+           § 9b. CONFIGURACIÓN PROTEGIDA — suma matemática para adultos
+           Genera una suma simple aleatoria. Si el usuario la resuelve,
+           accede a las opciones de mantenimiento (descargar, actualizar).
+           ═══════════════════════════════════════════════════════════════════ */
+
+        let _configRespuestaCorrecta = 0;
+
+        /** Abre el modal de configuración y genera una nueva suma */
+        const abrirConfig = () => {
+            const a = Math.floor(Math.random() * 9) + 1;
+            const b = Math.floor(Math.random() * 9) + 1;
+            _configRespuestaCorrecta = a + b;
+            document.getElementById('config-pregunta').textContent = `${a} + ${b} = ?`;
+            document.getElementById('config-respuesta').value = '';
+            document.getElementById('config-error').classList.add('hidden');
+            document.getElementById('config-verificacion').classList.remove('hidden');
+            document.getElementById('config-opciones').classList.add('hidden');
+            document.getElementById('config-opciones').classList.remove('flex');
+            document.getElementById('modal-config').classList.replace('hidden', 'flex');
+            setTimeout(() => document.getElementById('config-respuesta').focus(), 100);
+        };
+
+        /** Verifica si la respuesta ingresada es correcta */
+        const verificarConfig = () => {
+            const val = parseInt(document.getElementById('config-respuesta').value);
+            if (val === _configRespuestaCorrecta) {
+                document.getElementById('config-verificacion').classList.add('hidden');
+                document.getElementById('config-opciones').classList.remove('hidden');
+                document.getElementById('config-opciones').classList.add('flex');
+            } else {
+                const err = document.getElementById('config-error');
+                err.classList.remove('hidden');
+                document.getElementById('config-respuesta').value = '';
+                document.getElementById('config-respuesta').focus();
+                setTimeout(() => err.classList.add('hidden'), 2000);
+            }
+        };
+
+        /** Permite confirmar con Enter en el input de respuesta */
+        document.getElementById('config-respuesta').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') verificarConfig();
+        });
+
+        /** Cierra el modal de configuración */
+        const cerrarConfig = () => {
+            document.getElementById('modal-config').classList.replace('flex', 'hidden');
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 9c. INDICADOR DE CONTENIDO OFFLINE
+           Verifica al cargar y al volver al menú si todos los archivos
+           esperados están en la caché. Actualiza el badge discreto.
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Comprueba cuántos recursos de urlsParaCachear están en caché
+         * y actualiza el indicador visual del menú.
+         */
+        const verificarEstadoOffline = async () => {
+            const dot    = document.getElementById('indicador-offline-dot');
+            const texto  = document.getElementById('indicador-offline-texto');
+            const badge  = document.getElementById('indicador-offline');
+            if (!dot || !texto) return;
+
+            try {
+                if (!('caches' in window) || urlsParaCachear.length === 0) {
+                    texto.textContent = 'Sin caché';
+                    return;
+                }
+                const cache    = await caches.open(CACHE_NAME);
+                let guardados  = 0;
+                const total    = urlsParaCachear.length;
+                for (const url of urlsParaCachear) {
+                    const hit = await cache.match(url);
+                    if (hit) guardados++;
+                }
+                const pct = Math.round((guardados / total) * 100);
+
+                if (guardados === total) {
+                    // Todo descargado — verde
+                    dot.style.backgroundColor  = '#4ade80';
+                    badge.style.borderColor    = 'rgba(74,222,128,0.4)';
+                    badge.style.color          = 'rgba(255,255,255,0.8)';
+                    texto.textContent = '✓ Sin conexión';
+                } else {
+                    // Parcialmente descargado — ámbar
+                    dot.style.backgroundColor  = '#fbbf24';
+                    badge.style.borderColor    = 'rgba(251,191,36,0.4)';
+                    badge.style.color          = 'rgba(255,255,255,0.7)';
+                    texto.textContent = `${pct}% guardado`;
+                }
+            } catch (e) {
+                texto.textContent = 'Sin caché';
+            }
+        };
            PROBLEMA: Las cartas tienen proporción 2:3 (ancho:alto) pero el
            grid debe caber en el espacio vertical disponible sin que el título
            ni la pila inferior queden fuera de la pantalla.
@@ -1738,7 +1864,8 @@
             crearBotones(musica, contenedorMusica, 'musica');
             iniciarMemorama();
             crearBotonesVideos();
-            crearListaLibros(); // Panel lateral de libros (asíncrono, genera miniaturas)
+            crearListaLibros();
+            verificarEstadoOffline();
         };
 
 
@@ -1807,7 +1934,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v38'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v39'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
@@ -1818,8 +1945,6 @@
          * Se activa al presionar el botón 🔄 en el header.
          */
         const borrarCacheYRecargar = async () => {
-            document.querySelectorAll('#icono-actualizar, #icono-actualizar-sec')
-                .forEach(el => el.innerText = '⏳');
 
             try {
                 // 1. Borrar todas las cachés registradas bajo este origen
@@ -1891,6 +2016,7 @@
                 barra.classList.add('bg-green-500');
                 texto.innerText = '¡Todo descargado con éxito! ✅';
                 btnCerrar.classList.remove('hidden');
+                verificarEstadoOffline();
 
             } catch (error) {
                 console.error('Error crítico en descarga offline:', error);
