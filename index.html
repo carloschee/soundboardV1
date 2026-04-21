@@ -351,7 +351,7 @@
                 <div class="w-12 h-12 md:w-14 md:h-14 bg-white rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[10px] font-bold tracking-widest uppercase opacity-60">v40</span>
+                    <span class="text-[10px] font-bold tracking-widest uppercase opacity-60">v41</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1773,6 +1773,9 @@
                 texto.textContent = 'Sin caché';
             }
         };
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 10. LAYOUT DINÁMICO DEL MEMORAMA
            PROBLEMA: Las cartas tienen proporción 2:3 (ancho:alto) pero el
            grid debe caber en el espacio vertical disponible sin que el título
            ni la pila inferior queden fuera de la pantalla.
@@ -1937,7 +1940,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v40'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v41'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
