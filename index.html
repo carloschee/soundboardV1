@@ -352,7 +352,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v44</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v45</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -369,55 +369,38 @@
         </div>
 
         <!-- Grid de imágenes flotantes — sin bordes ni paneles -->
-        <!-- iPhone: 2×2 compacto | iPad: espaciado generoso -->
-        <div class="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-x-6 gap-y-4 sm:gap-6 md:gap-8 px-2 sm:px-4 md:px-8">
+        <div class="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-x-4 gap-y-2 sm:gap-5 md:gap-8 px-0 sm:px-4 md:px-8">
 
             <!-- Música -->
             <button onclick="cambiarSeccion('musica')"
-                class="menu-card flex flex-col items-center justify-center gap-1.5 sm:gap-3 active:scale-90 transition-transform duration-150 min-h-0">
+                class="menu-card flex flex-col items-center justify-center active:scale-90 transition-transform duration-150 min-h-0">
                 <img src="img/icn-musica.png"
-                    class="w-full max-w-[110px] sm:max-w-[150px] md:max-w-[190px] flex-1 min-h-0 object-contain drop-shadow-2xl"
-                    style="filter:drop-shadow(0 8px 20px rgba(0,0,0,0.35))" alt="Música">
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-lg sm:text-xl md:text-2xl leading-none">🎵</span>
-                    <span class="text-sm sm:text-base md:text-lg font-black text-white" style="text-shadow:0 2px 8px rgba(0,0,0,0.4)">Música</span>
-                </div>
+                    class="w-full max-w-[200px] sm:max-w-[240px] md:max-w-[320px] flex-1 min-h-0 object-contain"
+                    style="filter:drop-shadow(0 10px 24px rgba(0,0,0,0.4))" alt="Música">
             </button>
 
             <!-- Memorama -->
             <button onclick="cambiarSeccion('memorama')"
-                class="menu-card flex flex-col items-center justify-center gap-1.5 sm:gap-3 active:scale-90 transition-transform duration-150 min-h-0">
+                class="menu-card flex flex-col items-center justify-center active:scale-90 transition-transform duration-150 min-h-0">
                 <img src="img/icn-memorama.png"
-                    class="w-full max-w-[110px] sm:max-w-[150px] md:max-w-[190px] flex-1 min-h-0 object-contain drop-shadow-2xl"
-                    style="filter:drop-shadow(0 8px 20px rgba(0,0,0,0.35))" alt="Memorama">
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-lg sm:text-xl md:text-2xl leading-none">🍎</span>
-                    <span class="text-sm sm:text-base md:text-lg font-black text-white" style="text-shadow:0 2px 8px rgba(0,0,0,0.4)">Memorama</span>
-                </div>
+                    class="w-full max-w-[200px] sm:max-w-[240px] md:max-w-[320px] flex-1 min-h-0 object-contain"
+                    style="filter:drop-shadow(0 10px 24px rgba(0,0,0,0.4))" alt="Memorama">
             </button>
 
             <!-- Videos -->
             <button onclick="cambiarSeccion('videos')"
-                class="menu-card flex flex-col items-center justify-center gap-1.5 sm:gap-3 active:scale-90 transition-transform duration-150 min-h-0">
+                class="menu-card flex flex-col items-center justify-center active:scale-90 transition-transform duration-150 min-h-0">
                 <img src="img/icn-videos.png"
-                    class="w-full max-w-[110px] sm:max-w-[150px] md:max-w-[190px] flex-1 min-h-0 object-contain drop-shadow-2xl"
-                    style="filter:drop-shadow(0 8px 20px rgba(0,0,0,0.35))" alt="Videos">
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-lg sm:text-xl md:text-2xl leading-none">🎬</span>
-                    <span class="text-sm sm:text-base md:text-lg font-black text-white" style="text-shadow:0 2px 8px rgba(0,0,0,0.4)">Videos</span>
-                </div>
+                    class="w-full max-w-[200px] sm:max-w-[240px] md:max-w-[320px] flex-1 min-h-0 object-contain"
+                    style="filter:drop-shadow(0 10px 24px rgba(0,0,0,0.4))" alt="Videos">
             </button>
 
             <!-- Libros -->
             <button onclick="cambiarSeccion('libros')"
-                class="menu-card flex flex-col items-center justify-center gap-1.5 sm:gap-3 active:scale-90 transition-transform duration-150 min-h-0">
+                class="menu-card flex flex-col items-center justify-center active:scale-90 transition-transform duration-150 min-h-0">
                 <img src="img/icn-libros.png"
-                    class="w-full max-w-[110px] sm:max-w-[150px] md:max-w-[190px] flex-1 min-h-0 object-contain drop-shadow-2xl"
-                    style="filter:drop-shadow(0 8px 20px rgba(0,0,0,0.35))" alt="Libros">
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-lg sm:text-xl md:text-2xl leading-none">📚</span>
-                    <span class="text-sm sm:text-base md:text-lg font-black text-white" style="text-shadow:0 2px 8px rgba(0,0,0,0.4)">Libros</span>
-                </div>
+                    class="w-full max-w-[200px] sm:max-w-[240px] md:max-w-[320px] flex-1 min-h-0 object-contain"
+                    style="filter:drop-shadow(0 10px 24px rgba(0,0,0,0.4))" alt="Libros">
             </button>
 
         </div>
@@ -450,7 +433,7 @@
          ════════════════════════════════════════════════════════════ -->
     <button id="btn-parar-global" onclick="pararTodo()" title="Detener reproducción"
         class="fixed z-40 active:scale-90 transition-all duration-150"
-        style="right:16px; bottom:calc(16px + env(safe-area-inset-bottom,0px)); width:52px; height:52px; sm:width:56px; sm:height:56px">
+        style="right:14px; top:calc(14px + env(safe-area-inset-top,0px)); width:48px; height:48px">
         <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;filter:drop-shadow(0 4px 10px rgba(220,38,38,0.6))">
             <circle cx="26" cy="26" r="26" fill="#ef4444"/>
             <rect x="17" y="17" width="18" height="18" rx="3" fill="white"/>
@@ -461,16 +444,13 @@
          MAIN — Área de contenido de secciones
          Oculto mientras el menú de inicio está visible.
          ════════════════════════════════════════════════════════════ -->
-    <main id="main-secciones" class="hidden flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-2 pb-16 lg:px-8">
+    <main id="main-secciones" class="hidden flex-1 flex flex-col min-h-0 px-3 sm:px-4 md:px-6 pt-1 pb-2 lg:px-8">
 
         <!-- ── SECCIÓN: MÚSICA ──────────────────────────────────────
-             Grid responsive de botones de canciones.
-             Columnas: 3 en móvil, 4 en tablet, 5 en desktop, 6 en xl.
-             overflow-y-auto permite scroll cuando hay muchas canciones.
-             Los botones (article + audio) se inyectan por crearBotones(). -->
-        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-2 hidden scroll-nativo">
-            <div id="grid-musica" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pb-10">
-                <!-- Botones de canciones inyectados dinámicamente por crearBotones() -->
+             iPhone: 3 col | iPad: 4-6 col. gap reducido en móvil. -->
+        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-1 hidden scroll-nativo">
+            <div id="grid-musica" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-5 pb-4">
+                <!-- Botones inyectados por crearBotones() -->
             </div>
         </div>
 
@@ -1107,10 +1087,10 @@
                 // Botón principal: usa <article> para semántica de contenido interactivo
                 const articulo = document.createElement('article');
                 articulo.id        = `btn-${track.archivo}`;
-                articulo.className = `${track.color} rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center aspect-square border-4 border-white/20 relative overflow-hidden transition-all`;
+                articulo.className = `${track.color} rounded-2xl sm:rounded-3xl p-2 sm:p-4 shadow-lg sm:shadow-xl flex flex-col items-center justify-center aspect-square border-2 sm:border-4 border-white/20 relative overflow-hidden transition-all`;
                 articulo.innerHTML = `
-                    <span class="text-6xl md:text-7xl mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
-                    <span class="text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-1 pointer-events-none">${track.titulo}</span>
+                    <span class="text-4xl sm:text-6xl md:text-7xl mb-1 sm:mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
+                    <span class="text-[10px] sm:text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-0.5 sm:px-1 pointer-events-none">${track.titulo}</span>
                 `;
 
                 // Elemento <audio> oculto que carga el archivo MP3 real
@@ -1948,7 +1928,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v44'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v45'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
