@@ -352,7 +352,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v45</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v46</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -822,6 +822,66 @@
 
 
         /* ═══════════════════════════════════════════════════════════════════
+           § 2b. SÍNTESIS DE VOZ (Web Speech API)
+           Función centralizada para TTS. Configura una voz en español,
+           tono alegre (pitch alto) y velocidad ligeramente elevada.
+           Si el dispositivo no tiene voz en español disponible al momento
+           de la llamada, espera a que las voces carguen (onvoiceschanged).
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Enuncia un texto usando síntesis de voz del sistema.
+         * @param {string} texto      Texto a leer en voz alta
+         * @param {number} pitch      Tono (1.0 = normal, >1 = más agudo/alegre)
+         * @param {number} rate       Velocidad (1.0 = normal, >1 = más rápido)
+         * @param {number} delay      Retardo en ms antes de hablar (default 0)
+         */
+        const hablar = (texto, pitch = 1.4, rate = 1.1, delay = 0) => {
+            if (!window.speechSynthesis) return;
+            const hablarAhora = () => {
+                window.speechSynthesis.cancel(); // Cancelar cualquier utterance anterior
+                const utt = new SpeechSynthesisUtterance(texto);
+                utt.lang  = 'es-MX';
+                utt.pitch = pitch;
+                utt.rate  = rate;
+                utt.volume = 1;
+
+                // Intentar seleccionar una voz en español del dispositivo
+                const voces   = window.speechSynthesis.getVoices();
+                const vozEs   = voces.find(v => v.lang.startsWith('es')) || null;
+                if (vozEs) utt.voice = vozEs;
+
+                window.speechSynthesis.speak(utt);
+            };
+
+            if (delay > 0) {
+                setTimeout(hablarAhora, delay);
+            } else {
+                hablarAhora();
+            }
+        };
+
+        // Pre-cargar voces al inicio (iOS las carga de forma lazy)
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+
+
+        /* ═══════════════════════════════════════════════════════════════════
+           § 2c. MAPA DE NOMBRES DE FRUTAS
+           Traduce cada emoji de fruta a su nombre en español para la TTS.
+           ═══════════════════════════════════════════════════════════════════ */
+        const NOMBRES_FRUTAS = {
+            '🍇': 'uvas',   '🍉': 'sandía',  '🍊': 'naranja', '🍌': 'plátano',
+            '🍍': 'piña',   '🍎': 'manzana', '🍐': 'pera',    '🍋': 'limón',
+            '🍑': 'durazno','🍒': 'cerezas', '🍓': 'fresa',   '🥝': 'kiwi',
+            '🍅': 'jitomate','🥭': 'mango',  '🥥': 'coco',   '🍈': 'melón',
+            '🍏': 'manzana verde', '🫐': 'arándanos'
+        };
+
+
+        /* ═══════════════════════════════════════════════════════════════════
            § 3. EFECTO DE CONFETI
            Crea 80 partículas cuadradas de colores que caen desde arriba
            usando la Web Animations API. Cada partícula se elimina del DOM
@@ -1257,6 +1317,10 @@
                 parejasEncontradas++;
                 sonidoExito();
 
+                // Enunciar el nombre de la fruta con voz suave y entusiasta
+                const nombreFruta = NOMBRES_FRUTAS[fruta] || fruta;
+                hablar(`¡${nombreFruta}!`, 1.3, 0.95, 300);
+
                 setTimeout(() => {
                     // Animar desaparición de las cartas del tablero
                     carta1.cardEl.classList.add('scale-0', 'opacity-0');
@@ -1276,6 +1340,8 @@
                     if (parejasEncontradas === frutasMemorama.length) {
                         sonidoVictoria();
                         lanzarConfeti();
+                        // Enunciar felicitaciones durante la animación del trofeo
+                        hablar('¡Felicidades, ganaste!', 1.4, 0.9, 400);
 
                         // Mostrar trofeo con animación pop-in
                         const overlay = document.getElementById('mensaje-victoria');
@@ -1636,6 +1702,15 @@
             // Acciones específicas por sección
             if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
+
+            // Enunciar el nombre de la sección con voz alegre
+            const frases = {
+                musica:   '¡Hora de la música!',
+                memorama: '¡Vamos a jugar memorama!',
+                videos:   '¡A ver videos!',
+                libros:   '¡Hora de leer!'
+            };
+            hablar(frases[seccion] || cfg.titulo, 1.5, 1.1, 150);
         };
 
         /**
@@ -1928,7 +2003,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v45'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v46'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
