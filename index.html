@@ -42,7 +42,7 @@
 ║    [{ "archivo": "cuento", "titulo": "El nombre del libro" }, ...]           ║
 ║    → El archivo se busca en /libros/cuento.pdf                               ║
 ║                                                                              ║
-║  VERSIÓN ACTUAL: v26                                                         ║
+║  VERSIÓN ACTUAL: v52                                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
 
@@ -99,33 +99,34 @@
 -->
 <script>
     (function() {
+        // OPT-4: Reusar el ícono desde localStorage si ya fue generado
+        const ICON_KEY = 'djemmy-icon-v1';
+        const cached = localStorage.getItem(ICON_KEY);
+        if (cached) {
+            window.appIconPNG = cached;
+            document.getElementById('apple-icon').href = cached;
+            document.getElementById('favicon').href    = cached;
+            return;
+        }
         const canvas  = document.createElement('canvas');
         canvas.width  = 512;
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
-
-        // Fondo con degradado rosa → morado → índigo
         const grad = ctx.createLinearGradient(0, 0, 512, 512);
-        grad.addColorStop(0,   '#ec4899'); // Rosa
-        grad.addColorStop(0.5, '#8b5cf6'); // Morado
-        grad.addColorStop(1,   '#6366f1'); // Índigo
+        grad.addColorStop(0,   '#ec4899');
+        grad.addColorStop(0.5, '#8b5cf6');
+        grad.addColorStop(1,   '#6366f1');
         ctx.fillStyle = grad;
-        // iOS recorta las esquinas automáticamente; aquí llenamos el cuadrado completo
         ctx.fillRect(0, 0, 512, 512);
-
-        // Círculos de cristal decorativos (efecto glassmorphism)
         ctx.beginPath();
         ctx.arc(256, 256, 180, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,255,255,0.15)';
         ctx.fill();
-
         ctx.beginPath();
         ctx.arc(256, 256, 210, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.lineWidth = 8;
         ctx.stroke();
-
-        // Emoji de audífonos centrado con sombra
         ctx.font          = '240px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
         ctx.textAlign     = 'center';
         ctx.textBaseline  = 'middle';
@@ -133,11 +134,10 @@
         ctx.shadowBlur    = 20;
         ctx.shadowOffsetY = 10;
         ctx.fillText('🎧', 256, 276);
-
-        // Guardar PNG como variable global para reutilizarlo en el manifest PWA
         window.appIconPNG = canvas.toDataURL('image/png');
         document.getElementById('apple-icon').href = window.appIconPNG;
         document.getElementById('favicon').href    = window.appIconPNG;
+        try { localStorage.setItem(ICON_KEY, window.appIconPNG); } catch(e) {}
     })();
 </script>
 
@@ -371,7 +371,46 @@
 
 ```
 <!-- ════════════════════════════════════════════════════════════
-     MENÚ DE INICIO — imágenes flotantes sin paneles
+     SPLASH — Pantalla de carga inicial
+     Se muestra mientras inicializarApp() carga los JSONs y
+     construye la UI. Se desvanece y elimina del DOM al terminar.
+     Cubre todo el viewport con el mismo fondo animado de aurora.
+     ════════════════════════════════════════════════════════════ -->
+<div id="splash" class="fixed inset-0 z-[999] flex flex-col items-center justify-center gap-6"
+    style="background:inherit">
+    <!-- Logo -->
+    <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl shadow-2xl"
+        style="box-shadow:0 8px 40px rgba(0,0,0,0.3)">🎧</div>
+    <div class="text-center">
+        <h1 class="text-4xl font-black tracking-tight mb-1">DJ Emmy</h1>
+        <p class="text-white/60 text-sm font-semibold tracking-widest uppercase">Cargando...</p>
+    </div>
+    <!-- Barra de progreso de carga -->
+    <div class="w-48 sm:w-64 bg-white/20 rounded-full h-2 overflow-hidden">
+        <div id="splash-barra"
+            class="h-full rounded-full bg-white transition-all duration-300 ease-out"
+            style="width:0%"></div>
+    </div>
+    <p id="splash-texto" class="text-white/50 text-xs font-medium"></p>
+</div>
+
+<!-- SVG symbols reutilizables (OPT-11) — invisible, solo definiciones -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <symbol id="icn-casa" viewBox="0 0 44 44">
+        <circle cx="22" cy="22" r="22" fill="white"/>
+        <path d="M8 21 L22 8 L36 21" stroke="#7c3aed" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <rect x="13" y="21" width="18" height="14" rx="2.5" fill="#7c3aed"/>
+        <rect x="18.5" y="27" width="7" height="8" rx="2" fill="white"/>
+    </symbol>
+    <symbol id="icn-stop-40" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="20" fill="#ef4444"/>
+        <rect x="12" y="12" width="16" height="16" rx="2.5" fill="white"/>
+    </symbol>
+    <symbol id="icn-stop-36" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="20" fill="#ef4444"/>
+        <rect x="12" y="12" width="16" height="16" rx="2.5" fill="white"/>
+    </symbol>
+</svg>
      iPhone: 2 columnas ajustadas | iPad: espacio generoso
      ════════════════════════════════════════════════════════════ -->
 <div id="menu-inicio" class="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-2 sm:p-6 lg:p-8 gap-3 sm:gap-5">
@@ -382,7 +421,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v51</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v52</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -399,10 +438,7 @@
             <button onclick="pararTodo()" title="Detener reproducción"
                 class="active:scale-90 transition-all duration-150 shrink-0"
                 style="width:36px;height:36px">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;filter:drop-shadow(0 2px 6px rgba(220,38,38,0.5))">
-                    <circle cx="20" cy="20" r="20" fill="#ef4444"/>
-                    <rect x="12" y="12" width="16" height="16" rx="2.5" fill="white"/>
-                </svg>
+                <svg width="36" height="36" style="filter:drop-shadow(0 2px 6px rgba(220,38,38,0.5))"><use href="#icn-stop-36"/></svg>
             </button>
         </div>
     </div>
@@ -454,22 +490,14 @@
     <button onclick="volverAlMenu()" title="Volver al menú"
         class="active:scale-90 transition-all duration-150 shrink-0"
         style="width:44px;height:44px">
-        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:44px;height:44px;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3))">
-            <circle cx="22" cy="22" r="22" fill="white"/>
-            <path d="M8 21 L22 8 L36 21" stroke="#7c3aed" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <rect x="13" y="21" width="18" height="14" rx="2.5" fill="#7c3aed"/>
-            <rect x="18.5" y="27" width="7" height="8" rx="2" fill="white"/>
-        </svg>
+        <svg width="44" height="44" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3))"><use href="#icn-casa"/></svg>
     </button>
     <span id="titulo-seccion-activa" class="text-sm font-bold opacity-60 truncate flex-1"></span>
     <!-- Botón parar — parte del header, círculo rojo con cuadrado blanco -->
     <button onclick="pararTodo()" title="Detener reproducción"
         class="active:scale-90 transition-all duration-150 shrink-0 ml-1"
         style="width:40px;height:40px">
-        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:40px;height:40px;filter:drop-shadow(0 2px 6px rgba(220,38,38,0.5))">
-            <circle cx="20" cy="20" r="20" fill="#ef4444"/>
-            <rect x="12" y="12" width="16" height="16" rx="2.5" fill="white"/>
-        </svg>
+        <svg width="40" height="40" style="filter:drop-shadow(0 2px 6px rgba(220,38,38,0.5))"><use href="#icn-stop-40"/></svg>
     </button>
 </header>
 
@@ -1073,7 +1101,8 @@
         { tipo: 'video' }   ← el video usa el elemento global reproductorVideo
         null                ← sin BGM activo
     */
-    let bgmActual = null;
+    let bgmActual   = null;
+    const audioRefs = []; // OPT-10: referencias de <audio> para pararTodo sin DOM query
 
     /**
      * Detiene el BGM activo (música o video) sin afectar los SFX.
@@ -1115,7 +1144,8 @@
      */
     const pararTodo = () => {
         detenerBGM();
-        // Quitar animación de pulso de todos los botones de música/video
+        // OPT-10: usar array en memoria en lugar de querySelectorAll
+        audioRefs.forEach(a => { a.pause(); a.currentTime = 0; });
         document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
     };
 
@@ -1289,6 +1319,7 @@
             // Eventos de interacción
             articulo.addEventListener('click', () => reproducir(track, tipo));
             audioEl.addEventListener('ended', () => articulo.classList.remove('reproduciendo'));
+            audioRefs.push(audioEl); // OPT-10: registrar referencia en memoria
 
             articulo.appendChild(audioEl);
             contenedor.appendChild(articulo);
@@ -1600,8 +1631,9 @@
             item.addEventListener('click', () => abrirLibroPDF(libro, item));
             lista.appendChild(item);
 
-            // Intentar renderizar la miniatura de la portada en segundo plano
-            try {
+            // OPT-2: lazy render de miniatura solo cuando el item es visible
+            const renderMini = async () => {
+              try {
                 const urlPDF  = await obtenerUrlPDF(`libros/${libro.archivo}.pdf`);
                 const docMini = await pdfjsLib.getDocument(urlPDF).promise;
                 const pagina  = await docMini.getPage(1);
@@ -1615,7 +1647,7 @@
                     canvasContext: miniCanvas.getContext('2d'),
                     viewport
                 }).promise;
-            } catch (e) {
+              } catch (e) {
                 // Si falla la miniatura, mostrar ícono genérico de libro
                 const ctx = miniCanvas.getContext('2d');
                 miniCanvas.width  = 120;
@@ -1625,6 +1657,16 @@
                 ctx.font = '48px serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('📖', 60, 95);
+              }
+            };
+            // IntersectionObserver: solo render cuando el item entra al viewport
+            if ('IntersectionObserver' in window) {
+                const obs = new IntersectionObserver((entries, o) => {
+                    if (entries[0].isIntersecting) { renderMini(); o.disconnect(); }
+                }, { threshold: 0.1 });
+                obs.observe(item);
+            } else {
+                renderMini(); // fallback sin IO
             }
         }
     };
@@ -1861,7 +1903,7 @@
         // Mostrar menú de inicio
         document.getElementById('menu-inicio').classList.remove('hidden');
         document.getElementById('menu-inicio').classList.add('flex');
-        verificarEstadoOffline();
+        verificarEstadoOffline(true);
     };
 
 
@@ -1943,41 +1985,51 @@
      * Comprueba cuántos recursos de urlsParaCachear están en caché
      * y actualiza el indicador visual del menú.
      */
-    const verificarEstadoOffline = async () => {
+    // OPT-7: caché en memoria del resultado de verificación (TTL 5 min)
+    let _offlineCache = { ts: 0, guardados: -1, total: 0 };
+
+    const verificarEstadoOffline = async (forzar = false) => {
         const dot    = document.getElementById('indicador-offline-dot');
         const texto  = document.getElementById('indicador-offline-texto');
         const badge  = document.getElementById('indicador-offline');
         if (!dot || !texto) return;
 
+        const ahora = Date.now();
+        // Reusar resultado si tiene menos de 5 minutos y no se fuerza
+        if (!forzar && _offlineCache.ts && (ahora - _offlineCache.ts) < 5 * 60 * 1000) {
+            const { guardados, total } = _offlineCache;
+            _actualizarBadge(dot, badge, texto, guardados, total);
+            return;
+        }
+
         try {
             if (!('caches' in window) || urlsParaCachear.length === 0) {
-                texto.textContent = 'Sin caché';
-                return;
+                texto.textContent = 'Sin caché'; return;
             }
-            const cache    = await caches.open(CACHE_NAME);
-            let guardados  = 0;
-            const total    = urlsParaCachear.length;
-            for (const url of urlsParaCachear) {
-                const hit = await cache.match(url);
-                if (hit) guardados++;
-            }
-            const pct = Math.round((guardados / total) * 100);
-
-            if (guardados === total) {
-                // Todo descargado — verde
-                dot.style.backgroundColor  = '#4ade80';
-                badge.style.borderColor    = 'rgba(74,222,128,0.4)';
-                badge.style.color          = 'rgba(255,255,255,0.8)';
-                texto.textContent = '✓ Sin conexión';
-            } else {
-                // Parcialmente descargado — ámbar
-                dot.style.backgroundColor  = '#fbbf24';
-                badge.style.borderColor    = 'rgba(251,191,36,0.4)';
-                badge.style.color          = 'rgba(255,255,255,0.7)';
-                texto.textContent = `${pct}% guardado`;
-            }
+            const cache   = await caches.open(CACHE_NAME);
+            const total   = urlsParaCachear.length;
+            // OPT-7: verificar en paralelo en lugar de secuencialmente
+            const hits    = await Promise.all(urlsParaCachear.map(u => cache.match(u)));
+            const guardados = hits.filter(Boolean).length;
+            _offlineCache = { ts: ahora, guardados, total };
+            _actualizarBadge(dot, badge, texto, guardados, total);
         } catch (e) {
             texto.textContent = 'Sin caché';
+        }
+    };
+
+    const _actualizarBadge = (dot, badge, texto, guardados, total) => {
+        const pct = Math.round((guardados / total) * 100);
+        if (guardados === total) {
+            dot.style.backgroundColor = '#4ade80';
+            badge.style.borderColor   = 'rgba(74,222,128,0.4)';
+            badge.style.color         = 'rgba(255,255,255,0.8)';
+            texto.textContent = '✓ Sin conexión';
+        } else {
+            dot.style.backgroundColor = '#fbbf24';
+            badge.style.borderColor   = 'rgba(251,191,36,0.4)';
+            badge.style.color         = 'rgba(255,255,255,0.7)';
+            texto.textContent = `${pct}% guardado`;
         }
     };
 
@@ -2027,22 +2079,31 @@
         grid.style.gridAutoRows = Math.min(alturaFila, alturaDesdeAncho) + 'px';
     };
 
-    // Recalcular al rotar el iPad o redimensionar la ventana del navegador
-    window.addEventListener('resize', ajustarAlturaCartas);
+    // OPT-6: debounce resize — evitar cálculos repetidos al rotar el dispositivo
+    let _resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(ajustarAlturaCartas, 150);
+    });
 
 
     /* ═══════════════════════════════════════════════════════════════════
-       § 11. INICIALIZACIÓN ASÍNCRONA
-       Punto de entrada principal de la app. Carga los catálogos de
-       contenido desde los JSONs externos en paralelo (Promise.all),
-       luego renderiza los tres módulos de la interfaz.
-       Si la carga falla (sin conexión), la app arranca con los arrays
-       vacíos sin crashear — el usuario verá las secciones vacías.
+       § 11. INICIALIZACIÓN ASÍNCRONA + SPLASH
        ═══════════════════════════════════════════════════════════════════ */
 
+    // Actualiza la barra y texto del splash
+    const splashProgreso = (pct, texto) => {
+        const b = document.getElementById('splash-barra');
+        const t = document.getElementById('splash-texto');
+        if (b) b.style.width = pct + '%';
+        if (t) t.textContent = texto;
+    };
+
     const inicializarApp = async () => {
+        splashProgreso(10, 'Iniciando...');
+
         try {
-            // Cargar los tres catálogos simultáneamente
+            splashProgreso(20, 'Cargando catálogos...');
             const [resAudios, resVids, resLibros] = await Promise.all([
                 fetch('./audios.json'),
                 fetch('./vids.json'),
@@ -2051,13 +2112,12 @@
 
             if (!resAudios.ok) throw new Error(`audios.json respondió con ${resAudios.status}`);
             if (!resVids.ok)   throw new Error(`vids.json respondió con ${resVids.status}`);
-            // libros.json es opcional — si falla, la sección queda vacía sin crashear
             if (resLibros.ok) librosDatos = await resLibros.json();
 
+            splashProgreso(45, 'Preparando música...');
             musica      = await resAudios.json();
             videosDatos = await resVids.json();
 
-            // Registrar las URLs de los archivos de media para la caché offline
             musica.forEach(t =>
                 urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`))
             );
@@ -2073,12 +2133,30 @@
             console.error('⚠️ No se pudo cargar el catálogo de contenido:', err);
         }
 
-        // Renderizar la interfaz con los datos disponibles
+        splashProgreso(65, 'Construyendo interfaz...');
         crearBotones(musica, contenedorMusica, 'musica');
+
+        splashProgreso(78, 'Preparando juego...');
         iniciarMemorama();
-        crearBotonesVideos();
-        crearListaLibros();
-        verificarEstadoOffline();
+
+        splashProgreso(88, 'Cargando videos...');
+        crearBotonesVideos().catch(console.warn); // OPT-3: no bloquear
+
+        splashProgreso(94, 'Preparando libros...');
+        crearListaLibros();                       // OPT-2: lazy thumbnails
+
+        splashProgreso(100, '¡Listo!');
+        verificarEstadoOffline(true);
+
+        // Desvanecer y eliminar el splash
+        const splash = document.getElementById('splash');
+        if (splash) {
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                splash.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => splash.remove(), 420);
+            }, 200); // pequeño delay para que el 100% sea visible
+        }
     };
 
 
@@ -2147,7 +2225,7 @@
        y crearListaLibros lo usan para leer desde la Cache API.
        ═══════════════════════════════════════════════════════════════════ */
 
-    const CACHE_NAME = 'djemmy-cache-v51'; // ← Incrementar en cada deploy
+    const CACHE_NAME = 'djemmy-cache-v52'; // ← Incrementar en cada deploy
 
     // Iniciar la app (carga de JSONs → renderizado de UI)
     inicializarApp();
@@ -2373,9 +2451,11 @@
                     );
                 }
 
-                // C. Heartbeat cada 4 minutos
+                // OPT-13: Heartbeat pausado cuando la app está en segundo plano
                 setInterval(() => {
-                    reg.active?.postMessage({ tipo: 'heartbeat' });
+                    if (document.visibilityState === 'visible') {
+                        reg.active?.postMessage({ tipo: 'heartbeat' });
+                    }
                 }, 4 * 60 * 1000);
             })
             .catch(err => console.warn('❌ Error en SW:', err));
