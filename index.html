@@ -41,7 +41,7 @@
 ║    [{ "archivo": "cuento", "titulo": "El nombre del libro" }, ...]           ║
 ║    → El archivo se busca en /libros/cuento.pdf                               ║
 ║                                                                              ║
-║  VERSIÓN ACTUAL: v52                                                         ║
+║  VERSIÓN ACTUAL: v58                                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
 <html lang="es">
@@ -417,7 +417,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v57</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v58</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -513,56 +513,45 @@
         </div>
 
         <!-- ── SECCIÓN: MEMORAMA ────────────────────────────────────
-             Layout vertical:
-               0. Selector de tema (shrink-0, fija)
-               1. Barra título + reiniciar (shrink-0, fija)
+             Layout vertical compacto para iPad landscape:
+               1. Fila única: selector de tema + botón reiniciar (shrink-0)
                2. Grid de tarjetas (flex-1, altura calculada por JS)
-               3. Pila de pares encontrados (shrink-0, fija) -->
-        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center pt-1 pb-2 relative w-full overflow-hidden">
+               3. Pila de pares encontrados (shrink-0, altura mínima reducida) -->
+        <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center pt-1 pb-1 relative w-full overflow-hidden">
 
-            <!-- Selector de tema: fila horizontal de píldoras -->
-            <div id="memorama-selector-temas"
-                class="w-full flex gap-2 overflow-x-auto px-2 md:px-4 pb-1 shrink-0 max-w-7xl scroll-nativo">
-                <!-- Píldoras de tema inyectadas por crearSelectorTemas() -->
-            </div>
-
-            <!-- Barra: solo botón reiniciar (título eliminado) -->
-            <div class="w-full flex justify-end items-center mb-1 md:mb-2 px-2 md:px-4 shrink-0 max-w-7xl">
+            <!-- Fila única: selector de temas a la izquierda, reiniciar a la derecha -->
+            <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
+                <!-- Selector de temas -->
+                <div id="memorama-selector-temas"
+                    class="flex gap-1.5 overflow-x-auto scroll-nativo flex-1 min-w-0">
+                    <!-- Píldoras inyectadas por crearSelectorTemas() -->
+                </div>
+                <!-- Botón reiniciar -->
                 <button onclick="iniciarMemorama()"
-                    class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 md:px-5 md:py-2 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-2 text-sm md:text-base z-20">
-                    <span>🔄</span> <span class="hidden md:inline">Reiniciar</span>
+                    class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
+                    <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
                 </button>
             </div>
 
             <!-- Área central: grid de cartas + pila de pares -->
             <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
 
-                <!-- Grid de cartas memorama
-                     - 4 columnas en portrait (< lg), 8 en landscape (>= lg)
-                     - grid-auto-rows se sobreescribe dinámicamente por ajustarAlturaCartas()
-                       para que las 3 filas quepan exactamente en el espacio disponible
-                     - perspective-1000 habilita el efecto 3D en los hijos -->
                 <div id="grid-memorama"
                     class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0"
                     style="grid-auto-rows: 14vw">
-                    <!-- Tarjetas (div con dorso + frente) inyectadas por iniciarMemorama() -->
                 </div>
 
-                <!-- Pila de pares encontrados
-                     Se llena de izquierda a derecha con animación pop-in.
-                     overflow-x-auto permite scroll si hay muchos pares. -->
-                <div class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-2xl flex items-center px-2 py-1.5 md:px-3 md:py-2 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo" style="min-height:3.5rem">
-                    <span class="text-white/70 font-bold text-xs md:text-sm uppercase tracking-widest pl-1 pr-2 shrink-0">Pares</span>
-                    <div id="stack-parejas" class="flex flex-row gap-1.5 md:gap-3 w-full justify-start items-center">
-                        <!-- Frutas encontradas inyectadas por verificarPareja() -->
+                <!-- Pila de pares — altura reducida para landscape -->
+                <div id="memorama-pila"
+                    class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-xl flex items-center px-2 py-1 md:px-3 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo"
+                    style="min-height:2.4rem">
+                    <span class="text-white/60 font-bold text-[10px] md:text-xs uppercase tracking-widest pl-1 pr-1.5 shrink-0">Pares</span>
+                    <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center">
                     </div>
                 </div>
             </div>
 
-            <!-- Overlay de victoria
-                 Aparece al completar todos los pares, muestra 🏆 con pop-in,
-                 se desvanece solo tras 2.5s y luego llama a iniciarMemorama()
-                 para comenzar una nueva partida automáticamente. -->
+            <!-- Overlay de victoria -->
             <div id="mensaje-victoria"
                 class="hidden absolute inset-0 flex-col items-center justify-center z-10 pointer-events-none rounded-3xl m-2"
                 style="transition: opacity 1s ease;">
@@ -2169,30 +2158,27 @@
         const ajustarAlturaCartas = () => {
             const seccion = document.getElementById('seccion-memorama');
             if (!seccion || seccion.classList.contains('hidden')) return;
-            const grid = document.getElementById('grid-memorama');
+            const grid   = document.getElementById('grid-memorama');
+            const barraT = document.getElementById('memorama-barra-top');
+            const pila   = document.getElementById('memorama-pila');
 
-            // Medir la altura real de los elementos fijos (fuera del grid)
-            const header  = seccion.querySelector('div.shrink-0');           // Barra título
-            const stack   = seccion.querySelector('div.shrink-0:last-of-type'); // Pila pares
             const totalH  = seccion.clientHeight;
-            const headerH = header ? header.offsetHeight : 32;
-            const stackH  = stack  ? stack.offsetHeight  : 56;
+            const barraH  = barraT ? barraT.offsetHeight : 32;
+            const pilaH   = pila   ? pila.offsetHeight   : 38;
 
-            // Parámetros del grid según breakpoint activo
-            const cols  = window.innerWidth >= 1024 ? 8 : 4; // Columnas (lg:grid-cols-8)
+            const cols  = window.innerWidth >= 1024 ? 8 : 4;
             const filas = 3;
-            const gapPx = window.innerWidth >= 768 ? 8 : 6;  // Tailwind: gap-2 / gap-1.5
+            const gapPx = window.innerWidth >= 768 ? 8 : 6;
 
-            // Calcular altura de fila desde el espacio vertical disponible
-            const verticalOcupado = headerH + stackH + gapPx * 4 + (filas - 1) * gapPx;
-            const alturaFila      = Math.floor((totalH - verticalOcupado) / filas);
+            // Espacio para el grid: total − barra superior − pila − padding pt-1/pb-1 − gaps internos
+            const ocupado    = barraH + pilaH + 8 + 4 + gapPx * (filas - 1) + gapPx * 2;
+            const alturaFila = Math.floor((totalH - ocupado) / filas);
 
-            // Calcular altura máxima permitida por la proporción 2:3 del ancho de columna
             const anchoCarta       = Math.floor((grid.clientWidth - gapPx * (cols - 1)) / cols);
             const alturaDesdeAncho = Math.floor(anchoCarta * 3 / 2);
 
-            // Usar el menor valor: garantiza que la carta quepa en ambas dimensiones
-            grid.style.gridAutoRows = Math.min(alturaFila, alturaDesdeAncho) + 'px';
+            const filaFinal = Math.max(20, Math.min(alturaFila, alturaDesdeAncho));
+            grid.style.gridAutoRows = filaFinal + 'px';
         };
 
         // OPT-6: debounce resize — evitar cálculos repetidos al rotar el dispositivo
@@ -2372,7 +2358,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v57'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v58'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
