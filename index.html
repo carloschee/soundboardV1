@@ -417,7 +417,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v55</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v56</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1979,14 +1979,18 @@
             if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
 
-            // Enunciar el nombre de la sección con voz alegre
-            const frases = {
-                musica:   '¡Hora de la música!',
-                memorama: '¡Vamos a jugar memorama!',
-                videos:   '¡A ver videos!',
-                libros:   '¡Hora de leer!'
-            };
-            hablar(frases[seccion] || cfg.titulo, 1.5, 1.1, 150);
+            // Reproducir audio de navegación desde archivo, con TTS como fallback
+            const audioNav = new Audio(`audio/${seccion}.mp3`);
+            audioNav.play().catch(() => {
+                // Fallback TTS si el archivo no está disponible
+                const frases = {
+                    musica:   '¡Hora de la música!',
+                    memorama: '¡Vamos a jugar memorama!',
+                    videos:   '¡A ver videos!',
+                    libros:   '¡Hora de leer!'
+                };
+                hablar(frases[seccion] || cfg.titulo, 1.5, 1.1, 0);
+            });
         };
 
         /**
@@ -2228,6 +2232,20 @@
                 musica.forEach(t =>
                     urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`))
                 );
+
+                // Audios de navegación (sección)
+                ['musica', 'memorama', 'videos', 'libros'].forEach(s =>
+                    urlsParaCachear.push(makeAbsolute(`audio/${s}.mp3`))
+                );
+
+                // Audios del memorama por idioma
+                if (memoramaTemaActivo) {
+                    memoramaTemaActivo.items.forEach(item => {
+                        Object.entries(item.audio || {}).forEach(([lang, archivo]) => {
+                            urlsParaCachear.push(makeAbsolute(`${memoramaTemaActivo.carpeta_audio}${lang}/${archivo}`));
+                        });
+                    });
+                }
                 videosDatos.forEach(t => {
                     urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
                     urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
@@ -2349,7 +2367,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v55'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v56'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
