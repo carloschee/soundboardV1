@@ -41,7 +41,7 @@
 ║    [{ "archivo": "cuento", "titulo": "El nombre del libro" }, ...]           ║
 ║    → El archivo se busca en /libros/cuento.pdf                               ║
 ║                                                                              ║
-║  VERSIÓN ACTUAL: v58                                                         ║
+║  VERSIÓN ACTUAL: v52                                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
 <html lang="es">
@@ -417,7 +417,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v58</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v60</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -430,6 +430,10 @@
                 <button onclick="abrirConfig()"
                     class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg transition-all border border-white/15"
                     title="Configuración">⚙️</button>
+                <!-- Botón silenciar SFX/UI -->
+                <button id="btn-mute-sfx-menu" onclick="toggleMuteSFX()" title="Silenciar efectos de sonido"
+                    class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg transition-all border border-white/15">
+                    🔊</button>
                 <!-- Botón parar visible también en el menú -->
                 <button onclick="pararTodo()" title="Detener reproducción"
                     class="active:scale-90 transition-all duration-150 shrink-0"
@@ -489,7 +493,11 @@
             <svg width="44" height="44" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3))"><use href="#icn-casa"/></svg>
         </button>
         <span id="titulo-seccion-activa" class="text-sm font-bold opacity-60 truncate flex-1"></span>
-        <!-- Botón parar — parte del header, círculo rojo con cuadrado blanco -->
+        <!-- Botón silenciar SFX/UI — alterna entre 🔊 y 🔇 -->
+        <button id="btn-mute-sfx-sec" onclick="toggleMuteSFX()" title="Silenciar efectos de sonido"
+            class="active:scale-90 transition-all duration-150 shrink-0 bg-white/15 hover:bg-white/25 rounded-xl flex items-center justify-center text-lg border border-white/15"
+            style="width:40px;height:40px">🔊</button>
+        <!-- Botón parar — círculo rojo con cuadrado blanco -->
         <button onclick="pararTodo()" title="Detener reproducción"
             class="active:scale-90 transition-all duration-150 shrink-0 ml-1"
             style="width:40px;height:40px">
@@ -1076,17 +1084,16 @@
                 : idiomaMemorama;
 
             setTimeout(async () => {
-                // Intento 1: audio del tema
+
+                // Intento 1: archivo de audio del tema (SFX — no cancela BGM)
                 if (item && item.audio && memoramaTemaActivo) {
-                    const carpeta  = memoramaTemaActivo.carpeta_audio;
-                    const archivo  = item.audio[idioma];
+                    const carpeta = memoramaTemaActivo.carpeta_audio;
+                    const archivo = item.audio[idioma];
                     if (archivo) {
                         const urlAbs  = makeAbsolute(`${carpeta}${idioma}/${archivo}`);
                         const cacheKey = urlAbs;
                         try {
-                            // Reusar el elemento <audio> si ya está en caché
                             if (!_audioCache[cacheKey]) {
-                                // Verificar si está en la Cache API (offline)
                                 let src = urlAbs;
                                 if ('caches' in window) {
                                     const cache = await caches.open(CACHE_NAME);
@@ -1096,31 +1103,30 @@
                                         src = URL.createObjectURL(blob);
                                     }
                                 }
-                                const audioEl     = new Audio(src);
-                                audioEl.volume    = 1;
+                                const audioEl  = new Audio(src);
+                                audioEl.volume = 1;
                                 _audioCache[cacheKey] = audioEl;
                             }
+                            // SFX: reproducir sobre el BGM sin cancelarlo
                             const audioEl = _audioCache[cacheKey];
                             audioEl.currentTime = 0;
                             await audioEl.play();
-                            return; // Éxito — no usar TTS
+                            return;
                         } catch (e) {
                             console.warn('Audio de tema no disponible, usando TTS:', archivo, e);
                         }
                     }
                 }
 
-                // Intento 2: TTS fallback
+                // Intento 2: TTS fallback (también es SFX — no cancela BGM)
                 if (!window.speechSynthesis) return;
-                window.speechSynthesis.cancel();
-
-                // Obtener el nombre en el idioma correcto
+                // No cancelar utterances activas del BGM — solo hablar si no hay TTS en curso
                 const traducciones = item
                     ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
                     : (FRUTAS_I18N[emoji] || {});
                 const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
 
-                const utt   = new SpeechSynthesisUtterance(`¡${nombre}!`);
+                const utt   = new SpeechSynthesisUtterance(`${nombre}`);
                 utt.lang    = LANG_CODES[idioma] || 'es-MX';
                 utt.pitch   = 1.3;
                 utt.rate    = 0.95;
@@ -1200,6 +1206,36 @@
         */
         let bgmActual   = null;
         const audioRefs = []; // OPT-10: referencias de <audio> para pararTodo sin DOM query
+
+        /* ── CANAL UI (mutable) / SFX (siempre activo) ─────────────────────
+           uiMuted controla SOLO los audios de navegación de secciones (UI).
+           Los SFX del memorama (nombres de frutas) siempre se reproducen.
+           El BGM (música/video) nunca se ve afectado.
+        ─────────────────────────────────────────────────────────────────── */
+        let uiMuted = false;
+
+        /** Alterna el silencio del canal UI y actualiza los botones. */
+        const toggleMuteSFX = () => {
+            uiMuted = !uiMuted;
+            const icono = uiMuted ? '🔇' : '🔊';
+            ['btn-mute-sfx-menu', 'btn-mute-sfx-sec'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.textContent = icono;
+            });
+            if (uiMuted && window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+        };
+
+        /**
+         * Reproduce un audio SFX sin interrumpir el BGM.
+         * SFX SIEMPRE se reproduce — no afectado por uiMuted.
+         */
+        const reproducirSFX = (audioOrSrc) => {
+            const el = typeof audioOrSrc === 'string' ? new Audio(audioOrSrc) : audioOrSrc;
+            el.currentTime = 0;
+            el.play().catch(() => {});
+        };
 
         /**
          * Detiene el BGM activo (música o video) sin afectar los SFX.
@@ -1973,18 +2009,21 @@
             if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
 
-            // Reproducir audio de navegación desde archivo, con TTS como fallback
-            const audioNav = new Audio(`audio/${seccion}.mp3`);
-            audioNav.play().catch(() => {
-                // Fallback TTS si el archivo no está disponible
-                const frases = {
-                    musica:   '¡Hora de la música!',
-                    memorama: '¡Vamos a jugar memorama!',
-                    videos:   '¡A ver videos!',
-                    libros:   '¡Hora de leer!'
-                };
-                hablar(frases[seccion] || cfg.titulo, 1.5, 1.1, 0);
-            });
+            // Reproducir audio de navegación (canal UI — no interrumpe BGM, respeta uiMuted)
+            if (!uiMuted) {
+                const audioNav = new Audio(`audio/${seccion}.mp3`);
+                audioNav.play().catch(() => {
+                    // Fallback TTS si el archivo no está disponible
+                    if (uiMuted) return;
+                    const frases = {
+                        musica:   '¡Hora de la música!',
+                        memorama: '¡Vamos a jugar memorama!',
+                        videos:   '¡A ver videos!',
+                        libros:   '¡Hora de leer!'
+                    };
+                    hablar(frases[seccion] || cfg.titulo, 1.5, 1.1, 0);
+                });
+            }
         };
 
         /**
@@ -2358,7 +2397,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v58'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v60'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
