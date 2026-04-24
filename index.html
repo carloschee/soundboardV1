@@ -277,7 +277,7 @@
         background-image:
             repeating-linear-gradient( 45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px),
             repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px);
-        border: 3px solid #283593;
+        border: 3px solid rgba(255,255,255,0.7);
         box-shadow: inset 0 0 0 4px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.4);
     }
     /* Emoji 🎴 tenue como motivo decorativo central del dorso */
@@ -382,7 +382,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v50</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v51</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -740,11 +740,11 @@
                 </div>
                 <div class="grid grid-cols-5 gap-1.5">
                     <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
-                        class="lang-btn col-span-1 py-2 rounded-xl text-xs font-bold border-2 transition-all active:scale-95 border-purple-400 bg-purple-500 text-white">
+                        class="lang-btn col-span-1 py-2 rounded-xl text-xs font-bold border-2 transition-all active:scale-95 border-gray-200 bg-white text-gray-600">
                         🎲
                     </button>
                     <button onclick="setIdiomaMemorама('es')" id="lang-btn-es"
-                        class="lang-btn py-2 rounded-xl text-xs font-bold border-2 transition-all active:scale-95 border-gray-200 bg-white text-gray-600">
+                        class="lang-btn py-2 rounded-xl text-xs font-bold border-2 transition-all active:scale-95 border-purple-400 bg-purple-500 text-white">
                         🇲🇽 ES
                     </button>
                     <button onclick="setIdiomaMemorама('en')" id="lang-btn-en"
@@ -941,7 +941,7 @@
        idiomaMemorама: 'aleatorio' | 'es' | 'en' | 'fr' | 'zh'
        ═══════════════════════════════════════════════════════════════════ */
 
-    let idiomaMemorama = 'aleatorio'; // Se puede cambiar desde Configuración
+    let idiomaMemorama = 'es'; // Se puede cambiar desde Configuración
 
     // lang codes para speechSynthesis por idioma
     const LANG_CODES = {
@@ -2147,7 +2147,7 @@
        y crearListaLibros lo usan para leer desde la Cache API.
        ═══════════════════════════════════════════════════════════════════ */
 
-    const CACHE_NAME = 'djemmy-cache-v50'; // ← Incrementar en cada deploy
+    const CACHE_NAME = 'djemmy-cache-v51'; // ← Incrementar en cada deploy
 
     // Iniciar la app (carga de JSONs → renderizado de UI)
     inicializarApp();
