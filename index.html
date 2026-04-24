@@ -41,7 +41,7 @@
 ║    [{ "archivo": "cuento", "titulo": "El nombre del libro" }, ...]           ║
 ║    → El archivo se busca en /libros/cuento.pdf                               ║
 ║                                                                              ║
-║  VERSIÓN ACTUAL: v52                                                         ║
+║  VERSIÓN ACTUAL: v61                                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
 <html lang="es">
@@ -417,7 +417,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v60</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v61</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -574,7 +574,7 @@
                2. Carrusel horizontal de miniaturas (altura fija)
              Al seleccionar una miniatura se llama a reproducirVideo(track).
              En modo offline, el video se lee de la Cache API como blob URL. -->
-        <div id="seccion-videos" class="flex-1 min-h-0 flex-col gap-2 hidden pb-1">
+        <div id="seccion-videos" class="flex-1 min-h-0 flex-col gap-2 hidden pb-1" style="overscroll-behavior:none;touch-action:none">
 
             <!-- Reproductor de video principal -->
             <div id="contenedor-reproductor" class="flex-1 min-h-0 relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-black">
@@ -603,7 +603,7 @@
                  scroll horizontal con snap entre items.
                  Los botones se generan dinámicamente por crearBotonesVideos(). -->
             <div class="flex-none h-20 md:h-28 lg:h-32 w-full bg-black/20 backdrop-blur-md border-2 border-white/10 rounded-2xl shadow-inner p-2 md:p-3">
-                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-3 items-center snap-x snap-mandatory scroll-smooth h-full w-full scroll-nativo">
+                <div id="lista-videos" class="flex flex-row overflow-x-auto gap-3 items-center snap-x snap-mandatory scroll-smooth h-full w-full scroll-nativo" style="touch-action:pan-x">
                     <!-- Miniaturas inyectadas por crearBotonesVideos() -->
                 </div>
             </div>
@@ -2397,7 +2397,7 @@
            y crearListaLibros lo usan para leer desde la Cache API.
            ═══════════════════════════════════════════════════════════════════ */
 
-        const CACHE_NAME = 'djemmy-cache-v60'; // ← Incrementar en cada deploy
+        const CACHE_NAME = 'djemmy-cache-v61'; // ← Incrementar en cada deploy
 
         // Iniciar la app (carga de JSONs → renderizado de UI)
         inicializarApp();
