@@ -286,7 +286,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v63</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v64</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -1853,14 +1853,6 @@
                 urlsParaCachear.push(makeAbsolute(`audio/${s}.mp3`))
             );
 
-            
-            if (memoramaTemaActivo) {
-                memoramaTemaActivo.items.forEach(item => {
-                    Object.entries(item.audio || {}).forEach(([lang, archivo]) => {
-                        urlsParaCachear.push(makeAbsolute(`${memoramaTemaActivo.carpeta_audio}${lang}/${archivo}`));
-                    });
-                });
-            }
             videosDatos.forEach(t => {
                 urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
                 urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
@@ -1871,19 +1863,31 @@
 
             
             urlsParaCachear.push(makeAbsolute('memorama-temas.json'));
-            
-            if (memoramaTemas.length === 0) {
-                
-                try {
-                    const rt = await fetch('./memorama-temas.json');
-                    if (rt.ok) {
-                        const temas = await rt.json();
-                        temas.forEach(t => urlsParaCachear.push(makeAbsolute(t.archivo)));
+
+            try {
+                const rt = await fetchTimeout('./memorama-temas.json');
+                if (rt.ok) {
+                    const temas = await rt.json();
+
+                    for (const tema of temas) {
+                        urlsParaCachear.push(makeAbsolute(tema.archivo));
+
+                        try {
+                            const rTema = await fetchTimeout(`./${tema.archivo}`);
+                            if (!rTema.ok) continue;
+                            const datosTema = await rTema.json();
+                            const carpeta   = datosTema.carpeta_audio;
+                            if (!carpeta || !Array.isArray(datosTema.items)) continue;
+
+                            datosTema.items.forEach(item => {
+                                Object.entries(item.audio || {}).forEach(([lang, archivo]) => {
+                                    urlsParaCachear.push(makeAbsolute(`${carpeta}${lang}/${archivo}`));
+                                });
+                            });
+                        } catch(e) {}
                     }
-                } catch(e) {}
-            } else {
-                memoramaTemas.forEach(t => urlsParaCachear.push(makeAbsolute(t.archivo)));
-            }
+                }
+            } catch(e) {}
 
         } catch (err) {
             console.error('⚠️ No se pudo cargar el catálogo de contenido:', err);
@@ -1966,16 +1970,21 @@
         makeAbsolute('audios.json'),
         makeAbsolute('vids.json'),
         makeAbsolute('libros.json'),
-        
+
+        makeAbsolute('img/icn-musica.png'),
+        makeAbsolute('img/icn-memorama.png'),
+        makeAbsolute('img/icn-videos.png'),
+        makeAbsolute('img/icn-libros.png'),
+
         'https://cdn.tailwindcss.com',
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-        
+
     ];
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v63'; 
+    const CACHE_NAME = 'djemmy-cache-v64'; 
 
     
     inicializarApp();
