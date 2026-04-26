@@ -268,7 +268,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v64</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v66</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -779,7 +779,9 @@
 
     
 
-    // hablarFruta — pertenece al canal UI (respeta uiMuted)
+    // hablarFruta — UI (respeta uiMuted)
+    // Estrategia: intenta reproducir el archivo MP3 del tema en el idioma activo.
+    // Si el archivo no existe o falla la carga (error de red, no en caché), cae a TTS.
     const hablarFruta = (emoji, delay = 300) => {
         if (uiMuted) return;
         const item   = memoramaItemMap[emoji];
@@ -787,50 +789,13 @@
             ? IDIOMAS[Math.floor(Math.random() * IDIOMAS.length)]
             : idiomaMemorama;
 
-        setTimeout(async () => {
-            if (uiMuted) return;
-
-            
-            if (item && item.audio && memoramaTemaActivo) {
-                const carpeta = memoramaTemaActivo.carpeta_audio;
-                const archivo = item.audio[idioma];
-                if (archivo) {
-                    const urlAbs  = makeAbsolute(`${carpeta}${idioma}/${archivo}`);
-                    const cacheKey = urlAbs;
-                    try {
-                        if (!_audioCache[cacheKey]) {
-                            let src = urlAbs;
-                            if ('caches' in window) {
-                                const cache = await caches.open(CACHE_NAME);
-                                const resp  = await cache.match(urlAbs);
-                                if (resp) {
-                                    const blob = await resp.blob();
-                                    src = URL.createObjectURL(blob);
-                                }
-                            }
-                            const audioEl  = new Audio(src);
-                            audioEl.volume = 1;
-                            _addAudioCache(cacheKey, audioEl);
-                        }
-                        
-                        const audioEl = _audioCache[cacheKey];
-                        audioEl.currentTime = 0;
-                        await audioEl.play();
-                        return;
-                    } catch (e) {
-                        console.warn('Audio de tema no disponible, usando TTS:', archivo, e);
-                    }
-                }
-            }
-
-            
-            if (!window.speechSynthesis) return;
-            
+        // Genera el utterance TTS como fallback
+        const decirTTS = () => {
+            if (uiMuted || !window.speechSynthesis) return;
             const traducciones = item
                 ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
                 : (FRUTAS_I18N[emoji] || {});
             const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
-
             const utt   = new SpeechSynthesisUtterance(`${nombre}`);
             utt.lang    = LANG_CODES[idioma] || 'es-MX';
             utt.pitch   = 1.3;
@@ -840,6 +805,84 @@
             const voz   = voces.find(v => v.lang.startsWith(idioma.slice(0,2))) || null;
             if (voz) utt.voice = voz;
             window.speechSynthesis.speak(utt);
+        };
+
+        setTimeout(async () => {
+            if (uiMuted) return;
+
+            // Si no hay tema cargado o el item no tiene audio mapeado → directo a TTS
+            if (!item || !item.audio || !memoramaTemaActivo) {
+                decirTTS();
+                return;
+            }
+
+            const carpeta = memoramaTemaActivo.carpeta_audio;
+            const archivo = item.audio[idioma];
+            if (!archivo) { decirTTS(); return; }
+
+            const urlAbs   = makeAbsolute(`${carpeta}${idioma}/${archivo}`);
+            const cacheKey = urlAbs;
+
+            // Si ya está en caché, intentar reproducir directamente
+            if (_audioCache[cacheKey]) {
+                try {
+                    const audioEl = _audioCache[cacheKey];
+                    audioEl.currentTime = 0;
+                    await audioEl.play();
+                    return;
+                } catch (e) {
+                    console.debug('Audio en caché falló, reintentando con TTS:', archivo, e);
+                    decirTTS();
+                    return;
+                }
+            }
+
+            // No está en caché: cargar con detección robusta de error
+            try {
+                let src = urlAbs;
+                // Intentar primero la Cache API (modo offline)
+                if ('caches' in window) {
+                    try {
+                        const cache = await caches.open(CACHE_NAME);
+                        const resp  = await cache.match(urlAbs);
+                        if (resp && resp.ok) {
+                            const blob = await resp.blob();
+                            src = URL.createObjectURL(blob);
+                        }
+                    } catch(_) {}
+                }
+
+                const audioEl  = new Audio(src);
+                audioEl.volume = 1;
+                audioEl.preload = 'auto';
+
+                // Esperar a que el archivo cargue o falle, con timeout
+                const cargaOk = await new Promise((resolve) => {
+                    let resuelto = false;
+                    const finalizar = (ok) => {
+                        if (resuelto) return;
+                        resuelto = true;
+                        resolve(ok);
+                    };
+                    audioEl.addEventListener('canplaythrough', () => finalizar(true), { once: true });
+                    audioEl.addEventListener('error',          () => finalizar(false), { once: true });
+                    // Timeout de seguridad: si no responde en 3s, asumir fallo
+                    setTimeout(() => finalizar(false), 3000);
+                    audioEl.load();
+                });
+
+                if (!cargaOk || uiMuted) {
+                    if (!cargaOk) decirTTS();
+                    return;
+                }
+
+                _addAudioCache(cacheKey, audioEl);
+                audioEl.currentTime = 0;
+                await audioEl.play();
+            } catch (e) {
+                console.debug('hablarFruta: archivo no disponible, usando TTS:', archivo, e);
+                decirTTS();
+            }
         }, delay);
     };
 
@@ -1562,26 +1605,63 @@
 
     
 
+    // Reproducir audio de la sección con fallback robusto a TTS
+    // Usado por cambiarSeccion para sonar INMEDIATAMENTE al tocar el botón.
+    const _navCache = {};
+    const reproducirAudioSeccion = (seccion, fraseTTSFallback) => {
+        if (uiMuted) return;
+        const url = makeAbsolute(`audio/${seccion}.mp3`);
+
+        // Si ya cargamos este audio antes y funcionó, usar el elemento cacheado
+        if (_navCache[seccion] === false) {
+            // Ya sabemos que el archivo no existe → ir directo a TTS
+            if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
+            return;
+        }
+
+        const audioNav = new Audio(url);
+        audioNav.preload = 'auto';
+
+        // Detección de error: si falla la carga o reproducción, fallback a TTS
+        const irATTS = () => {
+            _navCache[seccion] = false; // Marcar como no disponible para próxima vez
+            if (uiMuted) return;
+            if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
+        };
+
+        audioNav.addEventListener('error', irATTS, { once: true });
+
+        // Intentar reproducir inmediatamente
+        audioNav.play().then(() => {
+            _navCache[seccion] = true;
+        }).catch(irATTS);
+    };
+
     const cambiarSeccion = (seccion) => {
         const cfg = SECCIONES[seccion];
         if (!cfg) return;
 
-        
+        // PRIMERO: reproducir el audio de la sección (respuesta inmediata al toque)
+        const FRASES_SECCION = {
+            musica:   '¡Hora de la música!',
+            memorama: '¡Vamos a jugar memorama!',
+            videos:   '¡A ver videos!',
+            libros:   '¡Hora de leer!'
+        };
+        reproducirAudioSeccion(seccion, FRASES_SECCION[seccion] || cfg.titulo);
+
         document.getElementById('menu-inicio').classList.add('hidden');
         document.getElementById('menu-inicio').classList.remove('flex');
 
-        
         const headerSec = document.getElementById('header-seccion');
         headerSec.classList.remove('hidden');
         headerSec.classList.add('flex');
         document.getElementById('titulo-seccion-activa').textContent = cfg.titulo;
 
-        
         const mainSec = document.getElementById('main-secciones');
         mainSec.classList.remove('hidden');
         mainSec.classList.add('flex');
 
-        
         Object.keys(SECCIONES).forEach(id => {
             const el  = document.getElementById(`seccion-${id}`);
             const dis = SECCIONES[id].display;
@@ -1594,25 +1674,8 @@
             }
         });
 
-        
         if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
         if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
-
-        
-        if (!uiMuted) {
-            const audioNav = new Audio(`audio/${seccion}.mp3`);
-            audioNav.play().catch(() => {
-                
-                if (uiMuted) return;
-                const frases = {
-                    musica:   '¡Hora de la música!',
-                    memorama: '¡Vamos a jugar memorama!',
-                    videos:   '¡A ver videos!',
-                    libros:   '¡Hora de leer!'
-                };
-                hablar(frases[seccion] || cfg.titulo, 1.5, 1.1, 0);
-            });
-        }
     };
 
     
@@ -1824,14 +1887,6 @@
                 urlsParaCachear.push(makeAbsolute(`audio/${s}.mp3`))
             );
 
-            
-            if (memoramaTemaActivo) {
-                memoramaTemaActivo.items.forEach(item => {
-                    Object.entries(item.audio || {}).forEach(([lang, archivo]) => {
-                        urlsParaCachear.push(makeAbsolute(`${memoramaTemaActivo.carpeta_audio}${lang}/${archivo}`));
-                    });
-                });
-            }
             videosDatos.forEach(t => {
                 urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
                 urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
@@ -1840,27 +1895,43 @@
                 urlsParaCachear.push(makeAbsolute(`libros/${t.archivo}.pdf`))
             );
 
-            
-            urlsParaCachear.push(makeAbsolute('memorama-temas.json'));
-            
-            if (memoramaTemas.length === 0) {
-                
-                try {
-                    const rt = await fetch('./memorama-temas.json');
-                    if (rt.ok) {
-                        const temas = await rt.json();
-                        temas.forEach(t => urlsParaCachear.push(makeAbsolute(t.archivo)));
+            // Cargar el catálogo de temas y los JSONs + audios de TODOS los temas
+            // (no solo el tema activo) para garantizar funcionamiento offline completo
+            try {
+                const rt = await fetchTimeout('./memorama-temas.json');
+                if (rt.ok) {
+                    const temas = await rt.json();
+                    if (Array.isArray(temas)) {
+                        // Cargar JSONs + audios de cada tema en paralelo
+                        await Promise.all(temas.map(async (t) => {
+                            if (!t || !t.archivo) return;
+                            urlsParaCachear.push(makeAbsolute(t.archivo));
+                            try {
+                                const rTema = await fetchTimeout(`./${t.archivo}`);
+                                if (!rTema.ok) return;
+                                const datosTema = await rTema.json();
+                                const carpeta   = datosTema.carpeta_audio;
+                                if (!carpeta || !Array.isArray(datosTema.items)) return;
+                                datosTema.items.forEach(item => {
+                                    Object.entries(item.audio || {}).forEach(([lang, archivo]) => {
+                                        urlsParaCachear.push(makeAbsolute(`${carpeta}${lang}/${archivo}`));
+                                    });
+                                });
+                            } catch(e) {
+                                console.warn(`Tema ${t.archivo} no se pudo enumerar:`, e);
+                            }
+                        }));
                     }
-                } catch(e) {}
-            } else {
-                memoramaTemas.forEach(t => urlsParaCachear.push(makeAbsolute(t.archivo)));
+                }
+            } catch(e) {
+                console.warn('No se pudo enumerar temas del memorama:', e);
             }
 
         } catch (err) {
-            console.error('⚠️ No se pudo cargar el catálogo de contenido:', err);
+            console.error('No se pudo cargar el catálogo de contenido:', err);
         }
         crearBotones(musica, contenedorMusica, 'musica');
-        await cargarTemasMemorama(); 
+        await cargarTemasMemorama();
         setIdiomaMemorама(idiomaMemorama);
         iniciarMemorama();
         crearBotonesVideos().catch(console.warn); 
@@ -1928,16 +1999,25 @@
         makeAbsolute('audios.json'),
         makeAbsolute('vids.json'),
         makeAbsolute('libros.json'),
-        
+
+        // Imágenes del menú principal
+        makeAbsolute('img/icn-musica.png'),
+        makeAbsolute('img/icn-memorama.png'),
+        makeAbsolute('img/icn-videos.png'),
+        makeAbsolute('img/icn-libros.png'),
+
+        // Catálogo de temas del memorama
+        makeAbsolute('memorama-temas.json'),
+
+        // CDN externos
         'https://cdn.tailwindcss.com',
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-        
     ];
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v64'; 
+    const CACHE_NAME = 'djemmy-cache-v66'; 
 
     
     inicializarApp();
