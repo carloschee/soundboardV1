@@ -25,8 +25,9 @@
 
 <script>
     (function() {
-        
-        const ICON_KEY = 'djemmy-icon-v1';
+
+        const ICON_KEY = 'djemmy-icon-v2';
+        try { localStorage.removeItem('djemmy-icon-v1'); } catch(e) {}
         const cached = localStorage.getItem(ICON_KEY);
         if (cached) {
             window.appIconPNG = cached;
@@ -38,28 +39,54 @@
         canvas.width  = 512;
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
+
         const grad = ctx.createLinearGradient(0, 0, 512, 512);
         grad.addColorStop(0,   '#ec4899');
         grad.addColorStop(0.5, '#8b5cf6');
         grad.addColorStop(1,   '#6366f1');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
+
         ctx.beginPath();
-        ctx.arc(256, 256, 180, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.arc(256, 256, 200, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(256, 256, 210, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 8;
+        ctx.arc(256, 256, 230, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+        ctx.lineWidth = 6;
         ctx.stroke();
-        ctx.font          = '240px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-        ctx.textAlign     = 'center';
-        ctx.textBaseline  = 'middle';
-        ctx.shadowColor   = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur    = 20;
-        ctx.shadowOffsetY = 10;
-        ctx.fillText('🎧', 256, 276);
+
+        ctx.save();
+        ctx.shadowColor   = 'rgba(0,0,0,0.35)';
+        ctx.shadowBlur    = 16;
+        ctx.shadowOffsetY = 8;
+
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth   = 26;
+        ctx.lineCap     = 'round';
+        ctx.beginPath();
+        ctx.arc(256, 280, 130, Math.PI, 0, false);
+        ctx.stroke();
+
+        ctx.fillStyle = 'white';
+        const cupRadiusX = 42, cupRadiusY = 58;
+        ctx.beginPath();
+        ctx.ellipse(126, 300, cupRadiusX, cupRadiusY, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(386, 300, cupRadiusX, cupRadiusY, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(126, 300, 24, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(386, 300, 24, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
+
         window.appIconPNG = canvas.toDataURL('image/png');
         document.getElementById('apple-icon').href = window.appIconPNG;
         document.getElementById('favicon').href    = window.appIconPNG;
@@ -270,7 +297,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v69</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v71</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -1945,9 +1972,19 @@
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v69'; 
+    const CACHE_NAME = 'djemmy-cache-v71'; 
 
     
+    // Exponer al scope global de window las funciones invocadas desde
+    // atributos onclick="..." en el HTML. Las funciones declaradas con
+    // const/let no se asignan automáticamente a window, por lo que los
+    // onclick inline no las encuentran.
+    Object.assign(window, {
+        cambiarSeccion, volverAlMenu, abrirConfig, cerrarConfig, verificarConfig,
+        pararTodo, toggleMuteSFX, iniciarMemorama, iniciarDescargaOffline,
+        borrarCacheYRecargar, cambiarPaginaPDF, setIdiomaMemorама
+    });
+
     inicializarApp();
 
     
