@@ -290,7 +290,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v68</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v69</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -837,8 +837,9 @@
     
 
     // hablarFruta — UI (respeta uiMuted)
-    // Estrategia: intenta reproducir el archivo MP3 del tema en el idioma activo.
-    // Si el archivo no existe o falla la carga (error de red, no en caché), cae a TTS.
+    // Estrategia simple: dispara TTS y MP3 en paralelo desde el mismo tick.
+    // Si el MP3 carga y reproduce, perfecto. Si falla, ya disparamos el TTS
+    // antes de perder el contexto del user-gesture en iOS.
     const hablarFruta = (emoji, delay = 300) => {
         if (uiMuted) return;
         const item   = memoramaItemMap[emoji];
@@ -846,27 +847,26 @@
             ? IDIOMAS[Math.floor(Math.random() * IDIOMAS.length)]
             : idiomaMemorama;
 
-        // Genera el utterance TTS como fallback
+        // Resolver nombre y voz para TTS (fallback)
+        const traducciones = item
+            ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
+            : (FRUTAS_I18N[emoji] || {});
+        const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
+        const lang   = LANG_CODES[idioma] || 'es-MX';
+
         const decirTTS = () => {
-            if (uiMuted || !window.speechSynthesis) {
-                console.debug('[TTS-Fruta] saltado:', { uiMuted, available: !!window.speechSynthesis });
-                return;
-            }
+            if (uiMuted || !window.speechSynthesis) return;
             try {
                 if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
                     window.speechSynthesis.cancel();
                 }
-                const traducciones = item
-                    ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
-                    : (FRUTAS_I18N[emoji] || {});
-                const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
                 const utt   = new SpeechSynthesisUtterance(`${nombre}`);
-                utt.lang    = LANG_CODES[idioma] || 'es-MX';
+                utt.lang    = lang;
                 utt.pitch   = 1.3;
                 utt.rate    = 0.95;
                 utt.volume  = 1;
                 const voces = window.speechSynthesis.getVoices();
-                const voz   = voces.find(v => v.lang === utt.lang)
+                const voz   = voces.find(v => v.lang === lang)
                            || voces.find(v => v.lang.startsWith(idioma.slice(0,2)))
                            || null;
                 if (voz) utt.voice = voz;
@@ -877,15 +877,14 @@
             }
         };
 
-        setTimeout(async () => {
+        setTimeout(() => {
             if (uiMuted) return;
 
-            // Si no hay tema cargado o el item no tiene audio mapeado → directo a TTS
+            // Sin tema cargado o sin audio mapeado → TTS directo
             if (!item || !item.audio || !memoramaTemaActivo) {
                 decirTTS();
                 return;
             }
-
             const carpeta = memoramaTemaActivo.carpeta_audio;
             const archivo = item.audio[idioma];
             if (!archivo) { decirTTS(); return; }
@@ -893,66 +892,35 @@
             const urlAbs   = makeAbsolute(`${carpeta}${idioma}/${archivo}`);
             const cacheKey = urlAbs;
 
-            // Si ya está en caché, intentar reproducir directamente
+            // Si el audio ya está cacheado y funcionando, reproducir
             if (_audioCache[cacheKey]) {
-                try {
-                    const audioEl = _audioCache[cacheKey];
-                    audioEl.currentTime = 0;
-                    await audioEl.play();
-                    return;
-                } catch (e) {
-                    console.debug('Audio en caché falló, reintentando con TTS:', archivo, e);
-                    decirTTS();
-                    return;
-                }
-            }
-
-            // No está en caché: cargar con detección robusta de error
-            try {
-                let src = urlAbs;
-                // Intentar primero la Cache API (modo offline)
-                if ('caches' in window) {
-                    try {
-                        const cache = await caches.open(CACHE_NAME);
-                        const resp  = await cache.match(urlAbs);
-                        if (resp && resp.ok) {
-                            const blob = await resp.blob();
-                            src = URL.createObjectURL(blob);
-                        }
-                    } catch(_) {}
-                }
-
-                const audioEl  = new Audio(src);
-                audioEl.volume = 1;
-                audioEl.preload = 'auto';
-
-                // Esperar a que el archivo cargue o falle, con timeout
-                const cargaOk = await new Promise((resolve) => {
-                    let resuelto = false;
-                    const finalizar = (ok) => {
-                        if (resuelto) return;
-                        resuelto = true;
-                        resolve(ok);
-                    };
-                    audioEl.addEventListener('canplaythrough', () => finalizar(true), { once: true });
-                    audioEl.addEventListener('error',          () => finalizar(false), { once: true });
-                    // Timeout de seguridad: si no responde en 3s, asumir fallo
-                    setTimeout(() => finalizar(false), 3000);
-                    audioEl.load();
-                });
-
-                if (!cargaOk || uiMuted) {
-                    if (!cargaOk) decirTTS();
-                    return;
-                }
-
-                _addAudioCache(cacheKey, audioEl);
+                const audioEl = _audioCache[cacheKey];
                 audioEl.currentTime = 0;
-                await audioEl.play();
-            } catch (e) {
-                console.debug('hablarFruta: archivo no disponible, usando TTS:', archivo, e);
-                decirTTS();
+                audioEl.play().catch(() => {
+                    // Si el cacheado falla, eliminar y caer a TTS
+                    delete _audioCache[cacheKey];
+                    decirTTS();
+                });
+                return;
             }
+
+            // Intentar el archivo. Si falla rápido, ir a TTS.
+            const audioEl = new Audio(urlAbs);
+            audioEl.volume = 1;
+
+            // Listener de error para fallback inmediato
+            audioEl.addEventListener('error', () => {
+                console.debug('[hablarFruta] archivo no disponible, TTS:', archivo);
+                decirTTS();
+            }, { once: true });
+
+            // Intento de reproducción directa
+            audioEl.play().then(() => {
+                _addAudioCache(cacheKey, audioEl);
+            }).catch((e) => {
+                console.debug('[hablarFruta] play falló, TTS:', archivo, e);
+                decirTTS();
+            });
         }, delay);
     };
 
@@ -2098,7 +2066,7 @@
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v68'; 
+    const CACHE_NAME = 'djemmy-cache-v69'; 
 
     
     inicializarApp();
