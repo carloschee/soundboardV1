@@ -268,7 +268,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v66</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v67</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -639,22 +639,37 @@
 
     // hablar — TTS de UI, respeta uiMuted
     const hablar = (texto, pitch = 1.4, rate = 1.1, delay = 0) => {
-        if (uiMuted || !window.speechSynthesis) return;
+        if (uiMuted || !window.speechSynthesis) {
+            console.debug('[TTS] saltado:', { uiMuted, available: !!window.speechSynthesis });
+            return;
+        }
         const hablarAhora = () => {
             if (uiMuted) return;
-            window.speechSynthesis.cancel();
-            const utt = new SpeechSynthesisUtterance(texto);
-            utt.lang  = 'es-MX';
-            utt.pitch = pitch;
-            utt.rate  = rate;
-            utt.volume = 1;
+            try {
+                // En iOS Safari, si hay una utterance activa, cancel()+speak() inmediato a veces
+                // deja el motor en estado bloqueado. Solo cancelamos si está realmente hablando.
+                if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                    window.speechSynthesis.cancel();
+                }
 
-            
-            const voces   = window.speechSynthesis.getVoices();
-            const vozEs   = voces.find(v => v.lang.startsWith('es')) || null;
-            if (vozEs) utt.voice = vozEs;
+                const utt = new SpeechSynthesisUtterance(texto);
+                utt.lang   = 'es-MX';
+                utt.pitch  = pitch;
+                utt.rate   = rate;
+                utt.volume = 1;
 
-            window.speechSynthesis.speak(utt);
+                // Buscar voz en español; si no hay, dejar que el sistema elija
+                const voces = window.speechSynthesis.getVoices();
+                const vozEs = voces.find(v => v.lang === 'es-MX')
+                           || voces.find(v => v.lang.startsWith('es'))
+                           || null;
+                if (vozEs) utt.voice = vozEs;
+
+                utt.onerror = (e) => console.debug('[TTS] error:', e.error);
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                console.debug('[TTS] excepción:', e);
+            }
         };
 
         if (delay > 0) {
@@ -668,6 +683,26 @@
     if (window.speechSynthesis) {
         window.speechSynthesis.getVoices();
         window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+        // Desbloqueo del motor TTS en iOS Safari: el primer speak() solo funciona
+        // dentro de un user-gesture stack. Hacemos un speak() vacío silencioso
+        // en el primer toque para que las llamadas posteriores funcionen.
+        let _ttsDesbloqueado = false;
+        const desbloquearTTS = () => {
+            if (_ttsDesbloqueado) return;
+            _ttsDesbloqueado = true;
+            try {
+                const utt = new SpeechSynthesisUtterance(' ');
+                utt.volume = 0;
+                utt.rate   = 10;
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                console.debug('[TTS] desbloqueo falló:', e);
+            }
+        };
+        ['touchstart', 'click', 'pointerdown'].forEach(evt =>
+            document.addEventListener(evt, desbloquearTTS, { once: true, passive: true })
+        );
     }
 
     
@@ -791,20 +826,33 @@
 
         // Genera el utterance TTS como fallback
         const decirTTS = () => {
-            if (uiMuted || !window.speechSynthesis) return;
-            const traducciones = item
-                ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
-                : (FRUTAS_I18N[emoji] || {});
-            const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
-            const utt   = new SpeechSynthesisUtterance(`${nombre}`);
-            utt.lang    = LANG_CODES[idioma] || 'es-MX';
-            utt.pitch   = 1.3;
-            utt.rate    = 0.95;
-            utt.volume  = 1;
-            const voces = window.speechSynthesis.getVoices();
-            const voz   = voces.find(v => v.lang.startsWith(idioma.slice(0,2))) || null;
-            if (voz) utt.voice = voz;
-            window.speechSynthesis.speak(utt);
+            if (uiMuted || !window.speechSynthesis) {
+                console.debug('[TTS-Fruta] saltado:', { uiMuted, available: !!window.speechSynthesis });
+                return;
+            }
+            try {
+                if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                    window.speechSynthesis.cancel();
+                }
+                const traducciones = item
+                    ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
+                    : (FRUTAS_I18N[emoji] || {});
+                const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
+                const utt   = new SpeechSynthesisUtterance(`${nombre}`);
+                utt.lang    = LANG_CODES[idioma] || 'es-MX';
+                utt.pitch   = 1.3;
+                utt.rate    = 0.95;
+                utt.volume  = 1;
+                const voces = window.speechSynthesis.getVoices();
+                const voz   = voces.find(v => v.lang === utt.lang)
+                           || voces.find(v => v.lang.startsWith(idioma.slice(0,2)))
+                           || null;
+                if (voz) utt.voice = voz;
+                utt.onerror = (e) => console.debug('[TTS-Fruta] error:', e.error);
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                console.debug('[TTS-Fruta] excepción:', e);
+            }
         };
 
         setTimeout(async () => {
@@ -1605,35 +1653,46 @@
 
     
 
-    // Reproducir audio de la sección con fallback robusto a TTS
-    // Usado por cambiarSeccion para sonar INMEDIATAMENTE al tocar el botón.
+    // Reproducir audio de la sección con fallback a TTS
+    // Para garantizar que el TTS se dispare dentro del user-gesture stack,
+    // verificamos primero contra la Cache API; si no está, vamos directo a TTS.
     const _navCache = {};
+    const _navAudioCache = {}; // audio elements pre-construidos
     const reproducirAudioSeccion = (seccion, fraseTTSFallback) => {
         if (uiMuted) return;
         const url = makeAbsolute(`audio/${seccion}.mp3`);
 
-        // Si ya cargamos este audio antes y funcionó, usar el elemento cacheado
+        // Decisión cacheada: ya sabemos el resultado de antes
         if (_navCache[seccion] === false) {
-            // Ya sabemos que el archivo no existe → ir directo a TTS
             if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
             return;
         }
 
+        // Si ya tenemos el audio precargado, usarlo
+        if (_navAudioCache[seccion]) {
+            const audioEl = _navAudioCache[seccion];
+            audioEl.currentTime = 0;
+            audioEl.play().catch(() => {
+                if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
+            });
+            return;
+        }
+
+        // Primera vez: crear el Audio y manejar error → TTS
         const audioNav = new Audio(url);
         audioNav.preload = 'auto';
 
-        // Detección de error: si falla la carga o reproducción, fallback a TTS
         const irATTS = () => {
-            _navCache[seccion] = false; // Marcar como no disponible para próxima vez
+            _navCache[seccion] = false;
             if (uiMuted) return;
             if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
         };
 
         audioNav.addEventListener('error', irATTS, { once: true });
 
-        // Intentar reproducir inmediatamente
         audioNav.play().then(() => {
             _navCache[seccion] = true;
+            _navAudioCache[seccion] = audioNav;
         }).catch(irATTS);
     };
 
@@ -2017,7 +2076,7 @@
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v66'; 
+    const CACHE_NAME = 'djemmy-cache-v67'; 
 
     
     inicializarApp();
