@@ -288,7 +288,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v67</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v68</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -1819,6 +1819,19 @@
         if (t) t.textContent = texto;
     };
 
+    const removerSplash = () => {
+        const splash = document.getElementById('splash');
+        if (splash && !splash.dataset.removing) {
+            splash.dataset.removing = '1';
+            splash.style.opacity = '0';
+            splash.style.transition = 'opacity 0.4s ease';
+            setTimeout(() => splash.remove(), 420);
+        }
+    };
+
+    // Garantía: el splash se quita máximo a los 12 segundos pase lo que pase
+    setTimeout(removerSplash, 12000);
+
     const inicializarApp = async () => {
         splashProgreso(10, 'Iniciando...');
 
@@ -1883,14 +1896,7 @@
 
         splashProgreso(100, '¡Listo!');
 
-        const splash = document.getElementById('splash');
-        if (splash) {
-            setTimeout(() => {
-                splash.style.opacity = '0';
-                splash.style.transition = 'opacity 0.4s ease';
-                setTimeout(() => splash.remove(), 420);
-            }, 200);
-        }
+        setTimeout(removerSplash, 200);
 
         cargarTemasMemorama().then(() => {
             setIdiomaMemorама(idiomaMemorama);
@@ -1954,24 +1960,33 @@
     
 
     const baseHref     = window.location.href.split('?')[0].replace(/index\.html$/, '');
-    const makeAbsolute = (path) => new URL(path, baseHref).href;
-
-    
-    
     const _domCache = {};
     const $ = (id) => {
         if (!_domCache[id]) _domCache[id] = document.getElementById(id);
         return _domCache[id];
     };
 
-    
     const fetchTimeout = (url, ms, opts = {}) => {
-        ms = ms || (typeof CONFIG !== 'undefined' ? CONFIG.FETCH_TIMEOUT_MS : 8000);
+        ms = ms || 8000;
         const ctrl = new AbortController();
         const t    = setTimeout(() => ctrl.abort(), ms);
         return fetch(url, { ...opts, signal: ctrl.signal })
             .finally(() => clearTimeout(t));
     };
+
+    // Captura global de errores para diagnóstico
+    window.addEventListener('error', (e) => {
+        console.error('Error global:', e.error || e.message);
+        const t = document.getElementById('splash-texto');
+        if (t) t.textContent = 'Error: ' + (e.message || 'desconocido').slice(0, 60);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        console.error('Promise rechazada:', e.reason);
+        const t = document.getElementById('splash-texto');
+        if (t) t.textContent = 'Error red: ' + String(e.reason).slice(0, 60);
+    });
+
+    const makeAbsolute = (path) => new URL(path, baseHref).href;
 
     let urlsParaCachear = [
         makeAbsolute('./'),
@@ -1993,7 +2008,7 @@
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v67'; 
+    const CACHE_NAME = 'djemmy-cache-v68'; 
 
     
     inicializarApp();
