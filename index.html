@@ -268,7 +268,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v63</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v64</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -282,9 +282,11 @@
                 class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg transition-all border border-white/15"
                 title="Configuración">⚙️</button>
             
-            <button id="btn-mute-sfx-menu" onclick="toggleMuteSFX()" title="Silenciar efectos de sonido"
-                class="bg-white/15 hover:bg-white/25 active:scale-95 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg transition-all border border-white/15">
-                🔊</button>
+            <button id="btn-mute-sfx-menu" onclick="toggleMuteSFX()" title="Silenciar audio de UI"
+                class="relative bg-white/15 hover:bg-white/25 active:scale-95 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg transition-all border border-white/15">
+                <span>🔊</span>
+                <span id="dot-mute-menu" class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-green-400 shadow"></span>
+            </button>
             
             <button onclick="pararTodo()" title="Detener reproducción"
                 class="active:scale-90 transition-all duration-150 shrink-0"
@@ -336,9 +338,12 @@
     </button>
     <span id="titulo-seccion-activa" class="text-sm font-bold opacity-60 truncate flex-1"></span>
     
-    <button id="btn-mute-sfx-sec" onclick="toggleMuteSFX()" title="Silenciar efectos de sonido"
-        class="active:scale-90 transition-all duration-150 shrink-0 bg-white/15 hover:bg-white/25 rounded-xl flex items-center justify-center text-lg border border-white/15"
-        style="width:40px;height:40px">🔊</button>
+    <button id="btn-mute-sfx-sec" onclick="toggleMuteSFX()" title="Silenciar audio de UI"
+        class="relative active:scale-90 transition-all duration-150 shrink-0 bg-white/15 hover:bg-white/25 rounded-xl flex items-center justify-center text-lg border border-white/15"
+        style="width:40px;height:40px">
+        <span>🔊</span>
+        <span id="dot-mute-sec" class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-green-400 shadow"></span>
+    </button>
     
     <button onclick="pararTodo()" title="Detener reproducción"
         class="active:scale-90 transition-all duration-150 shrink-0 ml-1"
@@ -632,10 +637,12 @@
 
     
 
+    // hablar — TTS de UI, respeta uiMuted
     const hablar = (texto, pitch = 1.4, rate = 1.1, delay = 0) => {
-        if (!window.speechSynthesis) return;
+        if (uiMuted || !window.speechSynthesis) return;
         const hablarAhora = () => {
-            window.speechSynthesis.cancel(); 
+            if (uiMuted) return;
+            window.speechSynthesis.cancel();
             const utt = new SpeechSynthesisUtterance(texto);
             utt.lang  = 'es-MX';
             utt.pitch = pitch;
@@ -772,13 +779,16 @@
 
     
 
+    // hablarFruta — pertenece al canal UI (respeta uiMuted)
     const hablarFruta = (emoji, delay = 300) => {
+        if (uiMuted) return;
         const item   = memoramaItemMap[emoji];
         const idioma = idiomaMemorama === 'aleatorio'
             ? IDIOMAS[Math.floor(Math.random() * IDIOMAS.length)]
             : idiomaMemorama;
 
         setTimeout(async () => {
+            if (uiMuted) return;
 
             
             if (item && item.audio && memoramaTemaActivo) {
@@ -877,27 +887,38 @@
     
 
     let bgmActual   = null;
-    const audioRefs = []; 
+    const audioRefs = [];
 
-    
+    // Estado UI muted persistido en localStorage
+    let uiMuted = localStorage.getItem('djemmy-ui-muted') === '1';
 
-    let uiMuted = false;
+    // Actualiza los indicadores verde/rojo en los botones de mute
+    const _actualizarIndicadoresMute = () => {
+        const color = uiMuted ? 'bg-red-500' : 'bg-green-400';
+        ['dot-mute-menu', 'dot-mute-sec'].forEach(id => {
+            const dot = document.getElementById(id);
+            if (!dot) return;
+            dot.className = dot.className
+                .replace('bg-green-400', '')
+                .replace('bg-red-500', '')
+                .trim() + ' ' + color;
+        });
+    };
 
-    
     const toggleMuteSFX = () => {
         uiMuted = !uiMuted;
-        const icono = uiMuted ? '🔇' : '🔊';
-        ['btn-mute-sfx-menu', 'btn-mute-sfx-sec'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) btn.textContent = icono;
-        });
+        try { localStorage.setItem('djemmy-ui-muted', uiMuted ? '1' : '0'); } catch(e) {}
+        _actualizarIndicadoresMute();
+        // Cancelar TTS en curso (parte del canal UI)
         if (uiMuted && window.speechSynthesis) {
             window.speechSynthesis.cancel();
         }
     };
 
-    
+    // Aplicar el estado inicial al cargar el DOM
+    document.addEventListener('DOMContentLoaded', _actualizarIndicadoresMute);
 
+    // Reproducir un audio SFX (NO afectado por uiMuted)
     const reproducirSFX = (audioOrSrc) => {
         const el = typeof audioOrSrc === 'string' ? new Audio(audioOrSrc) : audioOrSrc;
         el.currentTime = 0;
@@ -1916,7 +1937,7 @@
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v63'; 
+    const CACHE_NAME = 'djemmy-cache-v64'; 
 
     
     inicializarApp();
