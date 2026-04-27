@@ -293,7 +293,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v69</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v70</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1984,7 +1984,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v69'; 
+        const CACHE_NAME = 'djemmy-cache-v70'; 
 
         
         inicializarApp();
@@ -2101,8 +2101,10 @@
                 if (event.request.method !== 'GET') return;
 
                 const url     = event.request.url;
-                const isMedia = /\\.(mp4|mp3|webp|png|jpg|jpeg|pdf)$/i.test(url);
+                const isMedia = /\.(mp4|mp3|webp|png|jpg|jpeg|pdf)$/i.test(url);
+                const isJson  = /\.json(\?.*)?$/i.test(url);
 
+                // Media: cache-first con Range Request para video/PDF
                 if (isMedia) {
                     event.respondWith(
                         caches.open(CACHE_NAME_SW).then(async (cache) => {
@@ -2116,7 +2118,7 @@
                             const rangeHeader = event.request.headers.get('range');
                             if (!rangeHeader) return cached;
                             const blob   = await cached.blob();
-                            const bytes  = /bytes=(\\d+)-(\\d*)/.exec(rangeHeader);
+                            const bytes  = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
                             const start  = parseInt(bytes[1]);
                             const end    = bytes[2] ? parseInt(bytes[2]) : blob.size - 1;
                             const sliced = blob.slice(start, end + 1);
@@ -2134,7 +2136,30 @@
                     return;
                 }
 
-                // No-media: cache-first con guardado automático en red
+                // JSONs: network-first — siempre intenta la red para tener datos frescos,
+                // cae a caché si no hay conexión, y actualiza la caché con la respuesta nueva
+                if (isJson) {
+                    event.respondWith(
+                        fetch(event.request).then(resp => {
+                            if (resp.ok) {
+                                caches.open(CACHE_NAME_SW).then(cache =>
+                                    cache.put(event.request, resp.clone())
+                                );
+                            }
+                            return resp;
+                        }).catch(() =>
+                            caches.match(event.request).then(cached =>
+                                cached || new Response('[]', {
+                                    status: 200,
+                                    headers: { 'Content-Type': 'application/json' }
+                                })
+                            )
+                        )
+                    );
+                    return;
+                }
+
+                // Todo lo demás (HTML, CSS, JS): cache-first con actualización automática
                 event.respondWith(
                     caches.match(event.request).then(cached => {
                         if (cached) return cached;
