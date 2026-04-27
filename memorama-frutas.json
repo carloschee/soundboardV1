@@ -4,21 +4,246 @@
   "icono": "🍎",
   "carpeta_audio": "memorama/frutas/",
   "items": [
-    { "id": 1,  "emoji": "🍇", "audio": { "es-MX": "uvas.mp3",        "en-US": "grapes.mp3",      "fr-FR": "raisins.mp3",    "zh-CN": "putao.mp3"    }, "es-MX": "uvas",          "en-US": "grapes",       "fr-FR": "raisins",      "zh-CN": "葡萄"   },
-    { "id": 2,  "emoji": "🍉", "audio": { "es-MX": "sandia.mp3",       "en-US": "watermelon.mp3",  "fr-FR": "pasteque.mp3",   "zh-CN": "xigua.mp3"    }, "es-MX": "sandía",        "en-US": "watermelon",   "fr-FR": "pastèque",     "zh-CN": "西瓜"   },
-    { "id": 3,  "emoji": "🍊", "audio": { "es-MX": "naranja.mp3",      "en-US": "orange.mp3",      "fr-FR": "orange.mp3",     "zh-CN": "chengzi.mp3"  }, "es-MX": "naranja",       "en-US": "orange",       "fr-FR": "orange",       "zh-CN": "橙子"   },
-    { "id": 4,  "emoji": "🍌", "audio": { "es-MX": "platano.mp3",      "en-US": "banana.mp3",      "fr-FR": "banane.mp3",     "zh-CN": "xiangjiao.mp3"}, "es-MX": "plátano",       "en-US": "banana",       "fr-FR": "banane",       "zh-CN": "香蕉"   },
-    { "id": 5,  "emoji": "🍍", "audio": { "es-MX": "pina.mp3",         "en-US": "pineapple.mp3",   "fr-FR": "ananas.mp3",     "zh-CN": "boluo.mp3"    }, "es-MX": "piña",          "en-US": "pineapple",    "fr-FR": "ananas",       "zh-CN": "菠萝"   },
-    { "id": 6,  "emoji": "🍎", "audio": { "es-MX": "manzana.mp3",      "en-US": "apple.mp3",       "fr-FR": "pomme.mp3",      "zh-CN": "pingguo.mp3"  }, "es-MX": "manzana",       "en-US": "apple",        "fr-FR": "pomme",        "zh-CN": "苹果"   },
-    { "id": 7,  "emoji": "🍐", "audio": { "es-MX": "pera.mp3",         "en-US": "pear.mp3",        "fr-FR": "poire.mp3",      "zh-CN": "li.mp3"       }, "es-MX": "pera",          "en-US": "pear",         "fr-FR": "poire",        "zh-CN": "梨"     },
-    { "id": 8,  "emoji": "🍋", "audio": { "es-MX": "limon.mp3",        "en-US": "lemon.mp3",       "fr-FR": "citron.mp3",     "zh-CN": "ningmeng.mp3" }, "es-MX": "limón",         "en-US": "lemon",        "fr-FR": "citron",       "zh-CN": "柠檬"   },
-    { "id": 9,  "emoji": "🍑", "audio": { "es-MX": "durazno.mp3",      "en-US": "peach.mp3",       "fr-FR": "peche.mp3",      "zh-CN": "taozi.mp3"    }, "es-MX": "durazno",       "en-US": "peach",        "fr-FR": "pêche",        "zh-CN": "桃子"   },
-    { "id": 10, "emoji": "🍒", "audio": { "es-MX": "cerezas.mp3",      "en-US": "cherries.mp3",    "fr-FR": "cerises.mp3",    "zh-CN": "yingtao.mp3"  }, "es-MX": "cerezas",       "en-US": "cherries",     "fr-FR": "cerises",      "zh-CN": "樱桃"   },
-    { "id": 11, "emoji": "🍓", "audio": { "es-MX": "fresa.mp3",        "en-US": "strawberry.mp3",  "fr-FR": "fraise.mp3",     "zh-CN": "caomei.mp3"   }, "es-MX": "fresa",         "en-US": "strawberry",   "fr-FR": "fraise",       "zh-CN": "草莓"   },
-    { "id": 12, "emoji": "🥝", "audio": { "es-MX": "kiwi.mp3",         "en-US": "kiwi.mp3",        "fr-FR": "kiwi.mp3",       "zh-CN": "qiyiguo.mp3"  }, "es-MX": "kiwi",          "en-US": "kiwi",         "fr-FR": "kiwi",         "zh-CN": "奇异果" },
-    { "id": 13, "emoji": "🍅", "audio": { "es-MX": "tomate.mp3",       "en-US": "tomato.mp3",      "fr-FR": "tomate.mp3",     "zh-CN": "fanqie.mp3"   }, "es-MX": "tomate",        "en-US": "tomato",       "fr-FR": "tomate",       "zh-CN": "番茄"   },
-    { "id": 14, "emoji": "🥭", "audio": { "es-MX": "mango.mp3",        "en-US": "mango.mp3",       "fr-FR": "mangue.mp3",     "zh-CN": "mangguo.mp3"  }, "es-MX": "mango",         "en-US": "mango",        "fr-FR": "mangue",       "zh-CN": "芒果"   },
-    { "id": 15, "emoji": "🥥", "audio": { "es-MX": "coco.mp3",         "en-US": "coconut.mp3",     "fr-FR": "coco.mp3",       "zh-CN": "yezi.mp3"     }, "es-MX": "coco",          "en-US": "coconut",      "fr-FR": "noix de coco", "zh-CN": "椰子"   },
-    { "id": 16, "emoji": "🍈", "audio": { "es-MX": "melon.mp3",        "en-US": "melon.mp3",       "fr-FR": "melon.mp3",      "zh-CN": "tiangua.mp3"  }, "es-MX": "melón",         "en-US": "melon",        "fr-FR": "melon",        "zh-CN": "甜瓜"   }
-  ]
+    {
+      "id": 1,
+      "emoji": "🍇",
+      "audio": {
+        "es-MX": "uvas.mp3",
+        "en-US": "grapes.mp3",
+        "fr-FR": "raisins.mp3",
+        "zh-CN": "putao.mp3"
+      },
+      "es-MX": "uvas",
+      "en-US": "grapes",
+      "fr-FR": "raisins",
+      "zh-CN": "葡萄",
+      "imagen": "uvas.png"
+    },
+    {
+      "id": 2,
+      "emoji": "🍉",
+      "audio": {
+        "es-MX": "sandia.mp3",
+        "en-US": "watermelon.mp3",
+        "fr-FR": "pasteque.mp3",
+        "zh-CN": "xigua.mp3"
+      },
+      "es-MX": "sandía",
+      "en-US": "watermelon",
+      "fr-FR": "pastèque",
+      "zh-CN": "西瓜",
+      "imagen": "sandia.png"
+    },
+    {
+      "id": 3,
+      "emoji": "🍊",
+      "audio": {
+        "es-MX": "naranja.mp3",
+        "en-US": "orange.mp3",
+        "fr-FR": "orange.mp3",
+        "zh-CN": "chengzi.mp3"
+      },
+      "es-MX": "naranja",
+      "en-US": "orange",
+      "fr-FR": "orange",
+      "zh-CN": "橙子",
+      "imagen": "naranja.png"
+    },
+    {
+      "id": 4,
+      "emoji": "🍌",
+      "audio": {
+        "es-MX": "platano.mp3",
+        "en-US": "banana.mp3",
+        "fr-FR": "banane.mp3",
+        "zh-CN": "xiangjiao.mp3"
+      },
+      "es-MX": "plátano",
+      "en-US": "banana",
+      "fr-FR": "banane",
+      "zh-CN": "香蕉",
+      "imagen": "platano.png"
+    },
+    {
+      "id": 5,
+      "emoji": "🍍",
+      "audio": {
+        "es-MX": "pina.mp3",
+        "en-US": "pineapple.mp3",
+        "fr-FR": "ananas.mp3",
+        "zh-CN": "boluo.mp3"
+      },
+      "es-MX": "piña",
+      "en-US": "pineapple",
+      "fr-FR": "ananas",
+      "zh-CN": "菠萝",
+      "imagen": "pina.png"
+    },
+    {
+      "id": 6,
+      "emoji": "🍎",
+      "audio": {
+        "es-MX": "manzana.mp3",
+        "en-US": "apple.mp3",
+        "fr-FR": "pomme.mp3",
+        "zh-CN": "pingguo.mp3"
+      },
+      "es-MX": "manzana",
+      "en-US": "apple",
+      "fr-FR": "pomme",
+      "zh-CN": "苹果",
+      "imagen": "manzana.png"
+    },
+    {
+      "id": 7,
+      "emoji": "🍐",
+      "audio": {
+        "es-MX": "pera.mp3",
+        "en-US": "pear.mp3",
+        "fr-FR": "poire.mp3",
+        "zh-CN": "li.mp3"
+      },
+      "es-MX": "pera",
+      "en-US": "pear",
+      "fr-FR": "poire",
+      "zh-CN": "梨",
+      "imagen": "pera.png"
+    },
+    {
+      "id": 8,
+      "emoji": "🍋",
+      "audio": {
+        "es-MX": "limon.mp3",
+        "en-US": "lemon.mp3",
+        "fr-FR": "citron.mp3",
+        "zh-CN": "ningmeng.mp3"
+      },
+      "es-MX": "limón",
+      "en-US": "lemon",
+      "fr-FR": "citron",
+      "zh-CN": "柠檬",
+      "imagen": "limon.png"
+    },
+    {
+      "id": 9,
+      "emoji": "🍑",
+      "audio": {
+        "es-MX": "durazno.mp3",
+        "en-US": "peach.mp3",
+        "fr-FR": "peche.mp3",
+        "zh-CN": "taozi.mp3"
+      },
+      "es-MX": "durazno",
+      "en-US": "peach",
+      "fr-FR": "pêche",
+      "zh-CN": "桃子",
+      "imagen": "durazno.png"
+    },
+    {
+      "id": 10,
+      "emoji": "🍒",
+      "audio": {
+        "es-MX": "cerezas.mp3",
+        "en-US": "cherries.mp3",
+        "fr-FR": "cerises.mp3",
+        "zh-CN": "yingtao.mp3"
+      },
+      "es-MX": "cerezas",
+      "en-US": "cherries",
+      "fr-FR": "cerises",
+      "zh-CN": "樱桃",
+      "imagen": "cerezas.png"
+    },
+    {
+      "id": 11,
+      "emoji": "🍓",
+      "audio": {
+        "es-MX": "fresa.mp3",
+        "en-US": "strawberry.mp3",
+        "fr-FR": "fraise.mp3",
+        "zh-CN": "caomei.mp3"
+      },
+      "es-MX": "fresa",
+      "en-US": "strawberry",
+      "fr-FR": "fraise",
+      "zh-CN": "草莓",
+      "imagen": "fresa.png"
+    },
+    {
+      "id": 12,
+      "emoji": "🥝",
+      "audio": {
+        "es-MX": "kiwi.mp3",
+        "en-US": "kiwi.mp3",
+        "fr-FR": "kiwi.mp3",
+        "zh-CN": "qiyiguo.mp3"
+      },
+      "es-MX": "kiwi",
+      "en-US": "kiwi",
+      "fr-FR": "kiwi",
+      "zh-CN": "奇异果",
+      "imagen": "kiwi.png"
+    },
+    {
+      "id": 13,
+      "emoji": "🍅",
+      "audio": {
+        "es-MX": "tomate.mp3",
+        "en-US": "tomato.mp3",
+        "fr-FR": "tomate.mp3",
+        "zh-CN": "fanqie.mp3"
+      },
+      "es-MX": "tomate",
+      "en-US": "tomato",
+      "fr-FR": "tomate",
+      "zh-CN": "番茄",
+      "imagen": "tomate.png"
+    },
+    {
+      "id": 14,
+      "emoji": "🥭",
+      "audio": {
+        "es-MX": "mango.mp3",
+        "en-US": "mango.mp3",
+        "fr-FR": "mangue.mp3",
+        "zh-CN": "mangguo.mp3"
+      },
+      "es-MX": "mango",
+      "en-US": "mango",
+      "fr-FR": "mangue",
+      "zh-CN": "芒果",
+      "imagen": "mango.png"
+    },
+    {
+      "id": 15,
+      "emoji": "🥥",
+      "audio": {
+        "es-MX": "coco.mp3",
+        "en-US": "coconut.mp3",
+        "fr-FR": "coco.mp3",
+        "zh-CN": "yezi.mp3"
+      },
+      "es-MX": "coco",
+      "en-US": "coconut",
+      "fr-FR": "noix de coco",
+      "zh-CN": "椰子",
+      "imagen": "coco.png"
+    },
+    {
+      "id": 16,
+      "emoji": "🍈",
+      "audio": {
+        "es-MX": "melon.mp3",
+        "en-US": "melon.mp3",
+        "fr-FR": "melon.mp3",
+        "zh-CN": "tiangua.mp3"
+      },
+      "es-MX": "melón",
+      "en-US": "melon",
+      "fr-FR": "melon",
+      "zh-CN": "甜瓜",
+      "imagen": "melon.png"
+    }
+  ],
+  "carpeta_img": "memorama/frutas/img/"
 }
