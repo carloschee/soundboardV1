@@ -4,5 +4,11 @@
     "titulo": "Frutas",
     "icono": "🍎",
     "archivo": "memorama-frutas.json"
+  },
+  {
+    "id": "transportes",
+    "titulo": "Transportes",
+    "icono": "🚗",
+    "archivo": "memorama-transportes.json"
   }
 ]
