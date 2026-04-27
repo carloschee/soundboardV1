@@ -170,31 +170,68 @@
         .tarjeta-memorama   { transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1), opacity 0.5s ease; }
 
         
+        /* ── DORSO DE CARTA — estilo base ───────────────────────────────────── */
         .carta-dorso {
-            background-color: #1a237e;
-            background-image:
-                repeating-linear-gradient( 45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px),
-                repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px);
-            border: 3px solid rgba(255,255,255,0.7);
-            box-shadow: inset 0 0 0 4px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.4);
+            border: 3px solid rgba(255,255,255,0.80);
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.25),
+                        inset 0 -2px 0 rgba(0,0,0,0.15),
+                        0 6px 20px rgba(0,0,0,0.35);
+            overflow: hidden;
         }
-        
-        .carta-dorso::after {
-            content: '🎴';
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1.4rem, 3vw, 2.2rem);
-            opacity: 0.35;
-        }
-        
-        .carta-dorso-marco {
-            position: absolute; inset: 5px;
-            border: 1.5px solid rgba(255,255,255,0.15);
+        /* Marco interior dashed */
+        .carta-dorso::before {
+            content: '';
+            position: absolute; inset: 6px; z-index: 1;
             border-radius: 8px;
+            border: 2px dashed rgba(255,255,255,0.40);
             pointer-events: none;
         }
 
-        
+        /* ── TEMA: frutas — burbujas de acuarela en verde/amarillo ─────────── */
+        .dorso-frutas {
+            background: radial-gradient(ellipse at 30% 25%, #a8edab 0%, #43c06f 45%, #1b8a3e 100%);
+        }
+        .dorso-frutas .carta-dorso-marco::before { content: '🌿'; }
+        .dorso-frutas .carta-dorso-marco::after  { content: '🍀'; }
+
+        /* ── TEMA: transportes — velocidad en azul/naranja ─────────────────── */
+        .dorso-transportes {
+            background: linear-gradient(135deg, #1a237e 0%, #1565c0 40%, #ff6f00 100%);
+        }
+        .dorso-transportes .carta-dorso-marco::before { content: '⚡'; }
+        .dorso-transportes .carta-dorso-marco::after  { content: '💫'; }
+
+        /* ── TEMA: default (sin tema o desconocido) — galaxia violeta ──────── */
+        .dorso-default {
+            background: linear-gradient(135deg, #6a0dad 0%, #c0147a 55%, #ff6b35 100%);
+        }
+        .dorso-default .carta-dorso-marco::before { content: '⭐'; }
+        .dorso-default .carta-dorso-marco::after  { content: '✦'; }
+
+        /* Diseño SVG abstracto superpuesto — común a todos los dorsos */
+        .carta-dorso-svg {
+            position: absolute; inset: 0; z-index: 0;
+            pointer-events: none; overflow: hidden; border-radius: 10px;
+        }
+
+        /* Icono central del dorso */
+        .carta-dorso-marco {
+            position: absolute; inset: 0; z-index: 2;
+            pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+        }
+        .carta-dorso-marco::before,
+        .carta-dorso-marco::after {
+            position: absolute;
+            font-size: 0.65rem; line-height: 1;
+            opacity: 0.70;
+        }
+        .carta-dorso-marco::before { top: 7px; left: 8px; }
+        .carta-dorso-marco::after  { bottom: 7px; right: 8px; }
+
+        /* ── FRENTE de carta ─────────────────────────────────────────────────── */
         .carta-frente {
             background: linear-gradient(145deg, #fffef7 0%, #faf8ee 100%);
             border: 2px solid #e0d9c8;
@@ -204,15 +241,6 @@
             position: absolute; inset: 5px;
             border: 1.5px solid rgba(180,160,100,0.35);
             border-radius: 8px;
-            pointer-events: none;
-        }
-        
-        .carta-corner {
-            position: absolute;
-            font-size: clamp(0.5rem, 1.2vw, 0.75rem);
-            font-weight: 900;
-            color: #c0392b;
-            line-height: 1;
             pointer-events: none;
         }
 
@@ -265,7 +293,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v68</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v69</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1099,37 +1127,65 @@
                 const cardEl = document.createElement('div');
                 cardEl.className = 'tarjeta-memorama relative w-full h-full cursor-pointer transform-style-3d';
 
+                // Clase de dorso según tema activo
+                const temaId   = memoramaTemaActivo ? (memoramaTemaActivo.id || 'default') : 'default';
+                const dorsoCls = `dorso-${temaId}`;
+
                 // Resolver imagen del item: PNG si existe, emoji como fallback
-                const item     = memoramaItemMap[carta.fruta];
-                const carpeta  = memoramaTemaActivo && memoramaTemaActivo.carpeta_img
+                const item    = memoramaItemMap[carta.fruta];
+                const carpeta = memoramaTemaActivo && memoramaTemaActivo.carpeta_img
                     ? memoramaTemaActivo.carpeta_img : null;
-                const imgFile  = item && item.imagen ? item.imagen : null;
-                const imgUrl   = (carpeta && imgFile)
+                const imgFile = item && item.imagen ? item.imagen : null;
+                const imgUrl  = (carpeta && imgFile)
                     ? makeAbsolute(`${carpeta}${imgFile}`) : null;
 
-                // Generar el contenido del lado frontal
-                // Si hay imagen PNG: usarla con el emoji oculto como fallback
-                // Si no: mostrar solo el emoji
+                // Guardar imgUrl en el elemento para reutilizar en la pila de pares
+                cardEl.dataset.imgUrl = imgUrl || '';
+                cardEl.dataset.emoji  = carta.fruta;
+
+                // Contenido frontal — solo imagen/emoji, sin esquinas
                 const frontalCentro = imgUrl
-                    ? `<img
-                            src="${imgUrl}"
-                            alt="${carta.fruta}"
-                            class="w-4/5 h-4/5 object-contain drop-shadow pointer-events-none select-none"
+                    ? `<img src="${imgUrl}" alt="${carta.fruta}"
+                            class="w-4/5 h-4/5 object-contain drop-shadow-lg pointer-events-none select-none"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
                             draggable="false">
-                       <span class="text-5xl md:text-6xl lg:text-5xl xl:text-6xl drop-shadow pointer-events-none"
-                            style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15));display:none">${carta.fruta}</span>`
-                    : `<span class="text-5xl md:text-6xl lg:text-5xl xl:text-6xl drop-shadow pointer-events-none"
-                            style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">${carta.fruta}</span>`;
+                       <span class="text-5xl md:text-6xl drop-shadow pointer-events-none"
+                            style="display:none">${carta.fruta}</span>`
+                    : `<span class="text-5xl md:text-6xl drop-shadow pointer-events-none">${carta.fruta}</span>`;
+
+                // Patrón SVG abstracto del dorso según tema
+                const svgPatterns = {
+                    frutas: `<svg class="carta-dorso-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="15" cy="20" r="18" fill="rgba(255,255,255,0.08)"/>
+                        <circle cx="65" cy="90" r="22" fill="rgba(255,255,255,0.08)"/>
+                        <circle cx="70" cy="25" r="10" fill="rgba(255,255,255,0.10)"/>
+                        <circle cx="10" cy="95" r="12" fill="rgba(255,255,255,0.07)"/>
+                        <circle cx="40" cy="60" r="28" fill="rgba(255,255,255,0.05)"/>
+                    </svg>`,
+                    transportes: `<svg class="carta-dorso-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="0" y1="30" x2="80" y2="30" stroke="rgba(255,255,255,0.10)" stroke-width="8"/>
+                        <line x1="0" y1="60" x2="80" y2="60" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+                        <line x1="0" y1="90" x2="80" y2="90" stroke="rgba(255,255,255,0.10)" stroke-width="8"/>
+                        <polygon points="60,5 80,30 80,5" fill="rgba(255,200,0,0.20)"/>
+                        <polygon points="0,90 20,120 0,120" fill="rgba(255,200,0,0.15)"/>
+                    </svg>`,
+                    default: `<svg class="carta-dorso-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="40,5 75,30 62,70 18,70 5,30" fill="rgba(255,255,255,0.06)"/>
+                        <polygon points="40,25 65,42 56,72 24,72 15,42" fill="rgba(255,255,255,0.06)"/>
+                        <circle cx="40" cy="60" r="15" fill="rgba(255,255,255,0.07)"/>
+                        <circle cx="15" cy="105" r="20" fill="rgba(255,255,255,0.05)"/>
+                        <circle cx="65" cy="15" r="16" fill="rgba(255,255,255,0.05)"/>
+                    </svg>`
+                };
+                const svgPattern = svgPatterns[temaId] || svgPatterns.default;
 
                 cardEl.innerHTML = `
-                    <div class="carta-dorso absolute inset-0 rounded-xl flex items-center justify-center backface-hidden overflow-hidden">
-                        <div class="carta-dorso-marco rounded-lg"></div>
+                    <div class="carta-dorso ${dorsoCls} absolute inset-0 rounded-xl flex items-center justify-center backface-hidden overflow-hidden">
+                        ${svgPattern}
+                        <div class="carta-dorso-marco"></div>
                     </div>
                     <div class="carta-frente absolute inset-0 rounded-xl flex items-center justify-center backface-hidden rotate-y-180 overflow-hidden">
                         <div class="carta-frente-marco rounded-lg"></div>
-                        <span class="carta-corner" style="top:5px;left:6px">${carta.fruta}</span>
-                        <span class="carta-corner" style="bottom:5px;right:6px;transform:rotate(180deg)">${carta.fruta}</span>
                         ${frontalCentro}
                     </div>
                 `;
@@ -1186,8 +1242,29 @@
                     
                     const pilaEl     = document.getElementById('stack-parejas');
                     const frutaStack = document.createElement('div');
-                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center text-xl md:text-2xl anim-pop shadow-md shrink-0';
-                    frutaStack.innerText = fruta;
+                    frutaStack.className = 'bg-white/90 border-2 border-white/70 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center anim-pop shadow-md shrink-0 overflow-hidden';
+
+                    // Buscar la imgUrl guardada en la tarjeta encontrada
+                    const cartaEl  = cartasVolteadas[0].cardEl;
+                    const imgUrl   = cartaEl.dataset.imgUrl;
+                    const emoji    = cartaEl.dataset.emoji || fruta;
+
+                    if (imgUrl) {
+                        const img = document.createElement('img');
+                        img.src           = imgUrl;
+                        img.alt           = emoji;
+                        img.className     = 'w-full h-full object-contain p-0.5';
+                        img.draggable     = false;
+                        img.onerror = () => {
+                            img.remove();
+                            frutaStack.textContent = emoji;
+                            frutaStack.classList.add('text-xl', 'md:text-2xl');
+                        };
+                        frutaStack.appendChild(img);
+                    } else {
+                        frutaStack.textContent = emoji;
+                        frutaStack.classList.add('text-xl', 'md:text-2xl');
+                    }
                     pilaEl.appendChild(frutaStack);
 
                     memoramaBloqueado = false;
@@ -1907,7 +1984,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v68'; 
+        const CACHE_NAME = 'djemmy-cache-v69'; 
 
         
         inicializarApp();
