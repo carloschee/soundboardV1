@@ -285,7 +285,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v71</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v72</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1809,6 +1809,9 @@
 
         const inicializarApp = async () => {
 
+            // Referencias DOM — obtenidas aquí para garantizar que el DOM esté completo
+            const contenedorMusicaEl = document.getElementById('grid-musica');
+
             try {
                 const [resAudios, resVids, resLibros] = await Promise.all([
                     fetchTimeout('./audios.json'),
@@ -1823,7 +1826,6 @@
                 const vidsTmp   = await resVids.json();
                 const librosTmp = resLibros.ok ? await resLibros.json() : [];
 
-                
                 if (!Array.isArray(musicaTmp))  throw new Error('audios.json debe ser un array');
                 if (!Array.isArray(vidsTmp))    throw new Error('vids.json debe ser un array');
                 if (!Array.isArray(librosTmp)) console.warn('libros.json malformado, usando []');
@@ -1888,8 +1890,11 @@
 
             } catch (err) {
                 console.error('No se pudo cargar el catálogo de contenido:', err);
+                // Mostrar error visible al usuario
+                const gridM = document.getElementById('grid-musica');
+                if (gridM) gridM.innerHTML = `<p class="text-white/60 text-sm col-span-full text-center py-8">⚠️ Error al cargar contenido. Verifica tu conexión y recarga la app.<br><small>${err.message}</small></p>`;
             }
-            crearBotones(musica, contenedorMusica, 'musica');
+            crearBotones(musica, contenedorMusicaEl, 'musica');
             await cargarTemasMemorama();
             setIdiomaMemorама(idiomaMemorama);
             // Al iniciar siempre mostrar el menú de temas (el juego se abre al elegir)
@@ -1977,7 +1982,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v71';
+        const CACHE_NAME = 'djemmy-cache-v72';
 
         // Exponer funciones al scope de window para que los onclick inline las encuentren
         Object.assign(window, {
@@ -2131,6 +2136,28 @@
                                 }
                             });
                         }).catch(() => fetch(event.request))
+                    );
+                    return;
+                }
+
+                // JSONs de catálogo: network-first para garantizar datos frescos,
+                // con fallback a caché si no hay red
+                const isJson = /\.json(\?.*)?$/.test(url);
+                if (isJson) {
+                    event.respondWith(
+                        fetch(event.request).then(resp => {
+                            if (resp.ok) {
+                                caches.open(CACHE_NAME_SW).then(cache =>
+                                    cache.put(event.request, resp.clone())
+                                );
+                            }
+                            return resp;
+                        }).catch(() => caches.match(event.request)
+                            .then(cached => cached || new Response('[]', {
+                                status: 200,
+                                headers: { 'Content-Type': 'application/json' }
+                            }))
+                        )
                     );
                     return;
                 }
