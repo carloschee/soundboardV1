@@ -170,49 +170,29 @@
         .tarjeta-memorama   { transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1), opacity 0.5s ease; }
 
         
-        /* ── DORSO DE CARTA ─────────────────────────────────────────────────── */
         .carta-dorso {
-            background: linear-gradient(135deg, #6a0dad 0%, #c0147a 50%, #ff6b35 100%);
-            border: 3px solid rgba(255,255,255,0.85);
-            box-shadow:
-                inset 0 2px 0 rgba(255,255,255,0.3),
-                inset 0 -2px 0 rgba(0,0,0,0.2),
-                0 6px 20px rgba(0,0,0,0.4),
-                0 0 0 1.5px rgba(0,0,0,0.15);
+            background-color: #1a237e;
+            background-image:
+                repeating-linear-gradient( 45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px),
+                repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px);
+            border: 3px solid rgba(255,255,255,0.7);
+            box-shadow: inset 0 0 0 4px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.4);
         }
-        .carta-dorso::before {
-            content: '';
-            position: absolute; inset: 6px;
-            border-radius: 8px;
-            border: 2px dashed rgba(255,255,255,0.45);
-            pointer-events: none;
-            z-index: 1;
-        }
+        
         .carta-dorso::after {
-            content: '⭐';
+            content: '🎴';
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1.6rem, 3.2vw, 2.6rem);
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-            z-index: 2;
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            opacity: 0.35;
         }
-        /* Puntos decorativos en las esquinas del dorso */
+        
         .carta-dorso-marco {
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 5px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
             pointer-events: none;
-            z-index: 3;
         }
-        .carta-dorso-marco::before,
-        .carta-dorso-marco::after {
-            content: '✦';
-            position: absolute;
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.7);
-            line-height: 1;
-        }
-        .carta-dorso-marco::before { top: 5px; left: 6px; }
-        .carta-dorso-marco::after  { bottom: 5px; right: 6px; transform: rotate(180deg); }
 
         
         .carta-frente {
@@ -285,7 +265,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v69</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v68</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -379,57 +359,44 @@
 
         <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center pt-1 pb-1 relative w-full overflow-hidden">
 
-            <!-- MENÚ DE SELECCIÓN DE TEMA -->
-            <div id="memorama-menu-temas" class="hidden flex-col items-center justify-center w-full h-full gap-4 px-4">
-                <p class="text-white/80 font-black text-xl md:text-2xl tracking-wide drop-shadow">Elige un tema</p>
-                <div id="memorama-lista-temas" class="flex flex-col gap-3 w-full max-w-sm">
-                    <!-- Inyectado por crearMenuTemas() -->
+            <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
+                
+                <div id="memorama-selector-temas"
+                    class="flex gap-1.5 overflow-x-auto scroll-nativo shrink-0">
+                    
                 </div>
+
+                <div id="memorama-selector-idioma" class="flex gap-1 shrink-0">
+                    <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
+                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🎲</button>
+                    <button onclick="setIdiomaMemorама('es-MX')" id="lang-btn-es-MX"
+                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white bg-white text-purple-700 shadow-md">🇲🇽</button>
+                    <button onclick="setIdiomaMemorама('en-US')" id="lang-btn-en-US"
+                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇺🇸</button>
+                    <button onclick="setIdiomaMemorама('fr-FR')" id="lang-btn-fr-FR"
+                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇫🇷</button>
+                    <button onclick="setIdiomaMemorама('zh-CN')" id="lang-btn-zh-CN"
+                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇨🇳</button>
+                </div>
+
+                <button onclick="iniciarMemorama()"
+                    class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
+                    <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
+                </button>
             </div>
 
-            <!-- JUEGO -->
-            <div id="memorama-juego" class="hidden flex-col items-center w-full h-full">
+            <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
 
-                <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
-
-                    <!-- Botón volver al menú de temas -->
-                    <button onclick="mostrarMenuTemas()" title="Cambiar tema"
-                        class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm">
-                        <span id="memorama-tema-icono">🎴</span>
-                        <span id="memorama-tema-nombre" class="hidden sm:inline text-xs font-bold opacity-80"></span>
-                    </button>
-
-                    <!-- Selector de idioma -->
-                    <div id="memorama-selector-idioma" class="flex gap-1 shrink-0">
-                        <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
-                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🎲</button>
-                        <button onclick="setIdiomaMemorама('es-MX')" id="lang-btn-es-MX"
-                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white bg-white text-purple-700 shadow-md">🇲🇽</button>
-                        <button onclick="setIdiomaMemorама('en-US')" id="lang-btn-en-US"
-                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇺🇸</button>
-                        <button onclick="setIdiomaMemorама('fr-FR')" id="lang-btn-fr-FR"
-                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇫🇷</button>
-                        <button onclick="setIdiomaMemorама('zh-CN')" id="lang-btn-zh-CN"
-                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇨🇳</button>
-                    </div>
-
-                    <!-- Reiniciar -->
-                    <button onclick="iniciarMemorama()"
-                        class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
-                        <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
-                    </button>
+                <div id="grid-memorama"
+                    class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0"
+                    style="grid-auto-rows: 14vw">
                 </div>
 
-                <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
-                    <div id="grid-memorama"
-                        class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0"
-                        style="grid-auto-rows: 14vw">
-                    </div>
-                    <div id="memorama-pila"
-                        class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-xl flex items-center px-2 py-1 md:px-3 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo"
-                        style="min-height:2.4rem">
-                        <span class="text-white/60 font-bold text-[10px] md:text-xs uppercase tracking-widest pl-1 pr-1.5 shrink-0">Pares</span>
-                        <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center"></div>
+                <div id="memorama-pila"
+                    class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-xl flex items-center px-2 py-1 md:px-3 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo"
+                    style="min-height:2.4rem">
+                    <span class="text-white/60 font-bold text-[10px] md:text-xs uppercase tracking-widest pl-1 pr-1.5 shrink-0">Pares</span>
+                    <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center">
                     </div>
                 </div>
             </div>
@@ -684,7 +651,8 @@
                 const res = await fetchTimeout('./memorama-temas.json');
                 if (!res.ok) throw new Error(`memorama-temas.json: ${res.status}`);
                 memoramaTemas = await res.json();
-                crearMenuTemas();
+                if (memoramaTemas.length > 0) await activarTemaMemorama(memoramaTemas[0].id);
+                crearSelectorTemas();
             } catch (e) {
                 console.warn('Sin memorama-temas.json, usando frutas por defecto:', e);
                 frutasMemorama = ['🍇','🍉','🍊','🍌','🍍','🍎','🍐','🍋','🍑','🍒','🍓','🥝'];
@@ -703,59 +671,41 @@
                 memoramaItemMap    = {};
                 temaData.items.forEach(item => { memoramaItemMap[item.emoji] = item; });
                 Object.keys(_audioCache).forEach(k => delete _audioCache[k]);
-                // Actualizar indicador del botón en la barra del juego
-                const iconoEl  = document.getElementById('memorama-tema-icono');
-                const nombreEl = document.getElementById('memorama-tema-nombre');
-                if (iconoEl)  iconoEl.textContent  = temaData.icono  || meta.icono;
-                if (nombreEl) nombreEl.textContent  = temaData.titulo || meta.titulo;
+                console.log(`Tema: ${temaData.titulo} (${frutasMemorama.length} items)`);
             } catch (e) {
                 console.error('Error al cargar tema:', e);
             }
         };
 
-        // Construye el menú visual de selección de temas
-        const crearMenuTemas = () => {
-            const lista = document.getElementById('memorama-lista-temas');
-            if (!lista) return;
-            lista.innerHTML = '';
+        const crearSelectorTemas = () => {
+            const contenedor = document.getElementById('memorama-selector-temas');
+            if (!contenedor) return;
+            contenedor.innerHTML = '';
             memoramaTemas.forEach(meta => {
                 const btn = document.createElement('button');
-                btn.className = [
-                    'w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold',
-                    'bg-white/15 hover:bg-white/25 active:scale-95',
-                    'border-2 border-white/25 hover:border-white/50',
-                    'transition-all shadow-lg backdrop-blur-sm text-white text-left'
-                ].join(' ');
-                btn.innerHTML = `
-                    <span class="text-4xl leading-none drop-shadow">${meta.icono}</span>
-                    <div class="flex flex-col min-w-0">
-                        <span class="text-lg font-black tracking-wide">${meta.titulo}</span>
-                        <span class="text-white/50 text-xs font-semibold">Toca para jugar</span>
-                    </div>
-                    <span class="ml-auto text-white/40 text-2xl">›</span>
-                `;
+                const activo = memoramaTemaActivo && memoramaTemaActivo.id === meta.id;
+                btn.id        = `tema-btn-${meta.id}`;
+                btn.className = `shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
+                    activo ? 'bg-white text-purple-700 border-white shadow-md'
+                           : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
+                }`;
+                btn.innerHTML = `<span>${meta.icono}</span><span>${meta.titulo}</span>`;
                 btn.addEventListener('click', async () => {
+                    if (memoramaTemaActivo && memoramaTemaActivo.id === meta.id) return;
                     await activarTemaMemorama(meta.id);
-                    mostrarJuegoMemorama();
+                    memoramaTemas.forEach(m => {
+                        const b = document.getElementById(`tema-btn-${m.id}`);
+                        if (!b) return;
+                        const esActivo = m.id === meta.id;
+                        b.className = `shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
+                            esActivo ? 'bg-white text-purple-700 border-white shadow-md'
+                                     : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
+                        }`;
+                    });
                     iniciarMemorama();
                 });
-                lista.appendChild(btn);
+                contenedor.appendChild(btn);
             });
-        };
-
-        // Muestra el menú de selección de temas
-        const mostrarMenuTemas = () => {
-            document.getElementById('memorama-menu-temas').classList.replace('hidden','flex');
-            document.getElementById('memorama-juego').classList.replace('flex','hidden');
-            document.getElementById('memorama-juego').classList.add('hidden');
-        };
-
-        // Muestra el tablero de juego
-        const mostrarJuegoMemorama = () => {
-            document.getElementById('memorama-menu-temas').classList.replace('flex','hidden');
-            const juego = document.getElementById('memorama-juego');
-            juego.classList.remove('hidden');
-            juego.classList.add('flex');
         };
 
         
@@ -1609,11 +1559,7 @@
                 }
             });
 
-            if (seccion === 'memorama') {
-                requestAnimationFrame(() => ajustarAlturaCartas());
-                // Si no hay tema activo (primera vez), mostrar el menú de selección
-                if (!memoramaTemaActivo) mostrarMenuTemas();
-            }
+            if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
         };
 
@@ -1877,8 +1823,7 @@
             crearBotones(musica, contenedorMusica, 'musica');
             await cargarTemasMemorama();
             setIdiomaMemorама(idiomaMemorama);
-            // Al iniciar siempre mostrar el menú de temas (el juego se abre al elegir)
-            mostrarMenuTemas();
+            iniciarMemorama();
             crearBotonesVideos().catch(console.warn); 
             crearListaLibros();                       
             verificarEstadoOffline(true);
@@ -1962,17 +1907,9 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v69';
+        const CACHE_NAME = 'djemmy-cache-v68'; 
 
-        // Exponer funciones al scope de window para que los onclick inline las encuentren
-        Object.assign(window, {
-            cambiarSeccion, volverAlMenu, abrirConfig, cerrarConfig, verificarConfig,
-            pararTodo, toggleMuteSFX, iniciarMemorama, iniciarDescargaOffline,
-            borrarCacheYRecargar: () => borrarCacheYRecargar(),
-            cambiarPaginaPDF, setIdiomaMemorама,
-            mostrarMenuTemas, mostrarJuegoMemorama
-        });
-
+        
         inicializarApp();
 
         
