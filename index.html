@@ -108,40 +108,18 @@
     }
 
     body {
-        width: 100vw;
-        height: 100vh;
-        min-height: 100vh;
-        min-height: 100dvh;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
         box-sizing: border-box;
+        
+        padding-top:   env(safe-area-inset-top);
+        padding-left:  env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
         overscroll-behavior: none;
-        background: linear-gradient(
-            135deg,
-            #1a0a4e 0%,
-            #0a3d62 12%,
-            #0e7c5a 24%,
-            #00c4a0 36%,
-            #0a4fa3 48%,
-            #6a0dad 60%,
-            #c0147a 72%,
-            #0d6e8a 84%,
-            #1a0a4e 100%
-        );
-        background-size: 400% 400%;
-        animation: aurora 18s ease infinite;
-    }
-
-    /* El contenido respeta safe-area, pero el fondo de body cubre todo */
-    body > header,
-    body > main,
-    body > #menu-inicio {
-        padding-top:    env(safe-area-inset-top);
-        padding-left:   env(safe-area-inset-left);
-        padding-right:  env(safe-area-inset-right);
-        padding-bottom: env(safe-area-inset-bottom);
     }
 
     
@@ -290,7 +268,7 @@
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
             <div class="leading-none">
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v70</span>
+                <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v67</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -659,13 +637,98 @@
 
     
 
+    // hablar — TTS de UI, respeta uiMuted
+    const hablar = (texto, pitch = 1.4, rate = 1.1, delay = 0) => {
+        if (uiMuted || !window.speechSynthesis) {
+            console.debug('[TTS] saltado:', { uiMuted, available: !!window.speechSynthesis });
+            return;
+        }
+        const hablarAhora = () => {
+            if (uiMuted) return;
+            try {
+                // En iOS Safari, si hay una utterance activa, cancel()+speak() inmediato a veces
+                // deja el motor en estado bloqueado. Solo cancelamos si está realmente hablando.
+                if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                    window.speechSynthesis.cancel();
+                }
+
+                const utt = new SpeechSynthesisUtterance(texto);
+                utt.lang   = 'es-MX';
+                utt.pitch  = pitch;
+                utt.rate   = rate;
+                utt.volume = 1;
+
+                // Buscar voz en español; si no hay, dejar que el sistema elija
+                const voces = window.speechSynthesis.getVoices();
+                const vozEs = voces.find(v => v.lang === 'es-MX')
+                           || voces.find(v => v.lang.startsWith('es'))
+                           || null;
+                if (vozEs) utt.voice = vozEs;
+
+                utt.onerror = (e) => console.debug('[TTS] error:', e.error);
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                console.debug('[TTS] excepción:', e);
+            }
+        };
+
+        if (delay > 0) {
+            setTimeout(hablarAhora, delay);
+        } else {
+            hablarAhora();
+        }
+    };
+
+    
+    if (window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+        // Desbloqueo del motor TTS en iOS Safari: el primer speak() solo funciona
+        // dentro de un user-gesture stack. Hacemos un speak() vacío silencioso
+        // en el primer toque para que las llamadas posteriores funcionen.
+        let _ttsDesbloqueado = false;
+        const desbloquearTTS = () => {
+            if (_ttsDesbloqueado) return;
+            _ttsDesbloqueado = true;
+            try {
+                const utt = new SpeechSynthesisUtterance(' ');
+                utt.volume = 0;
+                utt.rate   = 10;
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                console.debug('[TTS] desbloqueo falló:', e);
+            }
+        };
+        ['touchstart', 'click', 'pointerdown'].forEach(evt =>
+            document.addEventListener(evt, desbloquearTTS, { once: true, passive: true })
+        );
+    }
 
     
 
     
+    const FRUTAS_I18N = {
+        '🍇': { 'es-MX':'uvas',    'en-US':'grapes',     'fr-FR':'raisins',  'zh-CN':'葡萄'   },
+        '🍉': { 'es-MX':'sandía',  'en-US':'watermelon', 'fr-FR':'pastèque', 'zh-CN':'西瓜'   },
+        '🍊': { 'es-MX':'naranja', 'en-US':'orange',     'fr-FR':'orange',   'zh-CN':'橙子'   },
+        '🍌': { 'es-MX':'plátano', 'en-US':'banana',     'fr-FR':'banane',   'zh-CN':'香蕉'   },
+        '🍍': { 'es-MX':'piña',    'en-US':'pineapple',  'fr-FR':'ananas',   'zh-CN':'菠萝'   },
+        '🍎': { 'es-MX':'manzana', 'en-US':'apple',      'fr-FR':'pomme',    'zh-CN':'苹果'   },
+        '🍐': { 'es-MX':'pera',    'en-US':'pear',       'fr-FR':'poire',    'zh-CN':'梨'     },
+        '🍋': { 'es-MX':'limón',   'en-US':'lemon',      'fr-FR':'citron',   'zh-CN':'柠檬'   },
+        '🍑': { 'es-MX':'durazno', 'en-US':'peach',      'fr-FR':'pêche',    'zh-CN':'桃子'   },
+        '🍒': { 'es-MX':'cerezas', 'en-US':'cherries',   'fr-FR':'cerises',  'zh-CN':'樱桃'   },
+        '🍓': { 'es-MX':'fresa',   'en-US':'strawberry', 'fr-FR':'fraise',   'zh-CN':'草莓'   },
+        '🥝': { 'es-MX':'kiwi',    'en-US':'kiwi',       'fr-FR':'kiwi',     'zh-CN':'奇异果' },
+        '🍅': { 'es-MX':'tomate',  'en-US':'tomato',     'fr-FR':'tomate',   'zh-CN':'番茄'   },
+        '🥭': { 'es-MX':'mango',   'en-US':'mango',      'fr-FR':'mangue',   'zh-CN':'芒果'   },
+        '🥥': { 'es-MX':'coco',    'en-US':'coconut',    'fr-FR':'noix de coco','zh-CN':'椰子'},
+        '🍈': { 'es-MX':'melón',   'en-US':'melon',      'fr-FR':'melon',    'zh-CN':'甜瓜'   }
+    };
 
-    
-    const IDIOMAS = ['es-MX', 'en-US', 'fr-FR', 'zh-CN'];
+    const IDIOMAS      = ['es-MX', 'en-US', 'fr-FR', 'zh-CN'];
+    const LANG_CODES   = { 'es-MX':'es-MX', 'en-US':'en-US', 'fr-FR':'fr-FR', 'zh-CN':'zh-CN' };
 
     let idiomaMemorama = localStorage.getItem('djemmy-idioma-memorama') || 'es-MX';
 
@@ -752,40 +815,126 @@
     
 
     // hablarFruta — UI (respeta uiMuted)
-    // Reproduce el archivo MP3 del nombre de la fruta en el idioma activo.
+    // Estrategia: intenta reproducir el archivo MP3 del tema en el idioma activo.
+    // Si el archivo no existe o falla la carga (error de red, no en caché), cae a TTS.
     const hablarFruta = (emoji, delay = 300) => {
         if (uiMuted) return;
-        const item = memoramaItemMap[emoji];
-        if (!item || !item.audio || !memoramaTemaActivo) return;
-
+        const item   = memoramaItemMap[emoji];
         const idioma = idiomaMemorama === 'aleatorio'
             ? IDIOMAS[Math.floor(Math.random() * IDIOMAS.length)]
             : idiomaMemorama;
 
-        const carpeta = memoramaTemaActivo.carpeta_audio;
-        const archivo = item.audio[idioma];
-        if (!archivo) return;
+        // Genera el utterance TTS como fallback
+        const decirTTS = () => {
+            if (uiMuted || !window.speechSynthesis) {
+                console.debug('[TTS-Fruta] saltado:', { uiMuted, available: !!window.speechSynthesis });
+                return;
+            }
+            try {
+                if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                    window.speechSynthesis.cancel();
+                }
+                const traducciones = item
+                    ? { 'es-MX': item['es-MX'], 'en-US': item['en-US'], 'fr-FR': item['fr-FR'], 'zh-CN': item['zh-CN'] }
+                    : (FRUTAS_I18N[emoji] || {});
+                const nombre = traducciones[idioma] || traducciones['es-MX'] || emoji;
+                const utt   = new SpeechSynthesisUtterance(`${nombre}`);
+                utt.lang    = LANG_CODES[idioma] || 'es-MX';
+                utt.pitch   = 1.3;
+                utt.rate    = 0.95;
+                utt.volume  = 1;
+                const voces = window.speechSynthesis.getVoices();
+                const voz   = voces.find(v => v.lang === utt.lang)
+                           || voces.find(v => v.lang.startsWith(idioma.slice(0,2)))
+                           || null;
+                if (voz) utt.voice = voz;
+                utt.onerror = (e) => console.debug('[TTS-Fruta] error:', e.error);
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                console.debug('[TTS-Fruta] excepción:', e);
+            }
+        };
 
-        const urlAbs   = makeAbsolute(`${carpeta}${idioma}/${archivo}`);
-        const cacheKey = urlAbs;
-
-        setTimeout(() => {
+        setTimeout(async () => {
             if (uiMuted) return;
 
-            if (_audioCache[cacheKey]) {
-                const audioEl = _audioCache[cacheKey];
-                audioEl.currentTime = 0;
-                audioEl.play().catch(() => { delete _audioCache[cacheKey]; });
+            // Si no hay tema cargado o el item no tiene audio mapeado → directo a TTS
+            if (!item || !item.audio || !memoramaTemaActivo) {
+                decirTTS();
                 return;
             }
 
-            const audioEl = new Audio(urlAbs);
-            audioEl.volume = 1;
-            audioEl.play().then(() => {
+            const carpeta = memoramaTemaActivo.carpeta_audio;
+            const archivo = item.audio[idioma];
+            if (!archivo) { decirTTS(); return; }
+
+            const urlAbs   = makeAbsolute(`${carpeta}${idioma}/${archivo}`);
+            const cacheKey = urlAbs;
+
+            // Si ya está en caché, intentar reproducir directamente
+            if (_audioCache[cacheKey]) {
+                try {
+                    const audioEl = _audioCache[cacheKey];
+                    audioEl.currentTime = 0;
+                    await audioEl.play();
+                    return;
+                } catch (e) {
+                    console.debug('Audio en caché falló, reintentando con TTS:', archivo, e);
+                    decirTTS();
+                    return;
+                }
+            }
+
+            // No está en caché: cargar con detección robusta de error
+            try {
+                let src = urlAbs;
+                // Intentar primero la Cache API (modo offline)
+                if ('caches' in window) {
+                    try {
+                        const cache = await caches.open(CACHE_NAME);
+                        const resp  = await cache.match(urlAbs);
+                        if (resp && resp.ok) {
+                            const blob = await resp.blob();
+                            src = URL.createObjectURL(blob);
+                        }
+                    } catch(_) {}
+                }
+
+                const audioEl  = new Audio(src);
+                audioEl.volume = 1;
+                audioEl.preload = 'auto';
+
+                // Esperar a que el archivo cargue o falle, con timeout
+                const cargaOk = await new Promise((resolve) => {
+                    let resuelto = false;
+                    const finalizar = (ok) => {
+                        if (resuelto) return;
+                        resuelto = true;
+                        resolve(ok);
+                    };
+                    audioEl.addEventListener('canplaythrough', () => finalizar(true), { once: true });
+                    audioEl.addEventListener('error',          () => finalizar(false), { once: true });
+                    // Timeout de seguridad: si no responde en 3s, asumir fallo
+                    setTimeout(() => finalizar(false), 3000);
+                    audioEl.load();
+                });
+
+                if (!cargaOk || uiMuted) {
+                    if (!cargaOk) decirTTS();
+                    return;
+                }
+
                 _addAudioCache(cacheKey, audioEl);
-            }).catch((e) => console.debug('[hablarFruta] no disponible:', archivo, e));
+                audioEl.currentTime = 0;
+                await audioEl.play();
+            } catch (e) {
+                console.debug('hablarFruta: archivo no disponible, usando TTS:', archivo, e);
+                decirTTS();
+            }
         }, delay);
     };
+
+    
 
     const lanzarConfeti = () => {
         const colores = ['#fce18a','#ff726d','#b48def','#f4306d','#42c062','#3b82f6','#fbbf24'];
@@ -851,6 +1000,10 @@
         uiMuted = !uiMuted;
         try { localStorage.setItem('djemmy-ui-muted', uiMuted ? '1' : '0'); } catch(e) {}
         _actualizarIndicadoresMute();
+        // Cancelar TTS en curso (parte del canal UI)
+        if (uiMuted && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
     };
 
     // Aplicar el estado inicial al cargar el DOM
@@ -1186,7 +1339,10 @@
                 if (parejasEncontradas === cartasJuego.length / 2) {
                     sonidoVictoria();
                     lanzarConfeti();
+                    
+                    hablar('¡Felicidades, ganaste!', 1.4, 0.9, 400);
 
+                    
                     const overlay = document.getElementById('mensaje-victoria');
                     const trofeo  = document.getElementById('trofeo-victoria');
                     overlay.classList.replace('hidden', 'flex');
@@ -1497,24 +1653,47 @@
 
     
 
-    // Reproducir audio de la sección. Cachea el elemento <Audio> tras la primera carga.
-    const _navAudioCache = {};
-    const reproducirAudioSeccion = (seccion) => {
+    // Reproducir audio de la sección con fallback a TTS
+    // Para garantizar que el TTS se dispare dentro del user-gesture stack,
+    // verificamos primero contra la Cache API; si no está, vamos directo a TTS.
+    const _navCache = {};
+    const _navAudioCache = {}; // audio elements pre-construidos
+    const reproducirAudioSeccion = (seccion, fraseTTSFallback) => {
         if (uiMuted) return;
         const url = makeAbsolute(`audio/${seccion}.mp3`);
 
-        if (_navAudioCache[seccion]) {
-            const audioEl = _navAudioCache[seccion];
-            audioEl.currentTime = 0;
-            audioEl.play().catch(e => console.debug('[nav] play falló:', e));
+        // Decisión cacheada: ya sabemos el resultado de antes
+        if (_navCache[seccion] === false) {
+            if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
             return;
         }
 
+        // Si ya tenemos el audio precargado, usarlo
+        if (_navAudioCache[seccion]) {
+            const audioEl = _navAudioCache[seccion];
+            audioEl.currentTime = 0;
+            audioEl.play().catch(() => {
+                if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
+            });
+            return;
+        }
+
+        // Primera vez: crear el Audio y manejar error → TTS
         const audioNav = new Audio(url);
         audioNav.preload = 'auto';
+
+        const irATTS = () => {
+            _navCache[seccion] = false;
+            if (uiMuted) return;
+            if (fraseTTSFallback) hablar(fraseTTSFallback, 1.5, 1.1, 0);
+        };
+
+        audioNav.addEventListener('error', irATTS, { once: true });
+
         audioNav.play().then(() => {
+            _navCache[seccion] = true;
             _navAudioCache[seccion] = audioNav;
-        }).catch(e => console.debug('[nav] no disponible:', seccion, e));
+        }).catch(irATTS);
     };
 
     const cambiarSeccion = (seccion) => {
@@ -1522,7 +1701,13 @@
         if (!cfg) return;
 
         // PRIMERO: reproducir el audio de la sección (respuesta inmediata al toque)
-        reproducirAudioSeccion(seccion);
+        const FRASES_SECCION = {
+            musica:   '¡Hora de la música!',
+            memorama: '¡Vamos a jugar memorama!',
+            videos:   '¡A ver videos!',
+            libros:   '¡Hora de leer!'
+        };
+        reproducirAudioSeccion(seccion, FRASES_SECCION[seccion] || cfg.titulo);
 
         document.getElementById('menu-inicio').classList.add('hidden');
         document.getElementById('menu-inicio').classList.remove('flex');
@@ -1891,7 +2076,7 @@
 
     
 
-    const CACHE_NAME = 'djemmy-cache-v70'; 
+    const CACHE_NAME = 'djemmy-cache-v67'; 
 
     
     inicializarApp();
