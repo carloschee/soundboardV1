@@ -170,29 +170,49 @@
         .tarjeta-memorama   { transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1), opacity 0.5s ease; }
 
         
+        /* ── DORSO DE CARTA ─────────────────────────────────────────────────── */
         .carta-dorso {
-            background-color: #1a237e;
-            background-image:
-                repeating-linear-gradient( 45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px),
-                repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px);
-            border: 3px solid rgba(255,255,255,0.7);
-            box-shadow: inset 0 0 0 4px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #6a0dad 0%, #c0147a 50%, #ff6b35 100%);
+            border: 3px solid rgba(255,255,255,0.85);
+            box-shadow:
+                inset 0 2px 0 rgba(255,255,255,0.3),
+                inset 0 -2px 0 rgba(0,0,0,0.2),
+                0 6px 20px rgba(0,0,0,0.4),
+                0 0 0 1.5px rgba(0,0,0,0.15);
         }
-        
+        .carta-dorso::before {
+            content: '';
+            position: absolute; inset: 6px;
+            border-radius: 8px;
+            border: 2px dashed rgba(255,255,255,0.45);
+            pointer-events: none;
+            z-index: 1;
+        }
         .carta-dorso::after {
-            content: '🎴';
+            content: '⭐';
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1.4rem, 3vw, 2.2rem);
-            opacity: 0.35;
+            font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            z-index: 2;
         }
-        
+        /* Puntos decorativos en las esquinas del dorso */
         .carta-dorso-marco {
-            position: absolute; inset: 5px;
-            border: 1.5px solid rgba(255,255,255,0.15);
-            border-radius: 8px;
+            position: absolute;
+            inset: 0;
             pointer-events: none;
+            z-index: 3;
         }
+        .carta-dorso-marco::before,
+        .carta-dorso-marco::after {
+            content: '✦';
+            position: absolute;
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1;
+        }
+        .carta-dorso-marco::before { top: 5px; left: 6px; }
+        .carta-dorso-marco::after  { bottom: 5px; right: 6px; transform: rotate(180deg); }
 
         
         .carta-frente {
@@ -265,7 +285,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v68</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v69</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -359,44 +379,57 @@
 
         <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center pt-1 pb-1 relative w-full overflow-hidden">
 
-            <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
-                
-                <div id="memorama-selector-temas"
-                    class="flex gap-1.5 overflow-x-auto scroll-nativo shrink-0">
-                    
+            <!-- MENÚ DE SELECCIÓN DE TEMA -->
+            <div id="memorama-menu-temas" class="hidden flex-col items-center justify-center w-full h-full gap-4 px-4">
+                <p class="text-white/80 font-black text-xl md:text-2xl tracking-wide drop-shadow">Elige un tema</p>
+                <div id="memorama-lista-temas" class="flex flex-col gap-3 w-full max-w-sm">
+                    <!-- Inyectado por crearMenuTemas() -->
                 </div>
-
-                <div id="memorama-selector-idioma" class="flex gap-1 shrink-0">
-                    <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
-                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🎲</button>
-                    <button onclick="setIdiomaMemorама('es-MX')" id="lang-btn-es-MX"
-                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white bg-white text-purple-700 shadow-md">🇲🇽</button>
-                    <button onclick="setIdiomaMemorама('en-US')" id="lang-btn-en-US"
-                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇺🇸</button>
-                    <button onclick="setIdiomaMemorама('fr-FR')" id="lang-btn-fr-FR"
-                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇫🇷</button>
-                    <button onclick="setIdiomaMemorама('zh-CN')" id="lang-btn-zh-CN"
-                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇨🇳</button>
-                </div>
-
-                <button onclick="iniciarMemorama()"
-                    class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
-                    <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
-                </button>
             </div>
 
-            <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
+            <!-- JUEGO -->
+            <div id="memorama-juego" class="hidden flex-col items-center w-full h-full">
 
-                <div id="grid-memorama"
-                    class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0"
-                    style="grid-auto-rows: 14vw">
+                <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
+
+                    <!-- Botón volver al menú de temas -->
+                    <button onclick="mostrarMenuTemas()" title="Cambiar tema"
+                        class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm">
+                        <span id="memorama-tema-icono">🎴</span>
+                        <span id="memorama-tema-nombre" class="hidden sm:inline text-xs font-bold opacity-80"></span>
+                    </button>
+
+                    <!-- Selector de idioma -->
+                    <div id="memorama-selector-idioma" class="flex gap-1 shrink-0">
+                        <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
+                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🎲</button>
+                        <button onclick="setIdiomaMemorама('es-MX')" id="lang-btn-es-MX"
+                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white bg-white text-purple-700 shadow-md">🇲🇽</button>
+                        <button onclick="setIdiomaMemorама('en-US')" id="lang-btn-en-US"
+                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇺🇸</button>
+                        <button onclick="setIdiomaMemorама('fr-FR')" id="lang-btn-fr-FR"
+                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇫🇷</button>
+                        <button onclick="setIdiomaMemorама('zh-CN')" id="lang-btn-zh-CN"
+                            class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇨🇳</button>
+                    </div>
+
+                    <!-- Reiniciar -->
+                    <button onclick="iniciarMemorama()"
+                        class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
+                        <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
+                    </button>
                 </div>
 
-                <div id="memorama-pila"
-                    class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-xl flex items-center px-2 py-1 md:px-3 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo"
-                    style="min-height:2.4rem">
-                    <span class="text-white/60 font-bold text-[10px] md:text-xs uppercase tracking-widest pl-1 pr-1.5 shrink-0">Pares</span>
-                    <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center">
+                <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
+                    <div id="grid-memorama"
+                        class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0"
+                        style="grid-auto-rows: 14vw">
+                    </div>
+                    <div id="memorama-pila"
+                        class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-xl flex items-center px-2 py-1 md:px-3 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo"
+                        style="min-height:2.4rem">
+                        <span class="text-white/60 font-bold text-[10px] md:text-xs uppercase tracking-widest pl-1 pr-1.5 shrink-0">Pares</span>
+                        <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center"></div>
                     </div>
                 </div>
             </div>
@@ -651,8 +684,7 @@
                 const res = await fetchTimeout('./memorama-temas.json');
                 if (!res.ok) throw new Error(`memorama-temas.json: ${res.status}`);
                 memoramaTemas = await res.json();
-                if (memoramaTemas.length > 0) await activarTemaMemorama(memoramaTemas[0].id);
-                crearSelectorTemas();
+                crearMenuTemas();
             } catch (e) {
                 console.warn('Sin memorama-temas.json, usando frutas por defecto:', e);
                 frutasMemorama = ['🍇','🍉','🍊','🍌','🍍','🍎','🍐','🍋','🍑','🍒','🍓','🥝'];
@@ -671,41 +703,59 @@
                 memoramaItemMap    = {};
                 temaData.items.forEach(item => { memoramaItemMap[item.emoji] = item; });
                 Object.keys(_audioCache).forEach(k => delete _audioCache[k]);
-                console.log(`Tema: ${temaData.titulo} (${frutasMemorama.length} items)`);
+                // Actualizar indicador del botón en la barra del juego
+                const iconoEl  = document.getElementById('memorama-tema-icono');
+                const nombreEl = document.getElementById('memorama-tema-nombre');
+                if (iconoEl)  iconoEl.textContent  = temaData.icono  || meta.icono;
+                if (nombreEl) nombreEl.textContent  = temaData.titulo || meta.titulo;
             } catch (e) {
                 console.error('Error al cargar tema:', e);
             }
         };
 
-        const crearSelectorTemas = () => {
-            const contenedor = document.getElementById('memorama-selector-temas');
-            if (!contenedor) return;
-            contenedor.innerHTML = '';
+        // Construye el menú visual de selección de temas
+        const crearMenuTemas = () => {
+            const lista = document.getElementById('memorama-lista-temas');
+            if (!lista) return;
+            lista.innerHTML = '';
             memoramaTemas.forEach(meta => {
                 const btn = document.createElement('button');
-                const activo = memoramaTemaActivo && memoramaTemaActivo.id === meta.id;
-                btn.id        = `tema-btn-${meta.id}`;
-                btn.className = `shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
-                    activo ? 'bg-white text-purple-700 border-white shadow-md'
-                           : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
-                }`;
-                btn.innerHTML = `<span>${meta.icono}</span><span>${meta.titulo}</span>`;
+                btn.className = [
+                    'w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold',
+                    'bg-white/15 hover:bg-white/25 active:scale-95',
+                    'border-2 border-white/25 hover:border-white/50',
+                    'transition-all shadow-lg backdrop-blur-sm text-white text-left'
+                ].join(' ');
+                btn.innerHTML = `
+                    <span class="text-4xl leading-none drop-shadow">${meta.icono}</span>
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-lg font-black tracking-wide">${meta.titulo}</span>
+                        <span class="text-white/50 text-xs font-semibold">Toca para jugar</span>
+                    </div>
+                    <span class="ml-auto text-white/40 text-2xl">›</span>
+                `;
                 btn.addEventListener('click', async () => {
-                    if (memoramaTemaActivo && memoramaTemaActivo.id === meta.id) return;
                     await activarTemaMemorama(meta.id);
-                    memoramaTemas.forEach(m => {
-                        const b = document.getElementById(`tema-btn-${m.id}`);
-                        if (!b) return;
-                        const esActivo = m.id === meta.id;
-                        b.className = `shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
-                            esActivo ? 'bg-white text-purple-700 border-white shadow-md'
-                                     : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
-                        }`;
-                    });
+                    mostrarJuegoMemorama();
                     iniciarMemorama();
                 });
-                contenedor.appendChild(btn);
+                lista.appendChild(btn);
             });
+        };
+
+        // Muestra el menú de selección de temas
+        const mostrarMenuTemas = () => {
+            document.getElementById('memorama-menu-temas').classList.replace('hidden','flex');
+            document.getElementById('memorama-juego').classList.replace('flex','hidden');
+            document.getElementById('memorama-juego').classList.add('hidden');
+        };
+
+        // Muestra el tablero de juego
+        const mostrarJuegoMemorama = () => {
+            document.getElementById('memorama-menu-temas').classList.replace('flex','hidden');
+            const juego = document.getElementById('memorama-juego');
+            juego.classList.remove('hidden');
+            juego.classList.add('flex');
         };
 
         
@@ -1559,7 +1609,11 @@
                 }
             });
 
-            if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
+            if (seccion === 'memorama') {
+                requestAnimationFrame(() => ajustarAlturaCartas());
+                // Si no hay tema activo (primera vez), mostrar el menú de selección
+                if (!memoramaTemaActivo) mostrarMenuTemas();
+            }
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
         };
 
@@ -1823,1504 +1877,6 @@
             crearBotones(musica, contenedorMusica, 'musica');
             await cargarTemasMemorama();
             setIdiomaMemorама(idiomaMemorama);
-            iniciarMemorama();
-            crearBotonesVideos().catch(console.warn); 
-            crearListaLibros();                       
-            verificarEstadoOffline(true);
-        };
-
-        
-
-        
-        const pwaManifest = {
-            name:             "DJ Emmy Reproductor",
-            short_name:       "DJ Emmy",
-            start_url:        ".",
-            display:          "standalone",   
-            background_color: "#8b5cf6",
-            theme_color:      "#8b5cf6",
-            description:      "Botonera musical infantil",
-            icons: [{
-                src:     window.appIconPNG,   
-                sizes:   "512x512",
-                type:    "image/png",
-                purpose: "any maskable"       
-            }]
-        };
-        const blobManifest = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
-        document.getElementById('manifest-link').href = URL.createObjectURL(blobManifest);
-
-        
-
-        
-        const _domCache = {};
-        const $ = (id) => {
-            if (!_domCache[id]) _domCache[id] = document.getElementById(id);
-            return _domCache[id];
-        };
-
-        
-        const fetchTimeout = (url, ms, opts = {}) => {
-            ms = ms || (typeof CONFIG !== 'undefined' ? CONFIG.FETCH_TIMEOUT_MS : 8000);
-            const ctrl = new AbortController();
-            const t    = setTimeout(() => ctrl.abort(), ms);
-            return fetch(url, { ...opts, signal: ctrl.signal })
-                .finally(() => clearTimeout(t));
-        };
-
-        
-        const CONFIG = {
-            MEMORAMA_PARES_MAX:     12,
-            MEMORAMA_PARES_FILAS:   3,
-            MEMORAMA_PARES_COLS_LG: 8,
-            MEMORAMA_PARES_COLS_SM: 4,
-            FETCH_TIMEOUT_MS:       8000,
-            HEARTBEAT_INTERVAL_MS:  4 * 60 * 1000,
-            OFFLINE_CACHE_TTL_MS:   5 * 60 * 1000,
-            RESIZE_DEBOUNCE_MS:     150
-        };
-
-        const baseHref     = window.location.href.split('?')[0].replace(/index\.html$/, '');
-        const makeAbsolute = (path) => new URL(path, baseHref).href;
-
-        let urlsParaCachear = [
-            makeAbsolute('./'),
-            makeAbsolute('index.html'),
-            makeAbsolute('audios.json'),
-            makeAbsolute('vids.json'),
-            makeAbsolute('libros.json'),
-
-            // Imágenes del menú principal
-            makeAbsolute('img/icn-musica.png'),
-            makeAbsolute('img/icn-memorama.png'),
-            makeAbsolute('img/icn-videos.png'),
-            makeAbsolute('img/icn-libros.png'),
-
-            // Catálogo de temas del memorama
-            makeAbsolute('memorama-temas.json'),
-
-            // CDN externos
-            'https://cdn.tailwindcss.com',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-        ];
-
-        
-
-        const CACHE_NAME = 'djemmy-cache-v68'; 
-
-        
-        inicializarApp();
-
-        
-
-        const borrarCacheYRecargar = async () => {
-
-            try {
-                
-                if ('caches' in window) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => caches.delete(key)));
-                }
-                
-                if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (const reg of registrations) await reg.unregister();
-                }
-                
-                window.location.reload();
-            } catch (error) {
-                console.error('Error al limpiar caché:', error);
-                window.location.reload(); 
-            }
-        };
-
-        
-
-        const iniciarDescargaOffline = async () => {
-            const modal     = document.getElementById('modal-descarga');
-            const barra     = document.getElementById('barra-progreso');
-            const texto     = document.getElementById('texto-progreso');
-            const btnCerrar = document.getElementById('btn-cerrar-descarga');
-
-            
-            modal.classList.replace('hidden', 'flex');
-            btnCerrar.classList.add('hidden');
-            barra.style.width = '0%';
-            barra.classList.remove('bg-red-500');
-            barra.classList.add('from-blue-400', 'to-indigo-500');
-
-            try {
-                const cache = await caches.open(CACHE_NAME);
-                let completados = 0;
-                const total     = urlsParaCachear.length;
-                texto.innerText = 'Calculando...';
-
-                
-                for (let i = 0; i < total; i++) {
-                    const url = urlsParaCachear[i];
-                    try {
-                        
-                        const enCache = await cache.match(url);
-                        if (!enCache) {
-                            const respuesta = await fetch(url, { cache: 'no-store' }); 
-                            if (respuesta.ok) await cache.put(url, respuesta);
-                            else console.warn('⚠️ Omitido (no encontrado en servidor):', url);
-                        }
-                    } catch (e) {
-                        console.warn('⚠️ Fallo de red al descargar:', url, e);
-                    }
-
-                    
-                    completados++;
-                    barra.style.width = `${Math.round((completados / total) * 100)}%`;
-                    texto.innerText   = `${completados} de ${total} guardados`;
-                }
-
-                
-                barra.classList.remove('from-blue-400', 'to-indigo-500');
-                barra.classList.add('bg-green-500');
-                texto.innerText = '¡Todo descargado con éxito! ✅';
-                btnCerrar.classList.remove('hidden');
-                verificarEstadoOffline();
-
-            } catch (error) {
-                console.error('Error crítico en descarga offline:', error);
-                barra.classList.remove('from-blue-400', 'to-indigo-500');
-                barra.classList.add('bg-red-500');
-                texto.innerText = 'Error de conexión. Intenta de nuevo. ❌';
-                btnCerrar.classList.remove('hidden');
-            }
-        };
-
-        
-
-        const swCodigo = `
-            const CACHE_NAME_SW = '${CACHE_NAME}';
-            const urlsToCache   = ${JSON.stringify(urlsParaCachear)};
-
-            self.addEventListener('install', (event) => {
-                self.skipWaiting();
-                event.waitUntil(
-                    caches.open(CACHE_NAME_SW).then((cache) =>
-                        Promise.all(urlsToCache.map(url =>
-                            cache.add(url).catch(() => {})
-                        ))
-                    )
-                );
-            });
-
-            self.addEventListener('activate', (event) => {
-                event.waitUntil(
-                    caches.keys()
-                        .then(names => Promise.all(
-                            names.filter(n => n !== CACHE_NAME_SW).map(n => caches.delete(n))
-                        ))
-                        .then(() => self.clients.claim())
-                );
-            });
-
-            self.addEventListener('fetch', (event) => {
-                if (event.request.method !== 'GET') return;
-
-                const url     = event.request.url;
-                const isMedia = /\\.(mp4|mp3|webp|png|jpg|jpeg|pdf)$/i.test(url);
-
-                if (isMedia) {
-                    event.respondWith(
-                        caches.open(CACHE_NAME_SW).then(async (cache) => {
-                            const cached = await cache.match(url);
-                            if (!cached) {
-                                const resp = await fetch(event.request);
-                                if (resp.ok) cache.put(url, resp.clone());
-                                return resp;
-                            }
-                            // Range Request para video/PDF (HTTP 206)
-                            const rangeHeader = event.request.headers.get('range');
-                            if (!rangeHeader) return cached;
-                            const blob   = await cached.blob();
-                            const bytes  = /bytes=(\\d+)-(\\d*)/.exec(rangeHeader);
-                            const start  = parseInt(bytes[1]);
-                            const end    = bytes[2] ? parseInt(bytes[2]) : blob.size - 1;
-                            const sliced = blob.slice(start, end + 1);
-                            return new Response(sliced, {
-                                status: 206, statusText: 'Partial Content',
-                                headers: {
-                                    'Content-Type':   cached.headers.get('Content-Type') || 'video/mp4',
-                                    'Content-Range':  \`bytes \${start}-\${end}/\${blob.size}\`,
-                                    'Content-Length': sliced.size,
-                                    'Accept-Ranges':  'bytes'
-                                }
-                            });
-                        }).catch(() => fetch(event.request))
-                    );
-                    return;
-                }
-
-                // No-media: cache-first con guardado automático en red
-                event.respondWith(
-                    caches.match(event.request).then(cached => {
-                        if (cached) return cached;
-                        return fetch(event.request).then(resp =>
-                            caches.open(CACHE_NAME_SW).then(cache => {
-                                cache.put(event.request, resp.clone());
-                                return resp;
-                            })
-                        );
-                    }).catch(() => new Response('Sin conexión', { status: 503 }))
-                );
-            });
-
-            self.addEventListener('message', async (event) => {
-                if (event.data?.tipo !== 'heartbeat') return;
-                try {
-                    const cache = await caches.open(CACHE_NAME_SW);
-                    const keys  = await cache.keys();
-                    for (const req of keys) {
-                        if (/\\.(json|html)$|\\/\$/.test(req.url)) {
-                            const resp = await cache.match(req);
-                            if (resp) await cache.put(req, resp.clone());
-                        }
-                    }
-                } catch (e) {}
-            });
-        `;
-
-        const blobSW = new Blob([swCodigo], { type: 'application/javascript' });
-        const urlSW  = URL.createObjectURL(blobSW);
-
-        const registrarSW = () => {
-            if (!('serviceWorker' in navigator)) return;
-            navigator.serviceWorker.register(urlSW, { scope: './' })
-                .then(reg => {
-                    console.log('✅ SW registrado:', reg.scope);
-
-                    
-                    if (navigator.storage?.persist) {
-                        navigator.storage.persist().then(ok =>
-                            console.log(ok
-                                ? '🔒 Almacenamiento persistente concedido'
-                                : '⚠️ Safari puede purgar la caché por inactividad')
-                        );
-                    }
-
-                    
-                    setInterval(() => {
-                        if (document.visibilityState === 'visible') {
-                            reg.active?.postMessage({ tipo: 'heartbeat' });
-                        }
-                    }, CONFIG.HEARTBEAT_INTERVAL_MS);
-                })
-                .catch(err => console.warn('❌ Error en SW:', err));
-        };
-
-        window.addEventListener('load', registrarSW);
-
-        
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState !== 'visible') return;
-            navigator.serviceWorker?.getRegistrations().then(regs => {
-                if (regs.length === 0) {
-                    console.log('SW perdido — re-registrando...');
-                    registrarSW();
-                }
-            });
-        });
-
-        
-
-        let wakeLock = null; 
-
-        
-
-        const videoKeepAwake = document.createElement('video');
-        videoKeepAwake.setAttribute('loop', '');
-        videoKeepAwake.setAttribute('playsinline', '');
-        videoKeepAwake.setAttribute('muted', '');
-        videoKeepAwake.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;';
-        videoKeepAwake.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAs1tZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAPZWxpYnggAAAHAm////+B';
-        document.body.appendChild(videoKeepAwake);
-
-        
-
-        const activarWakeLock = async () => {
-            
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('💡 Wake Lock activo (API nativa).');
-                    
-                    wakeLock.addEventListener('release', () => {
-                        console.log('💤 Wake Lock liberado por el sistema.');
-                        if (document.visibilityState === 'visible') activarWakeLock();
-                    });
-                    return; 
-                } catch (e) {
-                    console.warn('Wake Lock API no disponible, activando fallback de video:', e);
-                }
-            }
-            
-            videoKeepAwake.play().catch(() => {
-                console.warn('⚠️ Fallback de Wake Lock también falló.');
-            });
-        };
-
-        
-        document.addEventListener('click',      () => activarWakeLock(), { once: true });
-        document.addEventListener('touchstart', () => activarWakeLock(), { once: true });
-
-        
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                document.documentElement.classList.remove('app-oculta');
-                activarWakeLock();
-            } else {
-                document.documentElement.classList.add('app-oculta');
-            }
-        });
-
-        
-
-        
-
-        const puedeScrollear = (el, dy, dx) => {
-            while (el && el !== document.documentElement) {
-                const style     = window.getComputedStyle(el);
-                const overflowY = style.overflowY;
-                const overflowX = style.overflowX;
-
-                
-                if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
-                    if (dy > 0 && el.scrollTop < el.scrollHeight - el.clientHeight) return true; 
-                    if (dy < 0 && el.scrollTop > 0) return true;                                  
-                }
-
-                
-                if ((overflowX === 'auto' || overflowX === 'scroll') && el.scrollWidth > el.clientWidth) {
-                    if (dx > 0 && el.scrollLeft < el.scrollWidth - el.clientWidth) return true; 
-                    if (dx < 0 && el.scrollLeft > 0) return true;                                
-                }
-
-                el = el.parentElement;
-            }
-            return false;
-        };
-
-        let _touchStartX = 0;
-        let _touchStartY = 0;
-
-        document.addEventListener('touchstart', (e) => {
-            _touchStartX = e.touches[0].clientX;
-            _touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 1) return; 
-            const dy = _touchStartY - e.touches[0].clientY;
-            const dx = _touchStartX - e.touches[0].clientX;
-            if (!puedeScrollear(e.target, dy, dx)) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-    </script>
-</body>
-</html>speechSynthesis.cancel();
-                    }
-                    const utt   = new SpeechSynthesisUtterance(nombre);
-                    utt.lang    = lang;
-                    utt.pitch   = 1.3;
-                    utt.rate    = 0.9;
-                    utt.volume  = 1;
-                    const voces = window.speechSynthesis.getVoices();
-                    const voz   = voces.find(v => v.lang === lang)
-                               || voces.find(v => v.lang.startsWith(idioma.slice(0,2)))
-                               || null;
-                    if (voz) utt.voice = voz;
-                    utt.onerror = e => console.debug('[TTS] error:', e.error);
-                    window.speechSynthesis.speak(utt);
-                } catch(e) {
-                    console.debug('[TTS] excepción:', e);
-                }
-            }, delay);
-        };
-
-        // Desbloqueo del motor TTS en el primer toque (requerido por iOS Safari)
-        if (window.speechSynthesis) {
-            window.speechSynthesis.getVoices();
-            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-            let _ttsDesbloqueado = false;
-            const _desbloquearTTS = () => {
-                if (_ttsDesbloqueado) return;
-                _ttsDesbloqueado = true;
-                try {
-                    const u = new SpeechSynthesisUtterance(' ');
-                    u.volume = 0; u.rate = 10;
-                    window.speechSynthesis.speak(u);
-                } catch(e) {}
-            };
-            ['touchstart','pointerdown'].forEach(ev =>
-                document.addEventListener(ev, _desbloquearTTS, { once: true, passive: true })
-            );
-        }
-
-        const lanzarConfeti = () => {
-            const colores = ['#fce18a','#ff726d','#b48def','#f4306d','#42c062','#3b82f6','#fbbf24'];
-            for (let i = 0; i < 80; i++) {
-                const confeti = document.createElement('div');
-                confeti.className = 'absolute w-3 h-3 md:w-4 md:h-4 rounded-sm z-50 pointer-events-none';
-                confeti.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
-                confeti.style.left = Math.random() * 100 + 'vw'; 
-                confeti.style.top  = '-20px';                     
-                document.body.appendChild(confeti);
-
-                const duracion = Math.random() * 3 + 2; 
-                const delay    = Math.random() * 0.2;   
-
-                confeti.animate([
-                    { transform: 'translate3d(0,0,0) rotate(0deg)',                                                          opacity: 1 },
-                    { transform: `translate3d(${Math.random()*300 - 150}px, 100vh, 0) rotate(${Math.random()*720}deg)`,     opacity: 0 }
-                ], {
-                    duration: duracion * 1000,
-                    delay:    delay * 1000,
-                    easing:   'cubic-bezier(.37,0,.63,1)',
-                    fill:     'forwards'
-                });
-
-                
-                setTimeout(() => confeti.remove(), (duracion + delay) * 1000);
-            }
-        };
-
-        
-
-        const contenedorMusica      = document.getElementById('grid-musica');
-        const contenedorVideos      = document.getElementById('seccion-videos');
-        const contenedorReproductor = document.getElementById('contenedor-reproductor');
-        const listaVideosUI         = document.getElementById('lista-videos');
-        const reproductorVideo      = document.getElementById('reproductor-video');
-        const indicadorCargaVideo   = document.getElementById('indicador-carga-video');
-
-        let temporizadorSimulador = null; 
-
-        
-
-        let bgmActual   = null;
-        const audioRefs = [];
-
-        // Estado UI muted persistido en localStorage
-        let uiMuted = localStorage.getItem('djemmy-ui-muted') === '1';
-
-        // Actualiza los indicadores verde/rojo en los botones de mute
-        const _actualizarIndicadoresMute = () => {
-            const color = uiMuted ? 'bg-red-500' : 'bg-green-400';
-            ['dot-mute-menu', 'dot-mute-sec'].forEach(id => {
-                const dot = document.getElementById(id);
-                if (!dot) return;
-                dot.className = dot.className
-                    .replace('bg-green-400', '')
-                    .replace('bg-red-500', '')
-                    .trim() + ' ' + color;
-            });
-        };
-
-        const toggleMuteSFX = () => {
-            uiMuted = !uiMuted;
-            try { localStorage.setItem('djemmy-ui-muted', uiMuted ? '1' : '0'); } catch(e) {}
-            _actualizarIndicadoresMute();
-        };
-
-        // Aplicar el estado inicial al cargar el DOM
-        document.addEventListener('DOMContentLoaded', _actualizarIndicadoresMute);
-
-        // Reproducir un audio SFX (NO afectado por uiMuted)
-        const reproducirSFX = (audioOrSrc) => {
-            const el = typeof audioOrSrc === 'string' ? new Audio(audioOrSrc) : audioOrSrc;
-            el.currentTime = 0;
-            el.play().catch(e => console.debug('SFX play:', e));
-        };
-
-        
-
-        const detenerBGM = () => {
-            if (!bgmActual) return;
-
-            if (bgmActual.tipo === 'audio') {
-                bgmActual.el.pause();
-                bgmActual.el.currentTime = 0;
-                if (bgmActual.btn) bgmActual.btn.classList.remove('reproduciendo');
-            } else if (bgmActual.tipo === 'video') {
-                reproductorVideo.pause();
-                if (reproductorVideo._blobUrl) {
-                    URL.revokeObjectURL(reproductorVideo._blobUrl);
-                    reproductorVideo._blobUrl = null;
-                }
-                reproductorVideo.removeAttribute('src');
-                reproductorVideo.load();
-                indicadorCargaVideo.classList.add('hidden');
-                document.querySelectorAll('#lista-videos article').forEach(el => el.classList.remove('reproduciendo'));
-            }
-
-            bgmActual = null;
-            clearTimeout(temporizadorSimulador);
-        };
-
-        
-
-        
-
-        const pararTodo = () => {
-            detenerBGM();
-            
-            audioRefs.forEach(a => { a.pause(); a.currentTime = 0; });
-            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
-        };
-
-        
-
-        const reproducir = (track, tipo) => {
-            const audio    = document.getElementById(`audio-${track.archivo}`);
-            const articulo = document.getElementById(`btn-${track.archivo}`);
-            if (!audio || !articulo) return;
-
-            
-            detenerBGM();
-
-            
-            document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
-
-            
-            bgmActual = { tipo: 'audio', el: audio, btn: articulo };
-
-            articulo.classList.add('reproduciendo');
-            audio.currentTime = 0;
-
-            audio.play().catch(() => {
-                
-                temporizadorSimulador = setTimeout(() => {
-                    articulo.classList.remove('reproduciendo');
-                    bgmActual = null;
-                }, 4000);
-            });
-
-            
-            audio.onended = () => {
-                articulo.classList.remove('reproduciendo');
-                if (bgmActual && bgmActual.el === audio) bgmActual = null;
-            };
-        };
-
-        
-
-        
-
-        const reproducirVideo = async (track) => {
-            const articulo = document.getElementById(`btn-vid-${track.archivo}`);
-            if (!articulo) return;
-
-            
-            detenerBGM();
-            document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
-
-            articulo.classList.add('reproduciendo');
-            indicadorCargaVideo.classList.remove('hidden');
-
-            
-            bgmActual = { tipo: 'video' };
-
-            const rutaVideo   = `vid/${track.archivo}.mp4`;
-            const urlAbsoluta = makeAbsolute(rutaVideo);
-            let srcFinal      = rutaVideo; 
-
-            
-            try {
-                if ('caches' in window) {
-                    const cache     = await caches.open(CACHE_NAME);
-                    const respuesta = await cache.match(urlAbsoluta);
-                    if (respuesta) {
-                        const blob = await respuesta.blob();
-                        srcFinal   = URL.createObjectURL(blob); 
-                        console.log('✅ Video reproducido desde caché offline:', track.archivo);
-                    }
-                }
-            } catch (e) {
-                console.warn('⚠️ Caché de video no disponible, usando red:', e);
-            }
-
-            
-            if (reproductorVideo._blobUrl) {
-                URL.revokeObjectURL(reproductorVideo._blobUrl);
-                reproductorVideo._blobUrl = null;
-            }
-            
-            if (srcFinal.startsWith('blob:')) reproductorVideo._blobUrl = srcFinal;
-
-            reproductorVideo.src = srcFinal;
-
-            
-            reproductorVideo.oncanplay = () => indicadorCargaVideo.classList.add('hidden');
-
-            reproductorVideo.play().catch(() => {
-                
-                clearTimeout(temporizadorSimulador);
-                temporizadorSimulador = setTimeout(() => {
-                    articulo.classList.remove('reproduciendo');
-                    reproductorVideo.removeAttribute('src');
-                    reproductorVideo.load();
-                    indicadorCargaVideo.classList.add('hidden');
-                }, 5000);
-            });
-
-            
-            reproductorVideo.onended = () => {
-                articulo.classList.remove('reproduciendo');
-                if (reproductorVideo._blobUrl) {
-                    URL.revokeObjectURL(reproductorVideo._blobUrl);
-                    reproductorVideo._blobUrl = null;
-                }
-                reproductorVideo.removeAttribute('src');
-                reproductorVideo.load();
-                bgmActual = null;
-            };
-        };
-
-        
-
-        
-
-        const crearBotones = (arreglo, contenedor, tipo) => {
-            audioRefs.length = 0;        
-            arreglo.forEach((track) => {
-                
-                const articulo = document.createElement('article');
-                articulo.id        = `btn-${track.archivo}`;
-                articulo.className = `${track.color} rounded-2xl sm:rounded-3xl p-2 sm:p-4 shadow-lg sm:shadow-xl flex flex-col items-center justify-center aspect-square border-2 sm:border-4 border-white/20 relative overflow-hidden transition-all`;
-                articulo.innerHTML = `
-                    <span class="text-4xl sm:text-6xl md:text-7xl mb-1 sm:mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
-                    <span class="text-[10px] sm:text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-0.5 sm:px-1 pointer-events-none">${track.titulo}</span>
-                `;
-
-                
-                const audioEl   = document.createElement('audio');
-                audioEl.id      = `audio-${track.archivo}`;
-                audioEl.src     = `${tipo === 'musica' ? 'audio/' : 'sonidos/'}${track.archivo}.mp3`;
-                audioEl.preload = 'auto'; 
-
-                
-                articulo.addEventListener('click', () => reproducir(track, tipo));
-                audioEl.addEventListener('ended', () => articulo.classList.remove('reproduciendo'));
-                audioRefs.push(audioEl); 
-
-                articulo.appendChild(audioEl);
-                contenedor.appendChild(articulo);
-            });
-        };
-
-        
-
-        const crearBotonesVideos = async () => {
-            for (const track of videosDatos) {
-                const articulo = document.createElement('article');
-                articulo.id        = `btn-vid-${track.archivo}`;
-                articulo.className = `flex-none h-full aspect-video rounded-xl shadow-xl border-2 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
-
-                
-                const rutaWebp   = `img/cover-vid-${track.archivo}.webp`;
-                const urlAbsWebp = makeAbsolute(rutaWebp);
-                let srcMiniatura = rutaWebp; 
-                try {
-                    if ('caches' in window) {
-                        const cache     = await caches.open(CACHE_NAME);
-                        const respuesta = await cache.match(urlAbsWebp);
-                        if (respuesta) {
-                            const blob = await respuesta.blob();
-                            srcMiniatura = URL.createObjectURL(blob);
-                        }
-                    }
-                } catch (e) {  }
-
-                articulo.style.backgroundImage = `url('${srcMiniatura}')`;
-                articulo.innerHTML = `
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity pointer-events-none">
-                        <span class="text-4xl md:text-5xl drop-shadow-lg">▶️</span>
-                    </div>
-                `;
-                articulo.addEventListener('click', () => reproducirVideo(track));
-                listaVideosUI.appendChild(articulo);
-            }
-        };
-
-        
-
-        
-
-        const iniciarMemorama = () => {
-            const grid            = document.getElementById('grid-memorama');
-            const stack           = document.getElementById('stack-parejas');
-            const mensajeVictoria = document.getElementById('mensaje-victoria');
-
-            
-            grid.innerHTML  = '';
-            stack.innerHTML = '';
-            mensajeVictoria.classList.replace('flex', 'hidden');
-            cartasVolteadas    = [];
-            parejasEncontradas = 0;
-            memoramaBloqueado  = false;
-
-            
-            const MAX_PARES = 12;
-            const itemsBarajados = [...frutasMemorama].sort(() => Math.random() - 0.5);
-            const itemsSeleccionados = itemsBarajados.slice(0, MAX_PARES);
-
-            
-            cartasJuego = [...itemsSeleccionados, ...itemsSeleccionados]
-                .sort(() => Math.random() - 0.5)
-                .map((fruta, index) => ({ id: index, fruta, volteada: false, encontrada: false }));
-
-            
-            cartasJuego.forEach((carta, index) => {
-                const cardEl = document.createElement('div');
-                cardEl.className = 'tarjeta-memorama relative w-full h-full cursor-pointer transform-style-3d';
-
-                // Resolver imagen del item: PNG si existe, emoji como fallback
-                const item     = memoramaItemMap[carta.fruta];
-                const carpeta  = memoramaTemaActivo && memoramaTemaActivo.carpeta_img
-                    ? memoramaTemaActivo.carpeta_img : null;
-                const imgFile  = item && item.imagen ? item.imagen : null;
-                const imgUrl   = (carpeta && imgFile)
-                    ? makeAbsolute(`${carpeta}${imgFile}`) : null;
-
-                // Generar el contenido del lado frontal
-                // Si hay imagen PNG: usarla con el emoji oculto como fallback
-                // Si no: mostrar solo el emoji
-                const frontalCentro = imgUrl
-                    ? `<img
-                            src="${imgUrl}"
-                            alt="${carta.fruta}"
-                            class="w-4/5 h-4/5 object-contain drop-shadow pointer-events-none select-none"
-                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-                            draggable="false">
-                       <span class="text-5xl md:text-6xl lg:text-5xl xl:text-6xl drop-shadow pointer-events-none"
-                            style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15));display:none">${carta.fruta}</span>`
-                    : `<span class="text-5xl md:text-6xl lg:text-5xl xl:text-6xl drop-shadow pointer-events-none"
-                            style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">${carta.fruta}</span>`;
-
-                cardEl.innerHTML = `
-                    <div class="carta-dorso absolute inset-0 rounded-xl flex items-center justify-center backface-hidden overflow-hidden">
-                        <div class="carta-dorso-marco rounded-lg"></div>
-                    </div>
-                    <div class="carta-frente absolute inset-0 rounded-xl flex items-center justify-center backface-hidden rotate-y-180 overflow-hidden">
-                        <div class="carta-frente-marco rounded-lg"></div>
-                        <span class="carta-corner" style="top:5px;left:6px">${carta.fruta}</span>
-                        <span class="carta-corner" style="bottom:5px;right:6px;transform:rotate(180deg)">${carta.fruta}</span>
-                        ${frontalCentro}
-                    </div>
-                `;
-
-                cardEl.addEventListener('click', () => voltearCarta(cardEl, index));
-                grid.appendChild(cardEl);
-            });
-
-            
-            requestAnimationFrame(() => ajustarAlturaCartas());
-        };
-
-        
-
-        const voltearCarta = (cardEl, index) => {
-            if (memoramaBloqueado || cartasJuego[index].volteada || cartasJuego[index].encontrada) return;
-
-            initAudio(); 
-
-            
-            cartasJuego[index].volteada = true;
-            cardEl.classList.add('rotate-y-180');
-            cartasVolteadas.push({ cardEl, index });
-
-            
-            if (cartasVolteadas.length === 2) {
-                sonidoFlip(); 
-                verificarPareja();
-            }
-        };
-
-        
-
-        const verificarPareja = () => {
-            memoramaBloqueado = true; 
-            const [carta1, carta2] = cartasVolteadas;
-            const fruta = cartasJuego[carta1.index].fruta;
-
-            if (fruta === cartasJuego[carta2.index].fruta) {
-                
-                cartasJuego[carta1.index].encontrada = true;
-                cartasJuego[carta2.index].encontrada = true;
-                parejasEncontradas++;
-                sonidoExito();
-
-                
-                hablarFruta(fruta, 300);
-
-                setTimeout(() => {
-                    
-                    carta1.cardEl.classList.add('scale-0', 'opacity-0');
-                    carta2.cardEl.classList.add('scale-0', 'opacity-0');
-
-                    
-                    const pilaEl     = document.getElementById('stack-parejas');
-                    const frutaStack = document.createElement('div');
-                    frutaStack.className = 'bg-white/30 border-2 border-white/50 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center text-xl md:text-2xl anim-pop shadow-md shrink-0';
-                    frutaStack.innerText = fruta;
-                    pilaEl.appendChild(frutaStack);
-
-                    memoramaBloqueado = false;
-                    cartasVolteadas   = [];
-
-                    
-                    if (parejasEncontradas === cartasJuego.length / 2) {
-                        sonidoVictoria();
-                        lanzarConfeti();
-
-                        // Reproducir audio de completado (canal BGM — no afectado por uiMuted)
-                        const audioCompletado = new Audio(makeAbsolute('memorama/memorama-completado.mp3'));
-                        audioCompletado.play().catch(e => console.debug('[victoria] audio completado:', e));
-
-                        const overlay = document.getElementById('mensaje-victoria');
-                        const trofeo  = document.getElementById('trofeo-victoria');
-                        overlay.classList.replace('hidden', 'flex');
-                        overlay.style.opacity = '1';
-                        requestAnimationFrame(() => {
-                            trofeo.style.transform = 'scale(1)';
-                            trofeo.style.opacity   = '1';
-                        });
-
-                        
-                        setTimeout(() => {
-                            overlay.style.opacity  = '0';
-                            trofeo.style.opacity   = '0';
-                            trofeo.style.transform = 'scale(0)';
-                            setTimeout(() => {
-                                overlay.classList.replace('flex', 'hidden');
-                                overlay.style.opacity  = '1';
-                                trofeo.style.transform = 'scale(0)';
-                                trofeo.style.opacity   = '0';
-                                iniciarMemorama(); 
-                            }, 1000); 
-                        }, 2500); 
-                    }
-                }, 600); 
-
-            } else {
-                
-                
-                setTimeout(() => {
-                    sonidoError();
-                    
-                    carta1.cardEl.classList.remove('rotate-y-180');
-                    carta2.cardEl.classList.remove('rotate-y-180');
-                    cartasJuego[carta1.index].volteada = false;
-                    cartasJuego[carta2.index].volteada = false;
-                    memoramaBloqueado = false;
-                    cartasVolteadas   = [];
-                }, 1000);
-            }
-        };
-
-        
-
-        
-        let pdfDoc          = null;  
-        let pdfPaginaActual = 1;     
-        let pdfRenderTask   = null;  
-        let libroActivoEl   = null;  
-
-        
-        
-        
-        let _pdfJsCargandoPromise = null;
-        const cargarPDFjs = () => {
-            if (window.pdfjsLib) return Promise.resolve();
-            if (_pdfJsCargandoPromise) return _pdfJsCargandoPromise;
-            _pdfJsCargandoPromise = new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-                s.onload = () => {
-                    if (window.pdfjsLib) {
-                        pdfjsLib.GlobalWorkerOptions.workerSrc =
-                            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                        resolve();
-                    } else { reject(new Error('pdfjsLib no disponible')); }
-                };
-                s.onerror = () => reject(new Error('pdf.min.js no se pudo cargar'));
-                document.head.appendChild(s);
-            });
-            return _pdfJsCargandoPromise;
-        };
-
-        
-
-        const obtenerUrlPDF = async (rutaRelativa) => {
-            try {
-                if ('caches' in window) {
-                    const cache     = await caches.open(CACHE_NAME);
-                    const urlAbs    = makeAbsolute(rutaRelativa);
-                    const respuesta = await cache.match(urlAbs);
-                    if (respuesta) {
-                        const blob = await respuesta.blob();
-                        return URL.createObjectURL(blob);
-                    }
-                }
-            } catch (e) {
-                console.warn('Caché PDF no disponible, usando red:', rutaRelativa, e);
-            }
-            return rutaRelativa; 
-        };
-
-        
-
-        let _listaLibrosCreada = false;
-        const crearListaLibros = async (forzar = false) => {
-            if (_listaLibrosCreada && !forzar) return;
-            const lista = document.getElementById('lista-libros');
-            lista.innerHTML = '';
-            _listaLibrosCreada = true;
-
-            for (const libro of librosDatos) {
-                
-                const item = document.createElement('button');
-                item.id        = `libro-item-${libro.archivo}`;
-                item.className = 'w-full flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 border-white/20 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-left';
-
-                
-                const miniCanvas = document.createElement('canvas');
-                miniCanvas.className = 'w-full rounded-lg shadow-md bg-white';
-                miniCanvas.style.aspectRatio = '3/4'; 
-
-                
-                const titulo = document.createElement('p');
-                titulo.className = 'text-white text-xs font-bold text-center leading-tight w-full px-1 line-clamp-2';
-                titulo.textContent = libro.titulo;
-
-                item.appendChild(miniCanvas);
-                item.appendChild(titulo);
-                item.addEventListener('click', () => abrirLibroPDF(libro, item));
-                lista.appendChild(item);
-
-                
-                const renderMini = async () => {
-                  try {
-                    await cargarPDFjs();
-                    const urlPDF  = await obtenerUrlPDF(`libros/${libro.archivo}.pdf`);
-                    const docMini = await pdfjsLib.getDocument(urlPDF).promise;
-                    const pagina  = await docMini.getPage(1);
-                    const escala  = miniCanvas.offsetWidth > 0
-                        ? miniCanvas.offsetWidth / pagina.getViewport({ scale: 1 }).width
-                        : 0.3;
-                    const viewport = pagina.getViewport({ scale: Math.max(escala, 0.2) });
-                    miniCanvas.width  = viewport.width;
-                    miniCanvas.height = viewport.height;
-                    await pagina.render({
-                        canvasContext: miniCanvas.getContext('2d'),
-                        viewport
-                    }).promise;
-                  } catch (e) {
-                    
-                    const ctx = miniCanvas.getContext('2d');
-                    miniCanvas.width  = 120;
-                    miniCanvas.height = 160;
-                    ctx.fillStyle = '#e8e0f0';
-                    ctx.fillRect(0, 0, 120, 160);
-                    ctx.font = '48px serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('📖', 60, 95);
-                  }
-                };
-                
-                if ('IntersectionObserver' in window) {
-                    const obs = new IntersectionObserver((entries, o) => {
-                        if (entries[0].isIntersecting) { renderMini(); o.disconnect(); }
-                    }, { threshold: 0.1 });
-                    obs.observe(item);
-                } else {
-                    renderMini(); 
-                }
-            }
-        };
-
-        
-
-        const abrirLibroPDF = async (libro, itemEl) => {
-            
-            if (libroActivoEl) libroActivoEl.classList.remove('libro-activo');
-            libroActivoEl = itemEl;
-            itemEl.classList.add('libro-activo');
-
-            
-            const placeholder = document.getElementById('visor-placeholder');
-            const spinner     = document.getElementById('visor-spinner');
-            const canvas      = document.getElementById('visor-canvas');
-            placeholder.classList.add('hidden');
-            spinner.classList.remove('hidden');
-            canvas.classList.add('hidden');
-
-            try {
-                await cargarPDFjs();
-                const rutaPDF   = `libros/${libro.archivo}.pdf`;
-                const urlPDF    = await obtenerUrlPDF(rutaPDF);
-                pdfDoc          = await pdfjsLib.getDocument(urlPDF).promise;
-                
-                if (urlPDF.startsWith('blob:')) URL.revokeObjectURL(urlPDF);
-                pdfPaginaActual = 1;
-
-                
-                document.getElementById('total-paginas').textContent = pdfDoc.numPages;
-                document.getElementById('input-pagina').max = pdfDoc.numPages;
-
-                
-                document.getElementById('btn-pag-anterior').disabled = true;
-                document.getElementById('btn-pag-siguiente').disabled = pdfDoc.numPages <= 1;
-
-                await renderizarPaginaPDF(1);
-            } catch (e) {
-                console.error('Error al abrir PDF:', e);
-                spinner.classList.add('hidden');
-                placeholder.classList.remove('hidden');
-                document.getElementById('visor-placeholder').innerHTML =
-                    '<span class="text-4xl">⚠️</span><p class="text-sm font-semibold">No se pudo cargar el libro</p>';
-            }
-        };
-
-        
-
-        const renderizarPaginaPDF = async (numeroPagina) => {
-            if (!pdfDoc) return;
-
-            const spinner = document.getElementById('visor-spinner');
-            const canvas  = document.getElementById('visor-canvas');
-            spinner.classList.remove('hidden');
-            canvas.classList.add('hidden');
-
-            
-            if (pdfRenderTask) {
-                try { pdfRenderTask.cancel(); } catch (e) {}
-                pdfRenderTask = null;
-            }
-
-            try {
-                const pagina   = await pdfDoc.getPage(numeroPagina);
-                const viewport = pagina.getViewport({ scale: 1 });
-
-                
-                const contenedor = document.getElementById('visor-pdf-contenedor');
-                const maxW = contenedor.clientWidth  - 16; 
-                const maxH = contenedor.clientHeight - 16;
-                const escala = Math.min(maxW / viewport.width, maxH / viewport.height);
-                const vpEscalado = pagina.getViewport({ scale: escala });
-
-                canvas.width  = vpEscalado.width;
-                canvas.height = vpEscalado.height;
-
-                
-                pdfRenderTask = pagina.render({
-                    canvasContext: canvas.getContext('2d'),
-                    viewport:      vpEscalado
-                });
-                await pdfRenderTask.promise;
-
-                
-                spinner.classList.add('hidden');
-                canvas.classList.remove('hidden');
-
-                
-                pdfPaginaActual = numeroPagina;
-                document.getElementById('input-pagina').value = numeroPagina;
-                document.getElementById('btn-pag-anterior').disabled = numeroPagina <= 1;
-                document.getElementById('btn-pag-siguiente').disabled = numeroPagina >= pdfDoc.numPages;
-
-            } catch (e) {
-                if (e.name !== 'RenderingCancelledException') {
-                    console.error('Error al renderizar página:', e);
-                    spinner.classList.add('hidden');
-                }
-            }
-        };
-
-        
-
-        const cambiarPaginaPDF = (delta) => {
-            if (!pdfDoc) return;
-            const nueva = pdfPaginaActual + delta;
-            if (nueva >= 1 && nueva <= pdfDoc.numPages) {
-                renderizarPaginaPDF(nueva);
-            }
-        };
-
-        
-
-        const irAPaginaPDF = (valor) => {
-            if (!pdfDoc) return;
-            const n = Math.max(1, Math.min(parseInt(valor) || 1, pdfDoc.numPages));
-            renderizarPaginaPDF(n);
-        };
-
-        
-        
-        let swipeTouchStartX = 0;
-        document.getElementById('visor-pdf-contenedor').addEventListener('touchstart', (e) => {
-            swipeTouchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-        document.getElementById('visor-pdf-contenedor').addEventListener('touchend', (e) => {
-            const dx = e.changedTouches[0].screenX - swipeTouchStartX;
-            if (Math.abs(dx) > 50) {         
-                cambiarPaginaPDF(dx < 0 ? 1 : -1); 
-            }
-        }, { passive: true });
-
-        
-        window.addEventListener('resize', () => {
-            if (pdfDoc && document.getElementById('seccion-libros').classList.contains('flex')) {
-                renderizarPaginaPDF(pdfPaginaActual);
-            }
-        });
-
-        
-
-        
-        const SECCIONES = {
-            musica:   { display: 'block', titulo: '🎵 Música'   },
-            memorama: { display: 'flex',  titulo: '🍎 Memorama' },
-            videos:   { display: 'flex',  titulo: '🎬 Videos'   },
-            libros:   { display: 'flex',  titulo: '📚 Libros'   }
-        };
-
-        
-
-        // Reproducir audio de la sección. Cachea el elemento <Audio> tras la primera carga.
-        const _navAudioCache = {};
-        const reproducirAudioSeccion = (seccion) => {
-            if (uiMuted) return;
-            const url = makeAbsolute(`audio/${seccion}.mp3`);
-
-            if (_navAudioCache[seccion]) {
-                const audioEl = _navAudioCache[seccion];
-                audioEl.currentTime = 0;
-                audioEl.play().catch(e => console.debug('[nav] play falló:', e));
-                return;
-            }
-
-            const audioNav = new Audio(url);
-            audioNav.preload = 'auto';
-            audioNav.play().then(() => {
-                _navAudioCache[seccion] = audioNav;
-            }).catch(e => console.debug('[nav] no disponible:', seccion, e));
-        };
-
-        const cambiarSeccion = (seccion) => {
-            const cfg = SECCIONES[seccion];
-            if (!cfg) return;
-
-            // PRIMERO: reproducir el audio de la sección (respuesta inmediata al toque)
-            reproducirAudioSeccion(seccion);
-
-            document.getElementById('menu-inicio').classList.add('hidden');
-            document.getElementById('menu-inicio').classList.remove('flex');
-
-            const headerSec = document.getElementById('header-seccion');
-            headerSec.classList.remove('hidden');
-            headerSec.classList.add('flex');
-            document.getElementById('titulo-seccion-activa').textContent = cfg.titulo;
-
-            const mainSec = document.getElementById('main-secciones');
-            mainSec.classList.remove('hidden');
-            mainSec.classList.add('flex');
-
-            Object.keys(SECCIONES).forEach(id => {
-                const el  = document.getElementById(`seccion-${id}`);
-                const dis = SECCIONES[id].display;
-                if (id === seccion) {
-                    el.classList.remove('hidden');
-                    el.classList.add(dis === 'flex' ? 'flex' : 'block');
-                } else {
-                    el.classList.add('hidden');
-                    el.classList.remove(dis === 'flex' ? 'flex' : 'block');
-                }
-            });
-
-            if (seccion === 'memorama') {
-                requestAnimationFrame(() => {
-                    ajustarAlturaCartas();
-                    mostrarMenuTemas();
-                });
-            }
-            if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
-        };
-
-        
-
-        const volverAlMenu = () => {
-            
-            document.getElementById('header-seccion').classList.add('hidden');
-            document.getElementById('header-seccion').classList.remove('flex');
-            document.getElementById('main-secciones').classList.add('hidden');
-            document.getElementById('main-secciones').classList.remove('flex');
-
-            
-            Object.keys(SECCIONES).forEach(id => {
-                const el  = document.getElementById(`seccion-${id}`);
-                const dis = SECCIONES[id].display;
-                el.classList.add('hidden');
-                el.classList.remove(dis === 'flex' ? 'flex' : 'block');
-            });
-
-            
-            document.getElementById('menu-inicio').classList.remove('hidden');
-            document.getElementById('menu-inicio').classList.add('flex');
-            verificarEstadoOffline(true);
-        };
-
-        
-
-        let _configRespuestaCorrecta = 0;
-
-        
-        const abrirConfig = () => {
-            const a = Math.floor(Math.random() * 9) + 1;
-            const b = Math.floor(Math.random() * 9) + 1;
-            _configRespuestaCorrecta = a + b;
-            document.getElementById('config-pregunta').textContent = `${a} + ${b} = ?`;
-            document.getElementById('config-respuesta').value = '';
-            document.getElementById('config-error').classList.add('hidden');
-            document.getElementById('config-verificacion').classList.remove('hidden');
-            document.getElementById('config-opciones').classList.add('hidden');
-            document.getElementById('config-opciones').classList.remove('flex');
-            document.getElementById('modal-config').classList.replace('hidden', 'flex');
-            setTimeout(() => document.getElementById('config-respuesta').focus(), 100);
-        };
-
-        
-        const verificarConfig = () => {
-            const val = parseInt(document.getElementById('config-respuesta').value);
-            if (val === _configRespuestaCorrecta) {
-                document.getElementById('config-verificacion').classList.add('hidden');
-                document.getElementById('config-opciones').classList.remove('hidden');
-                document.getElementById('config-opciones').classList.add('flex');
-            } else {
-                const err = document.getElementById('config-error');
-                err.classList.remove('hidden');
-                document.getElementById('config-respuesta').value = '';
-                document.getElementById('config-respuesta').focus();
-                setTimeout(() => err.classList.add('hidden'), 2000);
-            }
-        };
-
-        
-        document.getElementById('config-respuesta').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') verificarConfig();
-        });
-
-        
-        const cerrarConfig = () => {
-            document.getElementById('modal-config').classList.replace('flex', 'hidden');
-        };
-
-        
-
-        const setIdiomaMemorама = (idioma) => {
-            idiomaMemorama = idioma;
-            try { localStorage.setItem('djemmy-idioma-memorama', idioma); } catch(e) {}
-            const ACTIVO   = 'border-white bg-white text-purple-700 shadow-md';
-            const INACTIVO = 'border-white/20 bg-white/15 text-white';
-            ['aleatorio', 'es-MX', 'en-US', 'fr-FR', 'zh-CN'].forEach(id => {
-                const btn = document.getElementById(`lang-btn-${id}`);
-                if (!btn) return;
-                btn.className = btn.className
-                    .replace(ACTIVO, '')
-                    .replace(INACTIVO, '')
-                    .trim() + ' ' + (id === idioma ? ACTIVO : INACTIVO);
-            });
-        };
-
-        
-
-        
-
-        
-        let _offlineCache = { ts: 0, guardados: -1, total: 0 };
-
-        const verificarEstadoOffline = async (forzar = false) => {
-            const dot    = document.getElementById('indicador-offline-dot');
-            const texto  = document.getElementById('indicador-offline-texto');
-            const badge  = document.getElementById('indicador-offline');
-            if (!dot || !texto) return;
-
-            const ahora = Date.now();
-            
-            if (!forzar && _offlineCache.ts && (ahora - _offlineCache.ts) < CONFIG.OFFLINE_CACHE_TTL_MS) {
-                const { guardados, total } = _offlineCache;
-                _actualizarBadge(dot, badge, texto, guardados, total);
-                return;
-            }
-
-            try {
-                if (!('caches' in window) || urlsParaCachear.length === 0) {
-                    texto.textContent = 'Sin caché'; return;
-                }
-                const cache   = await caches.open(CACHE_NAME);
-                const total   = urlsParaCachear.length;
-                
-                const hits    = await Promise.all(urlsParaCachear.map(u => cache.match(u)));
-                const guardados = hits.filter(Boolean).length;
-                _offlineCache = { ts: ahora, guardados, total };
-                _actualizarBadge(dot, badge, texto, guardados, total);
-            } catch (e) {
-                texto.textContent = 'Sin caché';
-            }
-        };
-
-        const _actualizarBadge = (dot, badge, texto, guardados, total) => {
-            const pct = Math.round((guardados / total) * 100);
-            if (guardados === total) {
-                dot.style.backgroundColor = '#4ade80';
-                badge.style.borderColor   = 'rgba(74,222,128,0.4)';
-                badge.style.color         = 'rgba(255,255,255,0.8)';
-                texto.textContent = '✓ Sin conexión';
-            } else {
-                dot.style.backgroundColor = '#fbbf24';
-                badge.style.borderColor   = 'rgba(251,191,36,0.4)';
-                badge.style.color         = 'rgba(255,255,255,0.7)';
-                texto.textContent = `${pct}% guardado`;
-            }
-        };
-
-        
-
-        
-
-        const ajustarAlturaCartas = () => {
-            const seccion = document.getElementById('seccion-memorama');
-            if (!seccion || seccion.classList.contains('hidden')) return;
-            const grid   = document.getElementById('grid-memorama');
-            const barraT = document.getElementById('memorama-barra-top');
-            const pila   = document.getElementById('memorama-pila');
-
-            const totalH  = seccion.clientHeight;
-            const barraH  = barraT ? barraT.offsetHeight : 32;
-            const pilaH   = pila   ? pila.offsetHeight   : 38;
-
-            const cols  = window.innerWidth >= 1024 ? 8 : 4;
-            const filas = 3;
-            const gapPx = window.innerWidth >= 768 ? 8 : 6;
-
-            
-            const ocupado    = barraH + pilaH + 8 + 4 + gapPx * (filas - 1) + gapPx * 2;
-            const alturaFila = Math.floor((totalH - ocupado) / filas);
-
-            const anchoCarta       = Math.floor((grid.clientWidth - gapPx * (cols - 1)) / cols);
-            const alturaDesdeAncho = Math.floor(anchoCarta * 3 / 2);
-
-            const filaFinal = Math.max(20, Math.min(alturaFila, alturaDesdeAncho));
-            grid.style.gridAutoRows = filaFinal + 'px';
-        };
-
-        
-        let _resizeTimer = null;
-        window.addEventListener('resize', () => {
-            clearTimeout(_resizeTimer);
-            _resizeTimer = setTimeout(ajustarAlturaCartas, CONFIG.RESIZE_DEBOUNCE_MS);
-        });
-
-        
-
-        const inicializarApp = async () => {
-
-            // Referencias DOM — obtenidas aquí para garantizar que el DOM esté completo
-            const contenedorMusicaEl = document.getElementById('grid-musica');
-
-            try {
-                const [resAudios, resVids, resLibros] = await Promise.all([
-                    fetchTimeout('./audios.json'),
-                    fetchTimeout('./vids.json'),
-                    fetchTimeout('./libros.json')
-                ]);
-
-                if (!resAudios.ok) throw new Error(`audios.json respondió con ${resAudios.status}`);
-                if (!resVids.ok)   throw new Error(`vids.json respondió con ${resVids.status}`);
-
-                const musicaTmp = await resAudios.json();
-                const vidsTmp   = await resVids.json();
-                const librosTmp = resLibros.ok ? await resLibros.json() : [];
-
-                if (!Array.isArray(musicaTmp))  throw new Error('audios.json debe ser un array');
-                if (!Array.isArray(vidsTmp))    throw new Error('vids.json debe ser un array');
-                if (!Array.isArray(librosTmp)) console.warn('libros.json malformado, usando []');
-                musica      = musicaTmp.filter(t => t && t.archivo && t.titulo);
-                videosDatos = vidsTmp.filter(t => t && t.archivo);
-                librosDatos = Array.isArray(librosTmp) ? librosTmp.filter(t => t && t.archivo) : [];
-
-                musica.forEach(t =>
-                    urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`))
-                );
-
-                
-                ['musica', 'memorama', 'videos', 'libros'].forEach(s =>
-                    urlsParaCachear.push(makeAbsolute(`audio/${s}.mp3`))
-                );
-                urlsParaCachear.push(makeAbsolute('memorama/memorama-completado.mp3'));
-
-                videosDatos.forEach(t => {
-                    urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
-                    urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
-                });
-                librosDatos.forEach(t =>
-                    urlsParaCachear.push(makeAbsolute(`libros/${t.archivo}.pdf`))
-                );
-
-                // Cargar el catálogo de temas y los JSONs + audios de TODOS los temas
-                // (no solo el tema activo) para garantizar funcionamiento offline completo
-                try {
-                    const rt = await fetchTimeout('./memorama-temas.json');
-                    if (rt.ok) {
-                        const temas = await rt.json();
-                        if (Array.isArray(temas)) {
-                            // Cargar JSONs + audios de cada tema en paralelo
-                            await Promise.all(temas.map(async (t) => {
-                                if (!t || !t.archivo) return;
-                                urlsParaCachear.push(makeAbsolute(t.archivo));
-                                try {
-                                    const rTema = await fetchTimeout(`./${t.archivo}`);
-                                    if (!rTema.ok) return;
-                                    const datosTema = await rTema.json();
-                                    const carpeta   = datosTema.carpeta_audio;
-                                    if (!carpeta || !Array.isArray(datosTema.items)) return;
-                                    datosTema.items.forEach(item => {
-                                        // Audios por idioma
-                                        Object.entries(item.audio || {}).forEach(([lang, archivo]) => {
-                                            urlsParaCachear.push(makeAbsolute(`${carpeta}${lang}/${archivo}`));
-                                        });
-                                        // Imágenes PNG del tema
-                                        if (datosTema.carpeta_img && item.imagen) {
-                                            urlsParaCachear.push(makeAbsolute(`${datosTema.carpeta_img}${item.imagen}`));
-                                        }
-                                    });
-                                } catch(e) {
-                                    console.warn(`Tema ${t.archivo} no se pudo enumerar:`, e);
-                                }
-                            }));
-                        }
-                    }
-                } catch(e) {
-                    console.warn('No se pudo enumerar temas del memorama:', e);
-                }
-
-            } catch (err) {
-                console.error('No se pudo cargar el catálogo de contenido:', err);
-                // Mostrar error visible al usuario
-                const gridM = document.getElementById('grid-musica');
-                if (gridM) gridM.innerHTML = `<p class="text-white/60 text-sm col-span-full text-center py-8">⚠️ Error al cargar contenido. Verifica tu conexión y recarga la app.<br><small>${err.message}</small></p>`;
-            }
-            crearBotones(musica, contenedorMusicaEl, 'musica');
-            await cargarTemasMemorama();
-            setIdiomaMemorама(idiomaMemorama);
             // Al iniciar siempre mostrar el menú de temas (el juego se abre al elegir)
             mostrarMenuTemas();
             crearBotonesVideos().catch(console.warn); 
@@ -3406,7 +1962,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v72';
+        const CACHE_NAME = 'djemmy-cache-v69';
 
         // Exponer funciones al scope de window para que los onclick inline las encuentren
         Object.assign(window, {
@@ -3560,28 +2116,6 @@
                                 }
                             });
                         }).catch(() => fetch(event.request))
-                    );
-                    return;
-                }
-
-                // JSONs de catálogo: network-first para garantizar datos frescos,
-                // con fallback a caché si no hay red
-                const isJson = /\.json(\?.*)?$/.test(url);
-                if (isJson) {
-                    event.respondWith(
-                        fetch(event.request).then(resp => {
-                            if (resp.ok) {
-                                caches.open(CACHE_NAME_SW).then(cache =>
-                                    cache.put(event.request, resp.clone())
-                                );
-                            }
-                            return resp;
-                        }).catch(() => caches.match(event.request)
-                            .then(cached => cached || new Response('[]', {
-                                status: 200,
-                                headers: { 'Content-Type': 'application/json' }
-                            }))
-                        )
                     );
                     return;
                 }
