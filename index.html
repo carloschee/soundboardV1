@@ -300,7 +300,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v75</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v76</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -390,7 +390,7 @@
 
             <!-- Panel izquierdo: lista de canciones -->
             <div id="panel-lista-musica"
-                 class="w-56 sm:w-64 md:w-72 shrink-0 flex flex-col border-r border-white/10 overflow-hidden">
+                 class="w-56 sm:w-64 md:w-72 shrink-0 flex flex-col border-r border-white/10 min-h-0">
                 <!-- Portada activa + info -->
                 <div id="musica-portada-wrap"
                      class="relative shrink-0 w-full bg-black/30 overflow-hidden"
@@ -1678,7 +1678,7 @@
 
         
         const SECCIONES = {
-            musica:   { display: 'block', titulo: '🎵 Música'   },
+            musica:   { display: 'flex',  titulo: '🎵 Música'   },
             memorama: { display: 'flex',  titulo: '🍎 Memorama' },
             videos:   { display: 'flex',  titulo: '🎬 Videos'   },
             libros:   { display: 'flex',  titulo: '📚 Libros'   }
@@ -1737,6 +1737,13 @@
                 }
             });
 
+            if (seccion === 'musica') {
+                requestAnimationFrame(() => {
+                    if (typeof _p5Instance !== 'undefined' && _p5Instance) {
+                        _p5Instance.windowResized && _p5Instance.windowResized();
+                    }
+                });
+            }
             if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
         };
@@ -2082,7 +2089,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v75'; 
+        const CACHE_NAME = 'djemmy-cache-v76'; 
 
         
         inicializarApp();
@@ -2459,6 +2466,11 @@
 
         _vizRunning = true;
         _iniciarP5();
+
+        // Resize tras un frame para garantizar que el contenedor tiene dimensiones reales
+        requestAnimationFrame(() => {
+            if (_p5Instance) _p5Instance.windowResized && _p5Instance.windowResized();
+        });
     }
 
     // Detener visualizador
@@ -2481,7 +2493,9 @@
             let hue = 0;
 
             p.setup = function() {
-                const c = p.createCanvas(contenedor.offsetWidth, contenedor.offsetHeight);
+                const w = contenedor.offsetWidth  || 600;
+                const h = contenedor.offsetHeight || 400;
+                const c = p.createCanvas(w, h);
                 c.parent(contenedor);
                 p.colorMode(p.HSB, 360, 100, 100, 100);
                 p.background(0, 0, 8);
@@ -2489,7 +2503,9 @@
             };
 
             p.windowResized = function() {
-                p.resizeCanvas(contenedor.offsetWidth, contenedor.offsetHeight);
+                const w = contenedor.offsetWidth  || 600;
+                const h = contenedor.offsetHeight || 400;
+                p.resizeCanvas(w, h);
             };
 
             p.draw = function() {
