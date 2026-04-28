@@ -170,73 +170,59 @@
         .tarjeta-memorama   { transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1), opacity 0.5s ease; }
 
         
-        /* ── DORSO DE CARTA — estilo base ───────────────────────────────────── */
+        /* ── DORSO DE CARTA — base ───────────────────────────────────────────── */
         .carta-dorso {
-            border: 3px solid rgba(255,255,255,0.80);
-            box-shadow: inset 0 2px 0 rgba(255,255,255,0.25),
-                        inset 0 -2px 0 rgba(0,0,0,0.15),
+            border: 2.5px solid rgba(255,255,255,0.55);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.20),
                         0 6px 20px rgba(0,0,0,0.35);
             overflow: hidden;
         }
-        /* Marco interior dashed */
-        .carta-dorso::before {
-            content: '';
-            position: absolute; inset: 6px; z-index: 1;
-            border-radius: 8px;
-            border: 2px dashed rgba(255,255,255,0.40);
-            pointer-events: none;
-        }
+        .carta-dorso-marco { display: none; } /* sin emojis */
 
-        /* ── TEMA: frutas — burbujas de acuarela en verde/amarillo ─────────── */
-        .dorso-frutas {
-            background: radial-gradient(ellipse at 30% 25%, #a8edab 0%, #43c06f 45%, #1b8a3e 100%);
-        }
-        .dorso-frutas .carta-dorso-marco::before { content: '🌿'; }
-        .dorso-frutas .carta-dorso-marco::after  { content: '🍀'; }
-
-        /* ── TEMA: transportes — velocidad en azul/naranja ─────────────────── */
-        .dorso-transportes {
-            background: linear-gradient(135deg, #1a237e 0%, #1565c0 40%, #ff6f00 100%);
-        }
-        .dorso-transportes .carta-dorso-marco::before { content: '⚡'; }
-        .dorso-transportes .carta-dorso-marco::after  { content: '💫'; }
-
-        /* ── TEMA: vegetales — tierra fértil en verde oscuro/tierra ─────────── */
-        .dorso-vegetales {
-            background: radial-gradient(ellipse at 70% 30%, #d4e157 0%, #7cb342 40%, #2e7d32 100%);
-        }
-        .dorso-vegetales .carta-dorso-marco::before { content: '🌱'; }
-        .dorso-vegetales .carta-dorso-marco::after  { content: '🍃'; }
-
-        /* ── TEMA: default (sin tema o desconocido) — galaxia violeta ──────── */
-        .dorso-default {
-            background: linear-gradient(135deg, #6a0dad 0%, #c0147a 55%, #ff6b35 100%);
-        }
-        .dorso-default .carta-dorso-marco::before { content: '⭐'; }
-        .dorso-default .carta-dorso-marco::after  { content: '✦'; }
-
-        /* Diseño SVG abstracto superpuesto — común a todos los dorsos */
+        /* Diseño SVG abstracto */
         .carta-dorso-svg {
             position: absolute; inset: 0; z-index: 0;
-            pointer-events: none; overflow: hidden; border-radius: 10px;
+            pointer-events: none; overflow: hidden; border-radius: 9px;
         }
 
-        /* Icono central del dorso */
-        .carta-dorso-marco {
-            position: absolute; inset: 0; z-index: 2;
-            pointer-events: none;
-            display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1.6rem, 3vw, 2.4rem);
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+        /* ── TEMA: frutas — ondas fluidas coral/verde ────────────────────────── */
+        .dorso-frutas {
+            background: linear-gradient(145deg, #1a4731 0%, #2d6a4f 40%, #52b788 100%);
         }
-        .carta-dorso-marco::before,
-        .carta-dorso-marco::after {
-            position: absolute;
-            font-size: 0.65rem; line-height: 1;
-            opacity: 0.70;
+
+        /* ── TEMA: transportes — planos angulares azul profundo ─────────────── */
+        .dorso-transportes {
+            background: linear-gradient(160deg, #03045e 0%, #0077b6 55%, #00b4d8 100%);
         }
-        .carta-dorso-marco::before { top: 7px; left: 8px; }
-        .carta-dorso-marco::after  { bottom: 7px; right: 8px; }
+
+        /* ── TEMA: vegetales — tierra orgánica ocre/oliva ───────────────────── */
+        .dorso-vegetales {
+            background: linear-gradient(145deg, #3d2b1f 0%, #6b4c2a 45%, #a3793a 100%);
+        }
+
+        /* ── TEMA: default ───────────────────────────────────────────────────── */
+        .dorso-default {
+            background: linear-gradient(135deg, #2d1b69 0%, #6a0dad 55%, #c0147a 100%);
+        }
+
+        /* ── Animaciones del memorama ────────────────────────────────────────── */
+        @keyframes flotar {
+            0%,100% { transform: translateY(0px) rotate(0deg); }
+            33%      { transform: translateY(-14px) rotate(3deg); }
+            66%      { transform: translateY(-8px) rotate(-2deg); }
+        }
+        @keyframes desvanecer-fuera {
+            0%   { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5) rotate(20deg); }
+        }
+        @keyframes materializar {
+            0%   { opacity: 0; transform: scale(0.3) rotateY(90deg); }
+            60%  { opacity: 1; transform: scale(1.08) rotateY(0deg); }
+            100% { opacity: 1; transform: scale(1) rotateY(0deg); }
+        }
+        .anim-flotar    { animation: flotar 2.5s ease-in-out infinite; }
+        .anim-salir     { animation: desvanecer-fuera 0.4s ease-in forwards; }
+        .anim-entrar    { animation: materializar 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; opacity: 0; }
 
         /* ── FRENTE de carta ─────────────────────────────────────────────────── */
         .carta-frente {
@@ -300,7 +286,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v78</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v79</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -434,13 +420,39 @@
 
         <div id="seccion-memorama" class="flex-1 min-h-0 hidden flex-col items-center pt-1 pb-1 relative w-full overflow-hidden">
 
-            <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
-                
-                <div id="memorama-selector-temas"
-                    class="flex gap-1.5 overflow-x-auto scroll-nativo shrink-0">
-                    
+            <!-- ── MODAL DE SELECCIÓN DE TEMA ───────────────────────────────── -->
+            <div id="modal-tema-memorama"
+                 class="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-md">
+                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8 w-full max-w-sm mx-4 shadow-2xl flex flex-col gap-4">
+                    <h2 class="text-white font-black text-xl text-center tracking-wide">Elige un tema</h2>
+                    <div id="modal-lista-temas" class="flex flex-col gap-3">
+                        <!-- Inyectado por crearModalTemas() -->
+                    </div>
                 </div>
+            </div>
 
+            <!-- ── PANTALLA DE INTRODUCCIÓN ──────────────────────────────────── -->
+            <div id="intro-memorama"
+                 class="absolute inset-0 z-20 hidden flex-col items-center justify-center gap-4 bg-black/30 backdrop-blur-sm">
+                <p id="intro-titulo-tema"
+                   class="text-white font-black text-2xl tracking-wide drop-shadow"></p>
+                <div id="intro-elementos"
+                     class="flex flex-wrap justify-center gap-3 max-w-2xl px-4">
+                    <!-- Imágenes animadas inyectadas por mostrarIntroTema() -->
+                </div>
+            </div>
+
+            <!-- ── BARRA DEL JUEGO ───────────────────────────────────────────── -->
+            <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
+
+                <!-- Botón: volver al modal de selección -->
+                <button onclick="abrirModalTema()" title="Cambiar tema"
+                    class="shrink-0 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-xl font-bold backdrop-blur-md border border-white/20 transition-all active:scale-95 shadow-md flex items-center gap-2 text-sm">
+                    <span id="barra-tema-emoji" class="text-lg">🎴</span>
+                    <span id="barra-tema-nombre" class="hidden sm:inline text-xs opacity-80"></span>
+                </button>
+
+                <!-- Selector de idioma -->
                 <div id="memorama-selector-idioma" class="flex gap-1 shrink-0">
                     <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
                         class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🎲</button>
@@ -454,28 +466,28 @@
                         class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇨🇳</button>
                 </div>
 
+                <!-- Reiniciar -->
                 <button onclick="iniciarMemorama()"
                     class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
                     <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
                 </button>
             </div>
 
+            <!-- ── TABLERO ────────────────────────────────────────────────────── -->
             <div class="flex flex-col w-full max-w-7xl items-center gap-1.5 md:gap-2 px-2 md:px-4 flex-1 min-h-0">
-
                 <div id="grid-memorama"
                     class="grid grid-cols-4 lg:grid-cols-8 gap-1.5 md:gap-2 w-full perspective-1000 shrink-0"
                     style="grid-auto-rows: 14vw">
                 </div>
-
                 <div id="memorama-pila"
                     class="w-full bg-black/20 backdrop-blur-md border-2 border-white/20 rounded-xl flex items-center px-2 py-1 md:px-3 gap-2 shadow-inner overflow-x-auto shrink-0 scroll-nativo"
                     style="min-height:2.4rem">
                     <span class="text-white/60 font-bold text-[10px] md:text-xs uppercase tracking-widest pl-1 pr-1.5 shrink-0">Pares</span>
-                    <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center">
-                    </div>
+                    <div id="stack-parejas" class="flex flex-row gap-1 md:gap-2 w-full justify-start items-center"></div>
                 </div>
             </div>
 
+            <!-- Victoria -->
             <div id="mensaje-victoria"
                 class="hidden absolute inset-0 flex-col items-center justify-center z-10 pointer-events-none rounded-3xl m-2"
                 style="transition: opacity 1s ease;">
@@ -726,11 +738,18 @@
                 const res = await fetchTimeout('./memorama-temas.json');
                 if (!res.ok) throw new Error(`memorama-temas.json: ${res.status}`);
                 memoramaTemas = await res.json();
-                if (memoramaTemas.length > 0) await activarTemaMemorama(memoramaTemas[0].id);
-                crearSelectorTemas();
+                // Enriquecer con conteo de items para mostrarlo en el modal
+                await Promise.all(memoramaTemas.map(async meta => {
+                    try {
+                        const r = await fetchTimeout(`./${meta.archivo}`);
+                        if (r.ok) { const d = await r.json(); meta.items = d.items ? d.items.length : 0; }
+                    } catch(_) {}
+                }));
+                crearModalTemas();
+                abrirModalTema();
             } catch (e) {
-                console.warn('Sin memorama-temas.json, usando frutas por defecto:', e);
-                itemsMemorama = []; // sin tema disponible, memorama vacío
+                console.warn('Sin memorama-temas.json:', e);
+                itemsMemorama = [];
             }
         };
 
@@ -752,38 +771,122 @@
             }
         };
 
-        const crearSelectorTemas = () => {
-            const contenedor = document.getElementById('memorama-selector-temas');
-            if (!contenedor) return;
-            contenedor.innerHTML = '';
+        // Emojis decorativos por tema (sin depender del icono PNG)
+        const TEMA_EMOJIS = {
+            frutas:      '🍎',
+            transportes: '🚗',
+            vegetales:   '🥦',
+        };
+
+        // Construye las opciones dentro del modal
+        const crearModalTemas = () => {
+            const lista = document.getElementById('modal-lista-temas');
+            if (!lista) return;
+            lista.innerHTML = '';
             memoramaTemas.forEach(meta => {
+                const emoji = TEMA_EMOJIS[meta.id] || '🎴';
                 const btn = document.createElement('button');
-                const activo = memoramaTemaActivo && memoramaTemaActivo.id === meta.id;
-                btn.id        = `tema-btn-${meta.id}`;
-                btn.className = `shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
-                    activo ? 'bg-white text-purple-700 border-white shadow-md'
-                           : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
-                }`;
-                btn.innerHTML = `<img src="${meta.icono}" alt="${meta.titulo}" class="w-5 h-5 object-contain" onerror="this.outerHTML='🎴'"><span>${meta.titulo}</span>`;
+                btn.className = 'flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 hover:border-white/40 transition-all text-white text-left';
+                btn.innerHTML = `
+                    <span class="text-4xl">${emoji}</span>
+                    <div class="flex flex-col">
+                        <span class="font-black text-base">${meta.titulo}</span>
+                        <span class="text-white/50 text-xs">${meta.items || ''} elementos</span>
+                    </div>
+                    <span class="ml-auto text-white/30 text-xl">›</span>
+                `;
                 btn.addEventListener('click', async () => {
-                    if (memoramaTemaActivo && memoramaTemaActivo.id === meta.id) return;
+                    cerrarModalTema();
                     await activarTemaMemorama(meta.id);
-                    memoramaTemas.forEach(m => {
-                        const b = document.getElementById(`tema-btn-${m.id}`);
-                        if (!b) return;
-                        const esActivo = m.id === meta.id;
-                        b.className = `shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
-                            esActivo ? 'bg-white text-purple-700 border-white shadow-md'
-                                     : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
-                        }`;
-                    });
-                    iniciarMemorama();
+                    mostrarIntroTema();
                 });
-                contenedor.appendChild(btn);
+                lista.appendChild(btn);
             });
         };
 
-        
+        // Abre el modal de selección de tema
+        const abrirModalTema = () => {
+            const modal = document.getElementById('modal-tema-memorama');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Ocultar intro si estaba visible
+            const intro = document.getElementById('intro-memorama');
+            if (intro) { intro.classList.add('hidden'); intro.classList.remove('flex'); }
+        };
+
+        // Cierra el modal
+        const cerrarModalTema = () => {
+            const modal = document.getElementById('modal-tema-memorama');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        };
+
+        // Intro animada: elementos del tema bailan → se desvanecen → aparecen las cartas
+        const mostrarIntroTema = () => {
+            if (!memoramaTemaActivo) { iniciarMemorama(); return; }
+            const intro     = document.getElementById('intro-memorama');
+            const elementos = document.getElementById('intro-elementos');
+            const titulo    = document.getElementById('intro-titulo-tema');
+            if (!intro || !elementos) { iniciarMemorama(); return; }
+
+            // Actualizar barra
+            const emoji = TEMA_EMOJIS[memoramaTemaActivo.id] || '🎴';
+            const barraEmoji  = document.getElementById('barra-tema-emoji');
+            const barraNombre = document.getElementById('barra-tema-nombre');
+            if (barraEmoji)  barraEmoji.textContent  = emoji;
+            if (barraNombre) barraNombre.textContent = memoramaTemaActivo.titulo || '';
+
+            // Mostrar intro
+            intro.classList.remove('hidden');
+            intro.classList.add('flex');
+            if (titulo) titulo.textContent = memoramaTemaActivo.titulo || '';
+            elementos.innerHTML = '';
+
+            // Crear imágenes de todos los items flotando
+            memoramaTemaActivo.items.forEach((item, i) => {
+                const imgUrl = memoramaTemaActivo.carpeta_img
+                    ? makeAbsolute(`${memoramaTemaActivo.carpeta_img}${item.imagen}`)
+                    : null;
+                const el = document.createElement('div');
+                el.className = 'anim-flotar';
+                el.style.animationDelay  = `${(i % 8) * 0.18}s`;
+                el.style.animationDuration = `${2.2 + (i % 4) * 0.3}s`;
+                el.innerHTML = imgUrl
+                    ? `<img src="${imgUrl}" alt="" class="w-14 h-14 md:w-16 md:h-16 object-contain drop-shadow-lg" draggable="false" onerror="this.style.display='none'">`
+                    : '';
+                elementos.appendChild(el);
+            });
+
+            // Fase 1: flotar 1.8s → Fase 2: salir 0.5s → Fase 3: iniciar juego
+            setTimeout(() => {
+                Array.from(elementos.children).forEach((el, i) => {
+                    el.classList.remove('anim-flotar');
+                    el.style.animationDelay    = `${i * 0.04}s`;
+                    el.classList.add('anim-salir');
+                });
+                setTimeout(() => {
+                    intro.classList.add('hidden');
+                    intro.classList.remove('flex');
+                    iniciarMemoramaConAnimacion();
+                }, 500);
+            }, 1800);
+        };
+
+        // Inicia el juego con animación de materialización en las cartas
+        const iniciarMemoramaConAnimacion = () => {
+            iniciarMemorama();
+            // Animar la entrada de cada carta con delay escalonado
+            requestAnimationFrame(() => {
+                const cartas = document.querySelectorAll('#grid-memorama .tarjeta-memorama');
+                cartas.forEach((carta, i) => {
+                    carta.style.opacity = '0';
+                    carta.classList.add('anim-entrar');
+                    carta.style.animationDelay = `${i * 0.035}s`;
+                });
+            });
+        };
+
+
         const _audioCache = {};
         const _audioCacheOrden = [];
         const _AUDIO_CACHE_MAX = 30;
@@ -1403,7 +1506,8 @@
                                 overlay.style.opacity  = '1';
                                 trofeo.style.transform = 'scale(0)';
                                 trofeo.style.opacity   = '0';
-                                iniciarMemorama(); 
+                                // Volver al modal de selección de tema tras la victoria
+                                abrirModalTema();
                             }, 1000); 
                         }, 2500); 
                     }
@@ -1752,7 +1856,11 @@
                     }
                 });
             }
-            if (seccion === 'memorama') requestAnimationFrame(() => ajustarAlturaCartas());
+            if (seccion === 'memorama') {
+                requestAnimationFrame(() => ajustarAlturaCartas());
+                // Mostrar modal de selección si ya hay temas cargados
+                if (memoramaTemas.length > 0) abrirModalTema();
+            }
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
         };
 
@@ -2097,7 +2205,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v78'; 
+        const CACHE_NAME = 'djemmy-cache-v79'; 
 
         
         inicializarApp();
