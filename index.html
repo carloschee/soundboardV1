@@ -300,7 +300,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v73</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v74</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -386,9 +386,40 @@
 
     <main id="main-secciones" class="hidden flex-1 flex flex-col min-h-0 px-3 sm:px-4 md:px-6 pt-1 pb-2 lg:px-8">
 
-        <div id="seccion-musica" class="flex-1 overflow-y-auto min-h-0 pr-1 hidden scroll-nativo">
-            <div id="grid-musica" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-5 pb-4">
-                
+        <div id="seccion-musica" class="flex-1 min-h-0 hidden flex-row gap-0 overflow-hidden">
+
+            <!-- Panel izquierdo: lista de canciones -->
+            <div id="panel-lista-musica"
+                 class="w-56 sm:w-64 md:w-72 shrink-0 flex flex-col border-r border-white/10 overflow-hidden">
+                <!-- Portada activa + info -->
+                <div id="musica-portada-wrap"
+                     class="relative shrink-0 w-full aspect-square bg-black/30 overflow-hidden">
+                    <img id="musica-portada-img"
+                         src="" alt=""
+                         class="w-full h-full object-cover opacity-0 transition-opacity duration-500">
+                    <div id="musica-portada-overlay"
+                         class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-3 gap-0.5">
+                        <p id="musica-titulo-activo"
+                           class="text-white font-black text-sm leading-tight drop-shadow line-clamp-2"></p>
+                        <p id="musica-artista-activo"
+                           class="text-white/70 font-semibold text-xs leading-tight drop-shadow line-clamp-1"></p>
+                    </div>
+                </div>
+                <!-- Lista scrollable -->
+                <div id="lista-musica"
+                     class="flex-1 overflow-y-auto scroll-nativo flex flex-col gap-px py-1">
+                </div>
+            </div>
+
+            <!-- Panel derecho: visualizador p5.js -->
+            <div id="panel-visualizador-musica"
+                 class="flex-1 min-w-0 relative overflow-hidden bg-black/20">
+                <div id="p5-canvas-musica" class="w-full h-full"></div>
+                <div id="visualizador-idle"
+                     class="absolute inset-0 flex items-center justify-center flex-col gap-3 pointer-events-none">
+                    <span class="text-6xl opacity-30">🎵</span>
+                    <p class="text-white/30 text-sm font-bold tracking-widest uppercase">Selecciona una canción</p>
+                </div>
             </div>
         </div>
 
@@ -846,7 +877,7 @@
 
         
 
-        const contenedorMusica      = document.getElementById('grid-musica');
+        // contenedorMusica eliminado — reemplazado por lista-musica
         const contenedorVideos      = document.getElementById('seccion-videos');
         const contenedorReproductor = document.getElementById('contenedor-reproductor');
         const listaVideosUI         = document.getElementById('lista-videos');
@@ -923,9 +954,16 @@
 
         const pararTodo = () => {
             detenerBGM();
-            
             audioRefs.forEach(a => { a.pause(); a.currentTime = 0; });
             document.querySelectorAll('article').forEach(el => el.classList.remove('reproduciendo'));
+            document.querySelectorAll('#lista-musica > div').forEach(el => {
+                el.classList.remove('reproduciendo', 'bg-white/15');
+                const icon = el.querySelector('.play-icon');
+                if (icon) icon.textContent = '▶';
+            });
+            _p5VisualizerStop();
+            const idle = document.getElementById('visualizador-idle');
+            if (idle) idle.style.display = '';
         };
 
         
@@ -935,30 +973,58 @@
             const articulo = document.getElementById(`btn-${track.archivo}`);
             if (!audio || !articulo) return;
 
-            
             detenerBGM();
 
-            
-            document.querySelectorAll('#seccion-musica article').forEach(el => el.classList.remove('reproduciendo'));
+            // Marcar item activo en la lista
+            document.querySelectorAll('#lista-musica > div').forEach(el => {
+                el.classList.remove('reproduciendo', 'bg-white/15');
+                const icon = el.querySelector('.play-icon');
+                if (icon) icon.textContent = '▶';
+            });
+            articulo.classList.add('reproduciendo', 'bg-white/15');
+            const playIcon = articulo.querySelector('.play-icon');
+            if (playIcon) playIcon.textContent = '⏸';
 
-            
+            // Actualizar portada y títulos del panel superior
+            const coverUrl = makeAbsolute(`img/cover-audios/${track.id}.jpg`);
+            const portadaImg     = document.getElementById('musica-portada-img');
+            const tituloActivoEl = document.getElementById('musica-titulo-activo');
+            const artistaActivoEl= document.getElementById('musica-artista-activo');
+            if (portadaImg) {
+                portadaImg.style.opacity = '0';
+                portadaImg.src = coverUrl;
+                portadaImg.onload = () => { portadaImg.style.opacity = '1'; };
+                portadaImg.onerror = () => { portadaImg.style.opacity = '0.2'; portadaImg.style.opacity = '1'; };
+            }
+            if (tituloActivoEl)  tituloActivoEl.textContent  = track.titulo || '';
+            if (artistaActivoEl) artistaActivoEl.textContent = track.artista || '';
+
+            // Ocultar idle, mostrar visualizador
+            const idle = document.getElementById('visualizador-idle');
+            if (idle) idle.style.display = 'none';
+
             bgmActual = { tipo: 'audio', el: audio, btn: articulo };
-
-            articulo.classList.add('reproduciendo');
             audio.currentTime = 0;
 
-            audio.play().catch(() => {
-                
-                temporizadorSimulador = setTimeout(() => {
-                    articulo.classList.remove('reproduciendo');
+            audio.play().then(() => {
+                _p5VisualizerStart(audio);
+            }).catch((e) => {
+                console.debug('[reproducir]', e);
+                setTimeout(() => {
+                    articulo.classList.remove('reproduciendo', 'bg-white/15');
+                    if (playIcon) playIcon.textContent = '▶';
                     bgmActual = null;
+                    _p5VisualizerStop();
                 }, 4000);
             });
 
-            
             audio.onended = () => {
-                articulo.classList.remove('reproduciendo');
+                articulo.classList.remove('reproduciendo', 'bg-white/15');
+                if (playIcon) playIcon.textContent = '▶';
                 if (bgmActual && bgmActual.el === audio) bgmActual = null;
+                _p5VisualizerStop();
+                const idle2 = document.getElementById('visualizador-idle');
+                if (idle2) idle2.style.display = '';
             };
         };
 
@@ -1040,31 +1106,47 @@
 
         
 
-        const crearBotones = (arreglo, contenedor, tipo) => {
-            audioRefs.length = 0;        
-            arreglo.forEach((track) => {
-                
-                const articulo = document.createElement('article');
-                articulo.id        = `btn-${track.archivo}`;
-                articulo.className = `${track.color} rounded-2xl sm:rounded-3xl p-2 sm:p-4 shadow-lg sm:shadow-xl flex flex-col items-center justify-center aspect-square border-2 sm:border-4 border-white/20 relative overflow-hidden transition-all`;
-                articulo.innerHTML = `
-                    <span class="text-4xl sm:text-6xl md:text-7xl mb-1 sm:mb-3 drop-shadow-md pointer-events-none">${track.emoji}</span>
-                    <span class="text-[10px] sm:text-sm md:text-base font-extrabold text-center leading-tight drop-shadow-md px-0.5 sm:px-1 pointer-events-none">${track.titulo}</span>
+        const crearListaMusica = (tracks) => {
+            audioRefs.length = 0;
+            const lista = document.getElementById('lista-musica');
+            if (!lista) return;
+            lista.innerHTML = '';
+
+            // Ordenar por id numérico
+            const ordenados = [...tracks].sort((a, b) => (a.id || 0) - (b.id || 0));
+
+            ordenados.forEach((track) => {
+                const coverUrl = makeAbsolute(`img/cover-audios/${track.id}.jpg`);
+
+                const item = document.createElement('div');
+                item.id        = `btn-${track.archivo}`;
+                item.className = 'flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-all hover:bg-white/10 active:bg-white/15 rounded-lg mx-1 relative group';
+                item.dataset.trackId = track.id;
+                item.innerHTML = `
+                    <img src="${coverUrl}" alt="${track.titulo}"
+                         class="w-9 h-9 rounded-md object-cover shrink-0 shadow-md"
+                         onerror="this.style.opacity='0.3'">
+                    <div class="flex flex-col min-w-0 flex-1">
+                        <span class="text-white font-bold text-xs leading-tight truncate">${track.titulo}</span>
+                        ${track.artista ? `<span class="text-white/50 text-[10px] leading-tight truncate">${track.artista}</span>` : ''}
+                    </div>
+                    <span class="play-icon text-white/30 group-hover:text-white/70 text-xs shrink-0 transition-colors">▶</span>
                 `;
 
-                
-                const audioEl   = document.createElement('audio');
+                const audioEl   = new Audio();
                 audioEl.id      = `audio-${track.archivo}`;
-                audioEl.src     = `${tipo === 'musica' ? 'audio/' : 'sonidos/'}${track.archivo}.mp3`;
-                audioEl.preload = 'auto'; 
+                audioEl.src     = `audio/${track.archivo}.mp3`;
+                audioEl.preload = 'none';
 
-                
-                articulo.addEventListener('click', () => reproducir(track, tipo));
-                audioEl.addEventListener('ended', () => articulo.classList.remove('reproduciendo'));
-                audioRefs.push(audioEl); 
+                item.addEventListener('click', () => reproducir(track, 'musica'));
+                audioEl.addEventListener('ended', () => {
+                    item.classList.remove('reproduciendo');
+                    _p5VisualizerStop();
+                });
+                audioRefs.push(audioEl);
+                item._audioEl = audioEl;
 
-                articulo.appendChild(audioEl);
-                contenedor.appendChild(articulo);
+                lista.appendChild(item);
             });
         };
 
@@ -1077,7 +1159,7 @@
                 articulo.className = `flex-none h-full aspect-video rounded-xl shadow-xl border-2 border-white/20 relative overflow-hidden transition-all cursor-pointer bg-cover bg-center bg-no-repeat bg-gray-800 snap-center`;
 
                 
-                const rutaWebp   = `img/cover-vid-${track.archivo}.webp`;
+                const rutaWebp   = `img/cover-vids/${track.archivo}.webp`;
                 const urlAbsWebp = makeAbsolute(rutaWebp);
                 let srcMiniatura = rutaWebp; 
                 try {
@@ -1850,9 +1932,10 @@
                 videosDatos = vidsTmp.filter(t => t && t.archivo);
                 librosDatos = Array.isArray(librosTmp) ? librosTmp.filter(t => t && t.archivo) : [];
 
-                musica.forEach(t =>
-                    urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`))
-                );
+                musica.forEach(t => {
+                    urlsParaCachear.push(makeAbsolute(`audio/${t.archivo}.mp3`));
+                    if (t.id) urlsParaCachear.push(makeAbsolute(`img/cover-audios/${t.id}.jpg`));
+                });
 
                 
                 ['musica', 'memorama', 'videos', 'libros'].forEach(s =>
@@ -1862,7 +1945,7 @@
 
                 videosDatos.forEach(t => {
                     urlsParaCachear.push(makeAbsolute(`vid/${t.archivo}.mp4`));
-                    urlsParaCachear.push(makeAbsolute(`img/cover-vid-${t.archivo}.webp`));
+                    urlsParaCachear.push(makeAbsolute(`img/cover-vids/${t.archivo}.webp`));
                 });
                 librosDatos.forEach(t =>
                     urlsParaCachear.push(makeAbsolute(`libros/${t.archivo}.pdf`))
@@ -1903,7 +1986,7 @@
             } catch (err) {
                 console.error('No se pudo cargar el catálogo de contenido:', err);
             }
-            crearBotones(musica, contenedorMusica, 'musica');
+            crearListaMusica(musica);
             await cargarTemasMemorama();
             setIdiomaMemorама(idiomaMemorama);
             iniciarMemorama();
@@ -1990,7 +2073,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v73'; 
+        const CACHE_NAME = 'djemmy-cache-v74'; 
 
         
         inicializarApp();
@@ -2331,6 +2414,167 @@
             }
         }, { passive: false });
 
+    </script>
+
+    <!-- ── VISUALIZADOR DE MÚSICA p5.js ────────────────────────────────────── -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+    <script>
+    // Variables del visualizador
+    let _p5Instance   = null;
+    let _audioCtxViz  = null;
+    let _analyserViz  = null;
+    let _sourceViz    = null;
+    let _vizRunning   = false;
+
+    // Iniciar visualizador con el elemento <audio> activo
+    function _p5VisualizerStart(audioEl) {
+        _p5VisualizerStop();
+
+        try {
+            if (!_audioCtxViz) {
+                _audioCtxViz = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (_audioCtxViz.state === 'suspended') _audioCtxViz.resume();
+
+            _analyserViz = _audioCtxViz.createAnalyser();
+            _analyserViz.fftSize = 256;
+            _analyserViz.smoothingTimeConstant = 0.82;
+
+            _sourceViz = _audioCtxViz.createMediaElementSource(audioEl);
+            _sourceViz.connect(_analyserViz);
+            _analyserViz.connect(_audioCtxViz.destination);
+        } catch(e) {
+            console.debug('[viz] Web Audio:', e);
+            // Sin Web Audio el visualizador corre en modo idle animado
+        }
+
+        _vizRunning = true;
+        _iniciarP5();
+    }
+
+    // Detener visualizador
+    function _p5VisualizerStop() {
+        _vizRunning = false;
+        if (_p5Instance) { _p5Instance.remove(); _p5Instance = null; }
+        if (_sourceViz)  { try { _sourceViz.disconnect(); } catch(e) {} _sourceViz = null; }
+        if (_analyserViz){ _analyserViz = null; }
+    }
+
+    // Sketch p5.js: ondas circulares reactivas al audio
+    function _iniciarP5() {
+        const contenedor = document.getElementById('p5-canvas-musica');
+        if (!contenedor) return;
+
+        _p5Instance = new p5(function(p) {
+            const BUF_SIZE = 128;
+            let dataArr;
+            let particles = [];
+            let hue = 0;
+
+            p.setup = function() {
+                const c = p.createCanvas(contenedor.offsetWidth, contenedor.offsetHeight);
+                c.parent(contenedor);
+                p.colorMode(p.HSB, 360, 100, 100, 100);
+                p.background(0, 0, 8);
+                dataArr = new Uint8Array(BUF_SIZE);
+            };
+
+            p.windowResized = function() {
+                p.resizeCanvas(contenedor.offsetWidth, contenedor.offsetHeight);
+            };
+
+            p.draw = function() {
+                // Obtener datos de frecuencia
+                let amp = 0;
+                if (_analyserViz && _vizRunning) {
+                    _analyserViz.getByteFrequencyData(dataArr);
+                    for (let i = 0; i < BUF_SIZE; i++) amp += dataArr[i];
+                    amp = amp / BUF_SIZE / 255;
+                } else {
+                    // Idle: pulso suave sin audio
+                    amp = 0.08 + 0.05 * Math.sin(p.frameCount * 0.04);
+                }
+
+                // Fondo con trail
+                p.background(0, 0, 5, 18);
+
+                const cx = p.width  / 2;
+                const cy = p.height / 2;
+                const base = Math.min(p.width, p.height) * 0.22;
+
+                hue = (hue + 0.6) % 360;
+
+                // Anillos de frecuencias
+                const numAnillos = Math.min(8, Math.floor(BUF_SIZE / 16));
+                for (let a = 0; a < numAnillos; a++) {
+                    const slice = Math.floor(BUF_SIZE / numAnillos);
+                    let sliceAmp = 0;
+                    if (_analyserViz && _vizRunning) {
+                        for (let k = a * slice; k < (a + 1) * slice; k++) sliceAmp += dataArr[k];
+                        sliceAmp = sliceAmp / slice / 255;
+                    } else {
+                        sliceAmp = amp;
+                    }
+                    const r = base * (1 + a * 0.35) + sliceAmp * base * 1.8;
+                    const h = (hue + a * 28) % 360;
+                    const pts = 80 + a * 12;
+                    p.noFill();
+                    p.strokeWeight(1.2 + sliceAmp * 3);
+                    p.stroke(h, 70, 90, 55 + sliceAmp * 45);
+                    p.beginShape();
+                    for (let i = 0; i <= pts; i++) {
+                        const angle = (i / pts) * p.TWO_PI;
+                        let noiseVal = 0;
+                        if (_analyserViz && _vizRunning) {
+                            const idx = Math.floor((i / pts) * slice + a * slice) % BUF_SIZE;
+                            noiseVal = (dataArr[idx] / 255) * base * 0.5;
+                        } else {
+                            noiseVal = p.noise(
+                                p.cos(angle) * 1.5 + a * 0.4,
+                                p.sin(angle) * 1.5 + a * 0.4,
+                                p.frameCount * 0.015
+                            ) * base * 0.3 * amp * 8;
+                        }
+                        const rx = cx + (r + noiseVal) * p.cos(angle);
+                        const ry = cy + (r + noiseVal) * p.sin(angle);
+                        p.curveVertex(rx, ry);
+                    }
+                    p.endShape();
+                }
+
+                // Círculo central pulsante
+                const pulso = base * (0.55 + amp * 1.2);
+                p.noStroke();
+                p.fill(hue, 60, 95, 22 + amp * 40);
+                p.ellipse(cx, cy, pulso * 2, pulso * 2);
+                p.fill(hue, 40, 100, 15 + amp * 25);
+                p.ellipse(cx, cy, pulso * 1.3, pulso * 1.3);
+
+                // Partículas que emergen con el beat
+                if (amp > 0.25 && _vizRunning) {
+                    for (let i = 0; i < 3; i++) {
+                        particles.push({
+                            x: cx + p.random(-base * 0.3, base * 0.3),
+                            y: cy + p.random(-base * 0.3, base * 0.3),
+                            vx: p.random(-2, 2),
+                            vy: p.random(-3, -0.5),
+                            life: 1,
+                            h: (hue + p.random(-30, 30)) % 360,
+                            size: p.random(2, 5 + amp * 6)
+                        });
+                    }
+                }
+                particles = particles.filter(pt => pt.life > 0);
+                particles.forEach(pt => {
+                    pt.x += pt.vx; pt.y += pt.vy;
+                    pt.vy += 0.06; pt.life -= 0.025;
+                    p.noStroke();
+                    p.fill(pt.h, 70, 95, pt.life * 80);
+                    p.ellipse(pt.x, pt.y, pt.size * pt.life);
+                });
+            };
+        });
+    }
     </script>
 </body>
 </html>

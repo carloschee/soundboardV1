@@ -1,128 +1,110 @@
 [
   {
-    "archivo": "a",
+    "id": 1,
+    "archivo": "1",
     "titulo": "Un pequeño dedo",
-    "interprete": "Super Simple",
-    "emoji": "☝️",
-    "color": "bg-red-400"
+    "artista": "Super Simple"
   },
   {
-    "archivo": "b",
+    "id": 2,
+    "archivo": "2",
     "titulo": "¿Por qué lloras?",
-    "interprete": "Nene León",
-    "emoji": "😢",
-    "color": "bg-blue-400"
+    "artista": "Nene León"
   },
   {
-    "archivo": "c",
+    "id": 3,
+    "archivo": "3",
     "titulo": "Los medios de transporte",
-    "interprete": "Nene León",
-    "emoji": "🚗",
-    "color": "bg-green-400"
+    "artista": "Nene León"
   },
   {
-    "archivo": "d",
+    "id": 4,
+    "archivo": "4",
     "titulo": "Como los animalitos",
-    "interprete": "Plim Plim",
-    "emoji": "🐾",
-    "color": "bg-yellow-400"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "e",
+    "id": 5,
+    "archivo": "5",
     "titulo": "Soy una taza",
-    "interprete": "Plim Plim",
-    "emoji": "☕",
-    "color": "bg-orange-400"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "f",
+    "id": 6,
+    "archivo": "6",
     "titulo": "Abejita chiquitita",
-    "interprete": "Plim Plim",
-    "emoji": "🐝",
-    "color": "bg-amber-500"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "g",
+    "id": 7,
+    "archivo": "7",
     "titulo": "Peekaboo",
-    "interprete": "Super Simple",
-    "emoji": "🙈",
-    "color": "bg-pink-400"
+    "artista": "Super Simple"
   },
   {
-    "archivo": "h",
+    "id": 8,
+    "archivo": "8",
     "titulo": "Los animales en la granja",
-    "interprete": "Super Simple",
-    "emoji": "🐄",
-    "color": "bg-emerald-500"
+    "artista": "Super Simple"
   },
   {
-    "archivo": "i",
+    "id": 9,
+    "archivo": "9",
     "titulo": "Canción del ombligo",
-    "interprete": "CoComelon",
-    "emoji": "👶",
-    "color": "bg-cyan-400"
+    "artista": "CoComelon"
   },
   {
-    "archivo": "j",
+    "id": 10,
+    "archivo": "10",
     "titulo": "¿Cómo hace el caballito?",
-    "interprete": "Plim Plim",
-    "emoji": "🐴",
-    "color": "bg-orange-500"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "k",
+    "id": 11,
+    "archivo": "11",
     "titulo": "¿Cómo hace el perrito?",
-    "interprete": "Plim Plim",
-    "emoji": "🐶",
-    "color": "bg-yellow-500"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "l",
+    "id": 12,
+    "archivo": "12",
     "titulo": "¿Cómo hace la tortuga?",
-    "interprete": "Plim Plim",
-    "emoji": "🐢",
-    "color": "bg-green-500"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "m",
+    "id": 13,
+    "archivo": "13",
     "titulo": "¿Cómo hace el gatito?",
-    "interprete": "Plim Plim",
-    "emoji": "🐱",
-    "color": "bg-orange-300"
+    "artista": "Plim Plim"
   },
   {
-    "archivo": "n",
+    "id": 14,
+    "archivo": "14",
     "titulo": "Hora del baño",
-    "interprete": "Nene León",
-    "emoji": "🛁",
-    "color": "bg-blue-300"
+    "artista": "Nene León"
   },
   {
-    "archivo": "o",
+    "id": 15,
+    "archivo": "15",
     "titulo": "Cabeza, hombros...",
-    "interprete": "Super Simple",
-    "emoji": "👤",
-    "color": "bg-indigo-400"
+    "artista": "Super Simple"
   },
   {
-    "archivo": "p",
+    "id": 16,
+    "archivo": "16",
     "titulo": "Toodly Doodly Doo",
-    "interprete": "Super Simple",
-    "emoji": "🎶",
-    "color": "bg-purple-400"
+    "artista": "Super Simple"
   },
   {
-    "archivo": "q",
+    "id": 17,
+    "archivo": "17",
     "titulo": "¿Estrellita dónde estás?",
-    "interprete": "Super Simple",
-    "emoji": "⭐",
-    "color": "bg-yellow-300"
+    "artista": "Super Simple"
   },
   {
-    "archivo": "r",
+    "id": 18,
+    "archivo": "18",
     "titulo": "El baile de la ensalada",
-    "interprete": "Plim Plim",
-    "emoji": "🥗",
-    "color": "bg-lime-500"
+    "artista": "Plim Plim"
   }
 ]
