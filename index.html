@@ -286,7 +286,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v79</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v80</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -422,7 +422,7 @@
 
             <!-- ── MODAL DE SELECCIÓN DE TEMA ───────────────────────────────── -->
             <div id="modal-tema-memorama"
-                 class="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-md">
+                 class="absolute inset-0 z-30 flex items-center justify-center">
                 <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8 w-full max-w-sm mx-4 shadow-2xl flex flex-col gap-4">
                     <h2 class="text-white font-black text-xl text-center tracking-wide">Elige un tema</h2>
                     <div id="modal-lista-temas" class="flex flex-col gap-3">
@@ -433,7 +433,7 @@
 
             <!-- ── PANTALLA DE INTRODUCCIÓN ──────────────────────────────────── -->
             <div id="intro-memorama"
-                 class="absolute inset-0 z-20 hidden flex-col items-center justify-center gap-4 bg-black/30 backdrop-blur-sm">
+                 class="absolute inset-0 z-20 hidden flex-col items-center justify-center gap-4">
                 <p id="intro-titulo-tema"
                    class="text-white font-black text-2xl tracking-wide drop-shadow"></p>
                 <div id="intro-elementos"
@@ -829,6 +829,19 @@
             const titulo    = document.getElementById('intro-titulo-tema');
             if (!intro || !elementos) { iniciarMemorama(); return; }
 
+            // TTS del nombre del tema elegido
+            if (!uiMuted && window.speechSynthesis) {
+                try {
+                    const utt = new SpeechSynthesisUtterance(memoramaTemaActivo.titulo || '');
+                    utt.lang = 'es-MX'; utt.pitch = 1.2; utt.rate = 0.95; utt.volume = 1;
+                    const voces = window.speechSynthesis.getVoices();
+                    const voz = voces.find(v => v.lang === 'es-MX') || voces.find(v => v.lang.startsWith('es')) || null;
+                    if (voz) utt.voice = voz;
+                    utt.onerror = e => console.debug('[TTS tema]', e.error);
+                    window.speechSynthesis.speak(utt);
+                } catch(e) {}
+            }
+
             // Actualizar barra
             const emoji = TEMA_EMOJIS[memoramaTemaActivo.id] || '🎴';
             const barraEmoji  = document.getElementById('barra-tema-emoji');
@@ -872,16 +885,17 @@
             }, 1800);
         };
 
-        // Inicia el juego con animación de materialización en las cartas
+        // Inicia el juego con animación de materialización
+        // IMPORTANTE: la animación se aplica a la CELDA del grid (no a .tarjeta-memorama)
+        // para no interferir con el transform del flip 3D de la tarjeta.
         const iniciarMemoramaConAnimacion = () => {
             iniciarMemorama();
-            // Animar la entrada de cada carta con delay escalonado
             requestAnimationFrame(() => {
-                const cartas = document.querySelectorAll('#grid-memorama .tarjeta-memorama');
-                cartas.forEach((carta, i) => {
-                    carta.style.opacity = '0';
-                    carta.classList.add('anim-entrar');
-                    carta.style.animationDelay = `${i * 0.035}s`;
+                // Animar las celdas del grid (hijos directos)
+                const celdas = document.querySelectorAll('#grid-memorama > div');
+                celdas.forEach((celda, i) => {
+                    celda.style.opacity = '0';
+                    celda.style.animation = `materializar 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.04}s forwards`;
                 });
             });
         };
@@ -1404,7 +1418,12 @@
                 `;
 
                 cardEl.addEventListener('click', () => voltearCarta(cardEl, index));
-                grid.appendChild(cardEl);
+
+                // Envolver en celda para que la animación de entrada no interfiera con el flip
+                const celda = document.createElement('div');
+                celda.className = 'relative w-full h-full';
+                celda.appendChild(cardEl);
+                grid.appendChild(celda);
             });
 
             
@@ -2205,7 +2224,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v79'; 
+        const CACHE_NAME = 'djemmy-cache-v80'; 
 
         
         inicializarApp();
