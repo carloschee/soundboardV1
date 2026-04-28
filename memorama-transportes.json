@@ -172,18 +172,18 @@
     },
     {
       "id": 12,
-      "emoji": "🚀",
+      "emoji": "🌊",
       "audio": {
-        "es-MX": "cohete.mp3",
-        "en-US": "rocket.mp3",
-        "fr-FR": "fusee.mp3",
-        "zh-CN": "huojian.mp3"
+        "es-MX": "submarino.mp3",
+        "en-US": "submarine.mp3",
+        "fr-FR": "sous-marin.mp3",
+        "zh-CN": "qianting.mp3"
       },
-      "es-MX": "cohete",
-      "en-US": "rocket",
-      "fr-FR": "fusée",
-      "zh-CN": "火箭",
-      "imagen": "cohete.png"
+      "es-MX": "submarino",
+      "en-US": "submarine",
+      "fr-FR": "sous-marin",
+      "zh-CN": "潛艇",
+      "imagen": "submarino.png"
     }
   ]
 }
