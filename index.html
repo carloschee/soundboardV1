@@ -300,7 +300,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v77</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v78</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -388,38 +388,46 @@
 
         <div id="seccion-musica" class="flex-1 min-h-0 hidden flex-row gap-0 overflow-hidden">
 
-            <!-- Panel izquierdo: lista de canciones -->
+            <!-- Panel izquierdo: lista de canciones (sin portada, scroll puro) -->
             <div id="panel-lista-musica"
-                 class="w-56 sm:w-64 md:w-72 shrink-0 flex flex-col border-r border-white/10 min-h-0">
-                <!-- Portada activa + info -->
-                <div id="musica-portada-wrap"
-                     class="relative shrink-0 w-full bg-black/30 overflow-hidden"
-                     style="height: clamp(120px, 35%, 220px)">
-                    <img id="musica-portada-img"
-                         src="" alt=""
-                         class="w-full h-full object-cover opacity-0 transition-opacity duration-500">
-                    <div id="musica-portada-overlay"
-                         class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-3 gap-0.5">
-                        <p id="musica-titulo-activo"
-                           class="text-white font-black text-sm leading-tight drop-shadow line-clamp-2"></p>
-                        <p id="musica-artista-activo"
-                           class="text-white/70 font-semibold text-xs leading-tight drop-shadow line-clamp-1"></p>
-                    </div>
+                 class="w-64 sm:w-72 md:w-80 shrink-0 flex flex-col border-r border-white/10 min-h-0 bg-black/15">
+
+                <!-- Encabezado fijo -->
+                <div class="shrink-0 px-4 py-3 border-b border-white/10">
+                    <p class="text-white font-black text-sm tracking-wide uppercase opacity-70">Canciones</p>
                 </div>
-                <!-- Lista scrollable -->
+
+                <!-- Lista scrollable — ocupa todo el espacio restante -->
                 <div id="lista-musica"
-                     class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-nativo flex flex-col gap-px py-1">
+                     class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-nativo flex flex-col py-2">
                 </div>
             </div>
 
-            <!-- Panel derecho: visualizador p5.js -->
+            <!-- Panel derecho: visualizador FFT p5.js -->
             <div id="panel-visualizador-musica"
-                 class="flex-1 min-w-0 relative overflow-hidden bg-black/20">
-                <div id="p5-canvas-musica" class="w-full h-full"></div>
+                 class="flex-1 min-w-0 relative overflow-hidden bg-black/30">
+                <div id="p5-canvas-musica" class="absolute inset-0"></div>
+
+                <!-- Portada + info flotante sobre el visualizador (esquina inferior izquierda) -->
+                <div id="musica-info-overlay"
+                     class="absolute bottom-0 left-0 right-0 px-5 py-4 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none">
+                    <div class="flex items-end gap-3">
+                        <img id="musica-portada-img" src="" alt=""
+                             class="w-14 h-14 rounded-xl object-cover shadow-xl opacity-0 transition-opacity duration-500 shrink-0">
+                        <div class="flex flex-col min-w-0 pb-0.5">
+                            <p id="musica-titulo-activo"
+                               class="text-white font-black text-base leading-tight drop-shadow truncate"></p>
+                            <p id="musica-artista-activo"
+                               class="text-white/60 font-semibold text-sm leading-tight drop-shadow truncate"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado idle -->
                 <div id="visualizador-idle"
                      class="absolute inset-0 flex items-center justify-center flex-col gap-3 pointer-events-none">
-                    <span class="text-6xl opacity-30">🎵</span>
-                    <p class="text-white/30 text-sm font-bold tracking-widest uppercase">Selecciona una canción</p>
+                    <span class="text-7xl opacity-20">🎵</span>
+                    <p class="text-white/25 text-sm font-bold tracking-widest uppercase">Selecciona una canción</p>
                 </div>
             </div>
         </div>
@@ -1125,17 +1133,17 @@
 
                 const item = document.createElement('div');
                 item.id        = `btn-${track.archivo}`;
-                item.className = 'flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-all hover:bg-white/10 active:bg-white/15 rounded-lg mx-1 relative group w-full overflow-hidden box-border';
+                item.className = 'flex items-center gap-3 px-4 py-3 mx-2 cursor-pointer transition-all hover:bg-white/10 active:bg-white/15 rounded-xl relative group w-auto overflow-hidden box-border shrink-0';
                 item.dataset.trackId = track.id;
                 item.innerHTML = `
                     <img src="${coverUrl}" alt="${track.titulo}"
-                         class="w-9 h-9 rounded-md object-cover shrink-0 shadow-md"
-                         onerror="this.style.opacity='0.3'">
-                    <div class="flex flex-col min-w-0 flex-1">
-                        <span class="text-white font-bold text-xs leading-tight truncate">${track.titulo}</span>
-                        ${track.artista ? `<span class="text-white/50 text-[10px] leading-tight truncate">${track.artista}</span>` : ''}
+                         class="w-12 h-12 rounded-lg object-cover shrink-0 shadow-lg"
+                         onerror="this.style.opacity='0.2'">
+                    <div class="flex flex-col min-w-0 flex-1 gap-0.5">
+                        <span class="text-white font-bold text-sm leading-tight truncate">${track.titulo}</span>
+                        ${track.artista ? `<span class="text-white/50 text-xs leading-tight truncate">${track.artista}</span>` : ''}
                     </div>
-                    <span class="play-icon text-white/30 group-hover:text-white/70 text-xs shrink-0 transition-colors">▶</span>
+                    <span class="play-icon text-white/25 group-hover:text-white/60 text-sm shrink-0 transition-colors pr-1">▶</span>
                 `;
 
                 // Crear Audio y guardarlo en el Map (NO en el DOM)
@@ -2089,7 +2097,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v77'; 
+        const CACHE_NAME = 'djemmy-cache-v78'; 
 
         
         inicializarApp();
@@ -2488,122 +2496,149 @@
         _analyserViz = null;
     }
 
-    // Sketch p5.js: ondas circulares reactivas al audio
+    // Sketch p5.js: visualizador FFT con barras espectrales, reflejo, onda y partículas
     function _iniciarP5() {
         const contenedor = document.getElementById('p5-canvas-musica');
         if (!contenedor) return;
 
         _p5Instance = new p5(function(p) {
-            const BUF_SIZE = 128;
-            let dataArr;
+            const FFT_SIZE   = 256;              // bins del analyser
+            const NUM_BARRAS = 80;               // barras visibles
+            let freqArr, timeArr;
             let particles = [];
-            let hue = 0;
+            let hue       = 200;
+            let prevAmps  = new Array(NUM_BARRAS).fill(0);  // suavizado temporal
+            let beatCooldown = 0;
 
             p.setup = function() {
-                const w = contenedor.offsetWidth  || 600;
-                const h = contenedor.offsetHeight || 400;
+                const w = contenedor.offsetWidth  || 800;
+                const h = contenedor.offsetHeight || 500;
                 const c = p.createCanvas(w, h);
                 c.parent(contenedor);
                 p.colorMode(p.HSB, 360, 100, 100, 100);
-                p.background(0, 0, 8);
-                dataArr = new Uint8Array(BUF_SIZE);
+                p.noStroke();
+                freqArr = new Uint8Array(FFT_SIZE);
+                timeArr = new Uint8Array(FFT_SIZE);
             };
 
             p.windowResized = function() {
-                const w = contenedor.offsetWidth  || 600;
-                const h = contenedor.offsetHeight || 400;
+                const w = contenedor.offsetWidth  || 800;
+                const h = contenedor.offsetHeight || 500;
                 p.resizeCanvas(w, h);
             };
 
             p.draw = function() {
-                // Obtener datos de frecuencia
-                let amp = 0;
-                if (_analyserViz && _vizRunning) {
-                    _analyserViz.getByteFrequencyData(dataArr);
-                    for (let i = 0; i < BUF_SIZE; i++) amp += dataArr[i];
-                    amp = amp / BUF_SIZE / 255;
+                // ── 1. Obtener datos FFT + onda ────────────────────────────
+                let hasData = _analyserViz && _vizRunning;
+                let avgAmp = 0;
+
+                if (hasData) {
+                    _analyserViz.fftSize = FFT_SIZE * 2;
+                    _analyserViz.getByteFrequencyData(freqArr);
+                    _analyserViz.getByteTimeDomainData(timeArr);
+                    for (let i = 0; i < FFT_SIZE; i++) avgAmp += freqArr[i];
+                    avgAmp = avgAmp / FFT_SIZE / 255;
                 } else {
-                    // Idle: pulso suave sin audio
-                    amp = 0.08 + 0.05 * Math.sin(p.frameCount * 0.04);
+                    // Idle: animación suave sin datos reales
+                    avgAmp = 0.05 + 0.04 * Math.sin(p.frameCount * 0.03);
                 }
 
-                // Fondo con trail
-                p.background(0, 0, 5, 18);
+                // ── 2. Fondo con desvanecimiento ───────────────────────────
+                p.background(240, 30, 6, 22);
 
-                const cx = p.width  / 2;
-                const cy = p.height / 2;
-                const base = Math.min(p.width, p.height) * 0.22;
+                const W = p.width;
+                const H = p.height;
+                const MID = H * 0.62;   // línea base de barras (ligeramente bajo el centro)
+                const barW = (W - 40) / NUM_BARRAS;
 
-                hue = (hue + 0.6) % 360;
+                hue = (hue + 0.4) % 360;
 
-                // Anillos de frecuencias
-                const numAnillos = Math.min(8, Math.floor(BUF_SIZE / 16));
-                for (let a = 0; a < numAnillos; a++) {
-                    const slice = Math.floor(BUF_SIZE / numAnillos);
-                    let sliceAmp = 0;
-                    if (_analyserViz && _vizRunning) {
-                        for (let k = a * slice; k < (a + 1) * slice; k++) sliceAmp += dataArr[k];
-                        sliceAmp = sliceAmp / slice / 255;
+                // ── 3. Barras FFT + reflejo ───────────────────────────────
+                for (let i = 0; i < NUM_BARRAS; i++) {
+                    let amp = 0;
+                    if (hasData) {
+                        // Mapear bins del FFT a barras (escala logarítmica)
+                        const binStart = Math.floor(Math.pow(i / NUM_BARRAS, 1.4) * (FFT_SIZE * 0.75));
+                        const binEnd   = Math.floor(Math.pow((i + 1) / NUM_BARRAS, 1.4) * (FFT_SIZE * 0.75));
+                        let sum = 0, count = 0;
+                        for (let b = binStart; b <= binEnd && b < FFT_SIZE; b++) { sum += freqArr[b]; count++; }
+                        amp = count > 0 ? (sum / count) / 255 : 0;
                     } else {
-                        sliceAmp = amp;
+                        amp = 0.04 + 0.04 * Math.sin(p.frameCount * 0.04 + i * 0.3);
                     }
-                    const r = base * (1 + a * 0.35) + sliceAmp * base * 1.8;
-                    const h = (hue + a * 28) % 360;
-                    const pts = 80 + a * 12;
-                    p.noFill();
-                    p.strokeWeight(1.2 + sliceAmp * 3);
-                    p.stroke(h, 70, 90, 55 + sliceAmp * 45);
+
+                    // Suavizado temporal (inertia)
+                    prevAmps[i] = prevAmps[i] * 0.75 + amp * 0.25;
+                    amp = prevAmps[i];
+
+                    const barH   = amp * MID * 1.85;
+                    const x      = 20 + i * barW;
+                    const barHue = (hue + i * 2.8) % 360;
+                    const bright = 60 + amp * 40;
+                    const alpha  = 75 + amp * 25;
+
+                    // Barra principal (hacia arriba)
+                    p.fill(barHue, 80, bright, alpha);
+                    p.rect(x, MID - barH, barW * 0.72, barH, 3, 3, 0, 0);
+
+                    // Reflejo (hacia abajo, desvanecido)
+                    for (let y = 0; y < barH * 0.45; y++) {
+                        const t = y / (barH * 0.45);
+                        p.fill(barHue, 70, bright, alpha * (1 - t) * 0.4);
+                        p.rect(x, MID + y, barW * 0.72, 1);
+                    }
+                }
+
+                // ── 4. Onda de tiempo superpuesta ──────────────────────────
+                p.noFill();
+                p.strokeWeight(1.8);
+                for (let i = 0; i < 2; i++) {
                     p.beginShape();
-                    for (let i = 0; i <= pts; i++) {
-                        const angle = (i / pts) * p.TWO_PI;
-                        let noiseVal = 0;
-                        if (_analyserViz && _vizRunning) {
-                            const idx = Math.floor((i / pts) * slice + a * slice) % BUF_SIZE;
-                            noiseVal = (dataArr[idx] / 255) * base * 0.5;
-                        } else {
-                            noiseVal = p.noise(
-                                p.cos(angle) * 1.5 + a * 0.4,
-                                p.sin(angle) * 1.5 + a * 0.4,
-                                p.frameCount * 0.015
-                            ) * base * 0.3 * amp * 8;
-                        }
-                        const rx = cx + (r + noiseVal) * p.cos(angle);
-                        const ry = cy + (r + noiseVal) * p.sin(angle);
-                        p.curveVertex(rx, ry);
+                    const waveHue = (hue + 60 + i * 40) % 360;
+                    p.stroke(waveHue, 60, 95, i === 0 ? 55 : 30);
+                    for (let x = 0; x < W; x++) {
+                        const idx = Math.floor((x / W) * (hasData ? FFT_SIZE : 1));
+                        const sampleVal = hasData
+                            ? ((timeArr[idx] - 128) / 128) * (MID * 0.28)
+                            : Math.sin((x / W) * p.TWO_PI * (2 + i) + p.frameCount * 0.05) * (MID * 0.05);
+                        p.curveVertex(x, MID - 18 - sampleVal - i * 8);
                     }
                     p.endShape();
                 }
-
-                // Círculo central pulsante
-                const pulso = base * (0.55 + amp * 1.2);
                 p.noStroke();
-                p.fill(hue, 60, 95, 22 + amp * 40);
-                p.ellipse(cx, cy, pulso * 2, pulso * 2);
-                p.fill(hue, 40, 100, 15 + amp * 25);
-                p.ellipse(cx, cy, pulso * 1.3, pulso * 1.3);
 
-                // Partículas que emergen con el beat
-                if (amp > 0.25 && _vizRunning) {
-                    for (let i = 0; i < 3; i++) {
+                // ── 5. Partículas en beat ──────────────────────────────────
+                if (beatCooldown > 0) beatCooldown--;
+                if (avgAmp > 0.35 && beatCooldown === 0 && hasData) {
+                    beatCooldown = 12;
+                    for (let i = 0; i < 8; i++) {
+                        const px = p.random(W * 0.1, W * 0.9);
                         particles.push({
-                            x: cx + p.random(-base * 0.3, base * 0.3),
-                            y: cy + p.random(-base * 0.3, base * 0.3),
-                            vx: p.random(-2, 2),
-                            vy: p.random(-3, -0.5),
+                            x: px, y: MID,
+                            vx: p.random(-3, 3),
+                            vy: p.random(-6, -1.5),
                             life: 1,
-                            h: (hue + p.random(-30, 30)) % 360,
-                            size: p.random(2, 5 + amp * 6)
+                            hue: (hue + p.random(-40, 40) + 360) % 360,
+                            size: p.random(3, 7 + avgAmp * 10)
                         });
                     }
                 }
-                particles = particles.filter(pt => pt.life > 0);
+                particles = particles.filter(pt => pt.life > 0.02);
                 particles.forEach(pt => {
-                    pt.x += pt.vx; pt.y += pt.vy;
-                    pt.vy += 0.06; pt.life -= 0.025;
-                    p.noStroke();
-                    p.fill(pt.h, 70, 95, pt.life * 80);
-                    p.ellipse(pt.x, pt.y, pt.size * pt.life);
+                    pt.x   += pt.vx;
+                    pt.y   += pt.vy;
+                    pt.vy  += 0.12;
+                    pt.vx  *= 0.97;
+                    pt.life -= 0.02;
+                    p.fill(pt.hue, 85, 100, pt.life * 90);
+                    p.ellipse(pt.x, pt.y, pt.size * pt.life * 1.5);
                 });
+
+                // ── 6. Línea base central ──────────────────────────────────
+                p.stroke(hue, 30, 70, 25);
+                p.strokeWeight(1);
+                p.line(20, MID, W - 20, MID);
+                p.noStroke();
             };
         });
     }
