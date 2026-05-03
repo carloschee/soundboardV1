@@ -286,7 +286,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">🎧</div>
                 <div class="leading-none">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none">DJ Emmy</h1>
-                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v80</span>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase opacity-60">v81</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -422,8 +422,12 @@
 
             <!-- ── MODAL DE SELECCIÓN DE TEMA ───────────────────────────────── -->
             <div id="modal-tema-memorama"
-                 class="absolute inset-0 z-30 flex items-center justify-center">
-                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8 w-full max-w-sm mx-4 shadow-2xl flex flex-col gap-4">
+                 class="absolute inset-0 z-30 hidden items-center justify-center"
+                 onclick="if(event.target===this)cerrarModalTema()">
+                <div class="bg-white/12 backdrop-blur-2xl border border-white/25 rounded-3xl p-6 sm:p-8 w-full max-w-sm mx-4 shadow-2xl flex flex-col gap-4 relative">
+                    <!-- X para cerrar -->
+                    <button onclick="cerrarModalTema()"
+                        class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 active:scale-90 transition-all text-white/70 text-sm font-bold">✕</button>
                     <h2 class="text-white font-black text-xl text-center tracking-wide">Elige un tema</h2>
                     <div id="modal-lista-temas" class="flex flex-col gap-3">
                         <!-- Inyectado por crearModalTemas() -->
@@ -445,31 +449,28 @@
             <!-- ── BARRA DEL JUEGO ───────────────────────────────────────────── -->
             <div id="memorama-barra-top" class="w-full flex items-center justify-between gap-2 px-2 md:px-4 mb-1 shrink-0 max-w-7xl">
 
-                <!-- Botón: volver al modal de selección -->
-                <button onclick="abrirModalTema()" title="Cambiar tema"
-                    class="shrink-0 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-xl font-bold backdrop-blur-md border border-white/20 transition-all active:scale-95 shadow-md flex items-center gap-2 text-sm">
-                    <span id="barra-tema-emoji" class="text-lg">🎴</span>
-                    <span id="barra-tema-nombre" class="hidden sm:inline text-xs opacity-80"></span>
-                </button>
+                <!-- Indicador de tema activo (solo info, sin acción) -->
+                <div class="shrink-0 flex items-center gap-2 px-2 py-1 text-sm">
+                    <span id="barra-tema-emoji" class="text-lg opacity-70">🎴</span>
+                    <span id="barra-tema-nombre" class="text-xs text-white/60 font-semibold hidden sm:inline"></span>
+                </div>
 
-                <!-- Selector de idioma -->
+                <!-- Selector de idioma (checkboxes multi-selección, sin aleatorio) -->
                 <div id="memorama-selector-idioma" class="flex gap-1 shrink-0">
-                    <button onclick="setIdiomaMemorама('aleatorio')" id="lang-btn-aleatorio"
-                        class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🎲</button>
-                    <button onclick="setIdiomaMemorама('es-MX')" id="lang-btn-es-MX"
+                    <button onclick="toggleIdiomaMemorама('es-MX')" id="lang-btn-es-MX"
                         class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white bg-white text-purple-700 shadow-md">🇲🇽</button>
-                    <button onclick="setIdiomaMemorама('en-US')" id="lang-btn-en-US"
+                    <button onclick="toggleIdiomaMemorама('en-US')" id="lang-btn-en-US"
                         class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇺🇸</button>
-                    <button onclick="setIdiomaMemorама('fr-FR')" id="lang-btn-fr-FR"
+                    <button onclick="toggleIdiomaMemorама('fr-FR')" id="lang-btn-fr-FR"
                         class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇫🇷</button>
-                    <button onclick="setIdiomaMemorама('zh-CN')" id="lang-btn-zh-CN"
+                    <button onclick="toggleIdiomaMemorама('zh-CN')" id="lang-btn-zh-CN"
                         class="w-9 h-8 rounded-lg text-base font-bold border-2 transition-all active:scale-95 border-white/20 bg-white/15 text-white">🇨🇳</button>
                 </div>
 
-                <!-- Reiniciar -->
-                <button onclick="iniciarMemorama()"
+                <!-- Botón Tema (abre el modal de selección) -->
+                <button onclick="abrirModalTema()"
                     class="shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl font-bold backdrop-blur-md border border-white/30 transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-sm z-20">
-                    <span>🔄</span><span class="hidden sm:inline">Reiniciar</span>
+                    <span>🎴</span><span class="hidden sm:inline">Tema</span>
                 </button>
             </div>
 
@@ -729,6 +730,55 @@
         
         const IDIOMAS = ['es-MX', 'en-US', 'fr-FR', 'zh-CN'];
 
+        // Multi-selección: Set de idiomas activos (persiste en localStorage)
+        const _cargarIdiomasActivos = () => {
+            try {
+                const saved = localStorage.getItem('djemmy-idiomas-activos');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) return new Set(parsed);
+                }
+            } catch(_) {}
+            return new Set(['es-MX']); // default: español
+        };
+        let idiomasActivos = _cargarIdiomasActivos();
+
+        const _guardarIdiomasActivos = () => {
+            try { localStorage.setItem('djemmy-idiomas-activos', JSON.stringify([...idiomasActivos])); } catch(_) {}
+        };
+
+        // Actualiza el estilo visual de los botones de idioma
+        const _actualizarBotonesIdioma = () => {
+            const ACTIVO   = 'border-white bg-white text-purple-700 shadow-md';
+            const INACTIVO = 'border-white/20 bg-white/15 text-white';
+            ['es-MX', 'en-US', 'fr-FR', 'zh-CN'].forEach(id => {
+                const btn = document.getElementById(`lang-btn-${id}`);
+                if (!btn) return;
+                const activo = idiomasActivos.has(id);
+                btn.className = btn.className
+                    .replace(ACTIVO, '').replace(INACTIVO, '').trim()
+                    + ' ' + (activo ? ACTIVO : INACTIVO);
+            });
+        };
+
+        // Toggle de un idioma — debe quedar al menos uno activo
+        const toggleIdiomaMemorама = (idioma) => {
+            if (idiomasActivos.has(idioma)) {
+                if (idiomasActivos.size <= 1) return; // no dejar vacío
+                idiomasActivos.delete(idioma);
+            } else {
+                idiomasActivos.add(idioma);
+            }
+            _guardarIdiomasActivos();
+            _actualizarBotonesIdioma();
+        };
+
+        // Elegir un idioma al azar de los activos
+        const _idiomaAleatorio = () => {
+            const arr = [...idiomasActivos];
+            return arr[Math.floor(Math.random() * arr.length)];
+        };
+
         let idiomaMemorama = localStorage.getItem('djemmy-idioma-memorama') || 'es-MX';
 
         
@@ -746,7 +796,7 @@
                     } catch(_) {}
                 }));
                 crearModalTemas();
-                abrirModalTema();
+
             } catch (e) {
                 console.warn('Sin memorama-temas.json:', e);
                 itemsMemorama = [];
@@ -919,14 +969,12 @@
         
 
         // hablarFruta — anuncia el nombre del par descubierto via TTS
-        // Respeta uiMuted. Usa el idioma activo del memorama.
+        // Elige un idioma al azar de los idiomas activos (checkboxes)
         const hablarFruta = (itemId, delay = 300) => {
             if (uiMuted || !window.speechSynthesis) return;
             const item   = memoramaItemMap[itemId];
             if (!item) return;
-            const idioma = idiomaMemorama === 'aleatorio'
-                ? IDIOMAS[Math.floor(Math.random() * IDIOMAS.length)]
-                : idiomaMemorama;
+            const idioma = _idiomaAleatorio();
             const nombre = item[idioma] || item['es-MX'] || String(itemId);
             const lang   = { 'es-MX':'es-MX', 'en-US':'en-US', 'fr-FR':'fr-FR', 'zh-CN':'zh-CN' }[idioma] || 'es-MX';
 
@@ -1474,7 +1522,9 @@
                     
                     const pilaEl     = document.getElementById('stack-parejas');
                     const frutaStack = document.createElement('div');
-                    frutaStack.className = 'bg-white/90 border-2 border-white/70 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center anim-pop shadow-md shrink-0 overflow-hidden';
+                    frutaStack.className = 'bg-white/90 border-2 border-white/70 rounded-lg w-8 h-8 md:w-11 md:h-11 flex items-center justify-center anim-pop shadow-md shrink-0 overflow-hidden cursor-pointer active:scale-90 transition-transform';
+                    frutaStack.title = (memoramaItemMap[itemId] || {})['es-MX'] || '';
+                    frutaStack.addEventListener('click', () => hablarFruta(itemId, 0));
 
                     // Buscar la imgUrl guardada en la tarjeta encontrada
                     const cartaEl  = cartasVolteadas[0].cardEl;
@@ -1878,7 +1928,7 @@
             if (seccion === 'memorama') {
                 requestAnimationFrame(() => ajustarAlturaCartas());
                 // Mostrar modal de selección si ya hay temas cargados
-                if (memoramaTemas.length > 0) abrirModalTema();
+
             }
             if (seccion === 'libros')   requestAnimationFrame(() => ajustarAlturaCartas());
         };
@@ -2139,8 +2189,8 @@
             }
             crearListaMusica(musica);
             await cargarTemasMemorama();
-            setIdiomaMemorама(idiomaMemorama);
-            iniciarMemorama();
+            _actualizarBotonesIdioma(); // sincronizar checkboxes de idioma al cargar
+            // No iniciar memorama automáticamente — esperar que el usuario elija tema
             crearBotonesVideos().catch(console.warn); 
             crearListaLibros();                       
             verificarEstadoOffline(true);
@@ -2224,7 +2274,7 @@
 
         
 
-        const CACHE_NAME = 'djemmy-cache-v80'; 
+        const CACHE_NAME = 'djemmy-cache-v81'; 
 
         
         inicializarApp();
